@@ -1,0 +1,9 @@
+[package]
+name = "gin-tonic-core"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/cemoktra/gin-tonic/"
+description = "core functionality for gin-tonic"
+license = "MIT"
+
+[dependencies]

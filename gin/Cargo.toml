@@ -1,0 +1,9 @@
+[package]
+name = "gin-tonic"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/cemoktra/gin-tonic/"
+description = "gin-tonic - useful tonic/prost extensions"
+license = "MIT"
+
+[dependencies]

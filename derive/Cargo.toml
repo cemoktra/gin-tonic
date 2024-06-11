@@ -1,0 +1,9 @@
+[package]
+name = "gin-tonic-derive"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/cemoktra/gin-tonic/"
+description = "derive macros for gin-tonic"
+license = "MIT"
+
+[dependencies]
