@@ -6,4 +6,10 @@ repository = "https://github.com/cemoktra/gin-tonic/"
 description = "derive macros for gin-tonic"
 license = "MIT"
 
+[lib]
+proc-macro = true
+
 [dependencies]
+
+[lints]
+workspace = true

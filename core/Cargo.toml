@@ -12,3 +12,8 @@ from-str = []
 to-str = []
 
 [dependencies]
+gin-tonic-derive = { workspace = true }
+prost = { workspace = true }
+
+[lints]
+workspace = true

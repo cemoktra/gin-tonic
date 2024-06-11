@@ -3,9 +3,7 @@
 
 /// the "Into" trait for converting any model type into a protobuf type
 pub trait IntoProto<Proto>: Sized {
-    type Error;
-
-    fn into_proto(self) -> Result<Proto, Self::Error>;
+    fn into_proto(self) -> Proto;
 }
 
 /// the "From" trait for converting any protobuf type into a model type
@@ -19,9 +17,7 @@ impl<Model, Proto> IntoProto<Proto> for Model
 where
     Proto: FromModel<Model>,
 {
-    type Error = Proto::Error;
-
-    fn into_proto(self) -> Result<Proto, Self::Error> {
+    fn into_proto(self) -> Proto {
         Proto::from_model(self)
     }
 }
@@ -35,9 +31,7 @@ pub trait IntoModel<Model>: Sized {
 
 /// the "From" trait for converting any model type into a protobuf type
 pub trait FromModel<Model>: Sized {
-    type Error;
-
-    fn from_model(model: Model) -> Result<Self, Self::Error>;
+    fn from_model(model: Model) -> Self;
 }
 
 impl<Proto, Model> IntoModel<Model> for Proto

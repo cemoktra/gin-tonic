@@ -25,10 +25,8 @@ impl<Model, Proto> FromModel<Option<Model>> for Option<Proto>
 where
     Proto: FromModel<Model>,
 {
-    type Error = <Proto as FromModel<Model>>::Error;
-
-    fn from_model(model: Option<Model>) -> Result<Self, Self::Error> {
-        model.map(IntoProto::into_proto).transpose()
+    fn from_model(model: Option<Model>) -> Self {
+        model.map(IntoProto::into_proto)
     }
 }
 
@@ -50,13 +48,11 @@ impl<Model, Proto> FromModel<Vec<Model>> for Vec<Proto>
 where
     Proto: FromModel<Model>,
 {
-    type Error = <Proto as FromModel<Model>>::Error;
-
-    fn from_model(model: Vec<Model>) -> Result<Self, Self::Error> {
+    fn from_model(model: Vec<Model>) -> Self {
         model
             .into_iter()
             .map(IntoProto::into_proto)
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<Vec<_>>()
     }
 }
 
@@ -114,10 +110,8 @@ mod infallible {
                 }
 
                 impl crate::traits::FromModel<$ty> for $ty {
-                    type Error = std::convert::Infallible;
-
-                    fn from_model(value: $ty) -> Result<Self, Self::Error> {
-                        Ok(value)
+                    fn from_model(value: $ty) -> Self {
+                        value
                     }
                 }
             )+

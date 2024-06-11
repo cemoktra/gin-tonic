@@ -5,3 +5,15 @@ members = [
     "core",
     "derive"
 ]
+
+[workspace.dependencies]
+gin-tonic-core = { version = "0.1.0", path = "core" }
+gin-tonic-derive = { version = "0.1.0", path = "derive" }
+prost = "0.12.6"
+
+
+[workspace.lints.rust]
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+cast_possible_truncation = "warn"
