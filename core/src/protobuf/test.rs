@@ -308,51 +308,78 @@ fn proto3_compliance() {
 struct Test {
     ip: std::net::Ipv4Addr,
     port: Option<u32>,
+    protocols: Vec<String>,
 }
 
+// this is a test implementation and should be replaced with a derive macro later
 impl ProtocolBuffer for Test {
-    fn serialize(&self, writer: &mut impl Write) -> Result<usize, Error> {
+    fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
         let mut written = 0;
 
+        // normal serialization
         let wire_type = self.ip.into_wire();
         written += wire_type.serialize(1, writer)?;
 
+        // optional serialization
         if let Some(port) = self.port {
             let wire_type = port.into_wire();
             written += wire_type.serialize(2, writer)?;
+        }
+
+        // vector serialization
+        for item in self.protocols {
+            let wire_type = item.into_wire();
+            written += wire_type.serialize(3, writer)?;
         }
 
         Ok(written)
     }
 
     fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
-        let mut reader = TagReader::new(buffer);
-        let mut field_map = HashMap::new();
+        let reader = TagReader::new(buffer);
+        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
 
-        while let Some(tag) = reader.next() {
+        for tag in reader {
             let (field_number, wire_type) = tag.into_parts();
-            field_map.insert(field_number, wire_type);
+            field_map.entry(field_number).or_default().push(wire_type);
         }
 
-        let ip = field_map.remove(&1).ok_or(Error::MissingField(1))?;
+        // normal deserialization
+        let ip = field_map
+            .remove(&1)
+            .ok_or(Error::MissingField(1))?
+            .into_iter()
+            .nth(0)
+            .ok_or(Error::MissingField(1))?;
         let ip = std::net::Ipv4Addr::from_wire(ip)?;
 
+        // optional deserialization
         let port = field_map
             .remove(&2)
-            .map(|wire| u32::from_wire(wire))
+            .map(|wire| u32::from_wire(wire.into_iter().nth(0).ok_or(Error::MissingField(1))?))
             .transpose()?;
 
-        Ok(Self { ip, port })
+        // vector deserialization
+        let mut protocols = vec![];
+        if let Some(wires) = field_map.remove(&3) {
+            for wire in wires {
+                protocols.push(String::from_wire(wire)?)
+            }
+        }
+
+        Ok(Self {
+            ip,
+            port,
+            protocols,
+        })
     }
 
     fn size_hint(&self) -> usize {
-        // each tag can take up to 10 bytes + the actual data
-        0 + self.ip.size_hint()
-            + 10
-            + self
-                .port
-                .map(|port| port.size_hint() + 10)
-                .unwrap_or_default()
+        let ip_size = self.ip.size_hint(1);
+        let port_size = self.port.map(|port| port.size_hint(2)).unwrap_or_default();
+        let protocols_size: usize = self.protocols.iter().map(|item| item.size_hint(3)).sum();
+
+        ip_size + port_size + protocols_size
     }
 }
 
@@ -387,9 +414,9 @@ mod wire_impl {
             WireType::VarInt(data, size)
         }
 
-        fn size_hint(&self) -> usize {
+        fn size_hint(&self, tag: u32) -> usize {
             let ip: u32 = (*self).into();
-            ip.required_space()
+            ip.required_space() + tag.required_space()
         }
     }
 }
@@ -400,6 +427,7 @@ fn basic_serde() {
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: None,
+        protocols: vec![],
     };
     let size_hint = test.size_hint();
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -412,16 +440,19 @@ fn basic_serde() {
 
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert!(test.port.is_none());
+    assert!(test.protocols.is_empty());
 
     // first round with optional field set to Some
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: Some(8080),
+        protocols: vec![String::from("tcp"), String::from("udp")],
     };
     let size_hint = test.size_hint();
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
+
     assert!(actual_size > 0);
     assert!(actual_size <= size_hint);
 
@@ -429,4 +460,5 @@ fn basic_serde() {
 
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert_eq!(test.port, Some(8080));
+    assert_eq!(test.protocols.len(), 2);
 }

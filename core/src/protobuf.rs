@@ -13,6 +13,9 @@ use crate::protobuf::wire::{WireType, WireTypeView};
 pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Utf8(#[from] std::string::FromUtf8Error),
+
     #[error("unexpected wire type")]
     UnexpectedWireType,
     #[error("invalid varint")]
@@ -27,7 +30,7 @@ pub trait ProtocolBuffer
 where
     Self: Sized,
 {
-    fn serialize(&self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
+    fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
     fn deserialize(buffer: &[u8]) -> Result<Self, Error>;
     fn size_hint(&self) -> usize;
 }
@@ -42,5 +45,5 @@ pub trait FromWire {
 /// convert a Rust type into a [WireType]
 pub trait IntoWire {
     fn into_wire(self) -> WireType;
-    fn size_hint(&self) -> usize;
+    fn size_hint(&self, tag: u32) -> usize;
 }

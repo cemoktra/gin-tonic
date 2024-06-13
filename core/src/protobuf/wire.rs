@@ -45,20 +45,10 @@ impl WireType {
                 written += writer.write(&tag_varint[0..tag_size])?;
                 written += writer.write(data)?;
             }
-            WireType::SGroup => {
-                let tag = tag | 0b10;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
-            }
-            WireType::EGroup => {
-                let tag = tag | 0b11;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
-            }
             WireType::LengthEncoded(data) => {
                 let mut len_varint = [0u8; 10];
 
-                let tag = tag | 0b100;
+                let tag = tag | 0b10;
                 let tag_size = tag.encode_var(&mut tag_varint);
                 written += writer.write(&tag_varint[0..tag_size])?;
 
@@ -67,6 +57,17 @@ impl WireType {
                 written += writer.write(&len_varint[0..len_size])?;
                 written += writer.write(data)?;
             }
+            WireType::SGroup => {
+                let tag = tag | 0b11;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                written += writer.write(&tag_varint[0..tag_size])?;
+            }
+            WireType::EGroup => {
+                let tag = tag | 0b100;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                written += writer.write(&tag_varint[0..tag_size])?;
+            }
+
             WireType::FixedI32(data) => {
                 let tag = tag | 0b101;
                 let tag_size = tag.encode_var(&mut tag_varint);
