@@ -1,13 +1,14 @@
-pub mod reader;
-pub mod tag;
-pub mod wire;
+pub(crate) mod reader;
+pub(crate) mod tag;
+pub(crate) mod wire;
+
+pub use wire::{WireType, WireTypeView};
 
 mod scalar;
 #[cfg(test)]
 mod test;
 
 use crate::protobuf::reader::TagReader;
-use crate::protobuf::wire::{WireType, WireTypeView};
 use std::collections::HashMap;
 
 /// error enumeration for problems occuring when converting a [WireTypeView] into an actual type
@@ -30,6 +31,19 @@ pub enum Error {
     UnknownEnumVariant(u32),
     #[error("invalid oneof")]
     InvalidOneOf,
+}
+
+pub mod nested {
+    use crate::protobuf::IntoWire;
+    use integer_encoding::VarInt;
+
+    pub fn size_hint<T>(tag: u32, message: &T) -> usize
+    where
+        T: IntoWire,
+    {
+        let size = message.size_hint(tag);
+        tag.required_space() + size.required_space() + size
+    }
 }
 
 pub mod map {
