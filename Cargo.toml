@@ -7,10 +7,14 @@ members = [
 ]
 
 [workspace.dependencies]
+darling = "0.20.9"
 gin-tonic-core = { version = "0.1.0", path = "core" }
 gin-tonic-derive = { version = "0.1.0", path = "derive" }
 integer-encoding = "4.0.0"
+proc-macro2 = "1.0.85"
 prost = "0.12.6"
+syn = "2.0.66"
+thiserror = "1.0.61"
 
 [workspace.lints.rust]
 
