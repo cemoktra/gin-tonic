@@ -78,6 +78,7 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                     });
                 }
                 Kind::OneOf => {}
+                Kind::Map => {}
             },
             Cardinality::Optional => match field.kind {
                 Kind::Primitive => {
@@ -107,6 +108,7 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                 }
                 Kind::Message => {}
                 Kind::OneOf => {}
+                Kind::Map => {}
             },
             Cardinality::Repeated => match field.kind {
                 Kind::Primitive => {
@@ -132,6 +134,7 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                 }
                 Kind::Message => {}
                 Kind::OneOf => {}
+                Kind::Map => {}
             },
         }
     }
@@ -171,16 +174,71 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
     }
 }
 
-// fn size_hint(&self) -> usize {
-//     use ::gin_tonic_core::export::VarInt;
-//     use ::gin_tonic_core::protobuf::IntoWire;
-//     let ip_size = self.ip.size_hint(1);
-//     let port_size = self
-//         .port
-//         .map(|value| value.size_hint(2))
-//         .unwrap_or_default();
-//     let protocols_size: usize = self.protocols.iter().map(|item| item.size_hint(3)).sum();
-//     let nested_size = gin_tonic_core::protobuf::IntoWire::size_hint(&self.nested, 4);
-//     let nested_size = u32::from(4).required_space() + nested_size.required_space() + nested_size;
-//     0 + ip_size + port_size + protocols_size + nested_size
-// }
+pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenStream {
+    let ty = input.ident;
+    let span = ty.span();
+
+    let variants = input
+        .data
+        .take_enum()
+        .expect("Enumeration derive only works on unit enumerations");
+
+    let mut into_impl = TokenStream::new();
+    let mut size_hint_impl = TokenStream::new();
+    let mut from_impl = TokenStream::new();
+
+    for variant in variants {
+        let var_ident = variant.ident;
+        let span = var_ident.span();
+        let tag = variant.tag;
+
+        into_impl.extend(quote_spanned! {span=>
+            #ty::#var_ident => {
+                let tag: u32 = #tag;
+                tag.into_wire()
+            },
+        });
+
+        size_hint_impl.extend(quote_spanned! {span=>
+            #ty::#var_ident => {
+                let tag: u32 = #tag;
+                tag.required_space()
+            }
+        });
+
+        from_impl.extend(quote_spanned! {span=>
+            #tag => Ok(#ty::#var_ident),
+        });
+    }
+
+    quote_spanned! {span=>
+        #[automatically_derived]
+        impl ::gin_tonic_core::protobuf::IntoWire for #ty {
+            fn into_wire(self) -> ::gin_tonic_core::protobuf::WireType {
+                match self {
+                    #into_impl
+                }
+            }
+
+            fn size_hint(&self, tag: u32) -> usize {
+                tag.required_space()
+                    + match self {
+                        #size_hint_impl
+                    }
+            }
+        }
+
+        #[automatically_derived]
+        impl ::gin_tonic_core::protobuf::FromWire for #ty {
+            fn from_wire(wire: ::gin_tonic_core::protobuf::WireTypeView) -> Result<Self, ::gin_tonic_core::protobuf::Error>
+            where
+                Self: Sized,
+            {
+                match u32::from_wire(wire)? {
+                    #from_impl
+                    n => Err(::gin_tonic_core::protobuf::Error::UnknownEnumVariant(n)),
+                }
+            }
+        }
+    }
+}

@@ -74,8 +74,8 @@ struct Test {
     protocols: Vec<String>,
     #[gin(tag = 4, kind = "message")]
     nested: Nested,
-    //#[gin(tag = 5)]
-    // logging: Logging,
+    #[gin(tag = 5)]
+    logging: Logging,
     // // 6 + 7
     //#[gin(tag = 0)]
     // oneof: Oneof,
@@ -89,11 +89,13 @@ struct Nested {
     number: i32,
 }
 
-// #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-// enum Logging {
-//     Human = 1,
-//     Json = 2,
-// }
+#[derive(Clone, Copy, Debug, Eq, PartialEq, gin_tonic_core::Enumeration)]
+enum Logging {
+    #[gin(tag = 1)]
+    Human,
+    #[gin(tag = 2)]
+    Json,
+}
 //
 // #[derive(Clone, Debug, Eq, PartialEq)]
 // enum Oneof {
@@ -108,7 +110,7 @@ fn pb_serde() {
         port: None,
         protocols: vec![],
         nested: Nested { number: -1 },
-        // logging: Logging::Human,
+        logging: Logging::Human,
         // oneof: Oneof::Num(123),
         // map: HashMap::new(),
     };
@@ -129,7 +131,7 @@ fn pb_serde() {
     assert!(test.port.is_none());
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
-    // assert_eq!(test.logging, Logging::Human);
+    assert_eq!(test.logging, Logging::Human);
     // match test.oneof {
     //     Oneof::Num(n) => assert_eq!(n, 123),
     //     _ => panic!("wrong oneof"),
@@ -145,7 +147,7 @@ fn pb_serde() {
         port: Some(8080),
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: -1 },
-        // logging: Logging::Json,
+        logging: Logging::Json,
         // oneof: Oneof::Str(String::from("hello")),
         // map,
     };
@@ -166,7 +168,7 @@ fn pb_serde() {
     assert_eq!(test.port, Some(8080));
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, -1);
-    // assert_eq!(test.logging, Logging::Json);
+    assert_eq!(test.logging, Logging::Json);
     // match test.oneof {
     //     Oneof::Str(s) => assert_eq!(s, "hello"),
     //     _ => panic!("wrong oneof"),
