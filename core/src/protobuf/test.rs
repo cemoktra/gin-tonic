@@ -316,12 +316,55 @@ struct Test {
     protocols: Vec<String>,
     nested: Nested,
     logging: Logging,
+    oneof: Oneof,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Logging {
     Human = 1,
     Json = 2,
+}
+
+enum Oneof {
+    Num(i32),
+    Str(String),
+}
+
+impl IntoWire for Oneof {
+    fn into_wire(self) -> WireType {
+        match self {
+            Oneof::Num(n) => n.into_wire(),
+            Oneof::Str(s) => s.into_wire(),
+        }
+    }
+
+    fn size_hint(&self, tag: u32) -> usize {
+        match self {
+            Oneof::Num(n) => n.size_hint(tag),
+            Oneof::Str(s) => s.size_hint(tag),
+        }
+    }
+}
+
+impl FromWire for Oneof {
+    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        // TODO: this is not as easy in this trait, likely it needs another trait
+        match wire {
+            WireTypeView::VarInt(data) => {
+                let (value, _) = i32::decode_var(data).ok_or(Error::InvalidVarInt)?;
+                Ok(Self::Num(value))
+            }
+            WireTypeView::FixedI32(data) => {
+                let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
+                Ok(Self::Num(i32::from_be_bytes(array)))
+            }
+            WireTypeView::LengthEncoded(data) => Ok(Self::Str(String::from_wire(wire)?)),
+            _ => Err(Error::UnexpectedWireType),
+        }
+    }
 }
 
 // this will be implemented via derive macro
@@ -386,6 +429,10 @@ impl Message for Test {
         let wire_type = self.logging.into_wire();
         written += wire_type.serialize(5, writer)?;
 
+        // oneof serialization
+        let wire_type = self.oneof.into_wire();
+        written += wire_type.serialize(6, writer)?;
+
         Ok(written)
     }
 
@@ -439,12 +486,23 @@ impl Message for Test {
             .ok_or(Error::MissingField(5))?;
         let logging = Logging::from_wire(logging)?;
 
+        // oneof deserialization
+        let oneof = field_map
+            .remove(&6)
+            .ok_or(Error::MissingField(6))?
+            .into_iter()
+            // last one wins
+            .last()
+            .ok_or(Error::MissingField(6))?;
+        let oneof = Oneof::from_wire(oneof)?;
+
         Ok(Self {
             ip,
             port,
             protocols,
             nested,
             logging,
+            oneof,
         })
     }
 
@@ -455,8 +513,9 @@ impl Message for Test {
         let nested_size = IntoWire::size_hint(&self.nested, 4);
         let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
         let logging_size = self.logging.size_hint(5);
+        let oneof_size = self.oneof.size_hint(6);
 
-        ip_size + port_size + protocols_size + nested_size + logging_size
+        ip_size + port_size + protocols_size + nested_size + logging_size + oneof_size
     }
 }
 
@@ -545,6 +604,7 @@ fn basic_serde() {
         protocols: vec![],
         nested: Nested { number: -1 },
         logging: Logging::Human,
+        oneof: Oneof::Num(123),
     };
     let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -560,6 +620,10 @@ fn basic_serde() {
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
     assert_eq!(test.logging, Logging::Human);
+    match test.oneof {
+        Oneof::Num(n) => assert_eq!(n, 123),
+        _ => panic!("wrong oneof"),
+    }
 
     // first round with optional field set to Some
     let test = Test {
@@ -568,6 +632,7 @@ fn basic_serde() {
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: -1 },
         logging: Logging::Json,
+        oneof: Oneof::Str(String::from("hello")),
     };
     let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -584,4 +649,8 @@ fn basic_serde() {
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, -1);
     assert_eq!(test.logging, Logging::Json);
+    match test.oneof {
+        Oneof::Str(s) => assert_eq!(s, "hello"),
+        _ => panic!("wrong oneof"),
+    }
 }
