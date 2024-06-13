@@ -1,118 +1,187 @@
-use std::io::{Result, Write};
+use integer_encoding::VarInt;
 
-/// protobuf VARINT type
-pub trait VarInt
-where
-    Self: Sized,
-{
-    fn decode_slice(buffer: &[u8]) -> Result<(Self, usize)>;
-
-    fn encode_writer(self, writer: &mut impl Write) -> Result<()>;
+pub struct TagReader<'a> {
+    position: usize,
+    buffer: &'a [u8],
 }
 
-impl VarInt for u64 {
-    fn decode_slice(buffer: &[u8]) -> Result<(Self, usize)> {
-        let mut read = 0;
-        let mut decoded = 0;
-
-        for b in buffer {
-            decoded |= u64::from(*b & 0x7F) << (read * 7);
-            read += 1;
-
-            if *b <= 0x7F {
-                return if read == 9 && *b >= 0x02 {
-                    Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, ""))
-                } else {
-                    Ok((decoded, read))
-                };
-            }
-        }
-
-        Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, ""))
-    }
-
-    fn encode_writer(mut self, writer: &mut impl Write) -> std::io::Result<()> {
-        loop {
-            if self < 0x80 {
-                writer.write(&[self as u8])?;
-                return Ok(());
-            }
-
-            writer.write(&[((self & 0x7F) | 0x80) as u8])?;
-            self >>= 7;
+impl<'a> TagReader<'a> {
+    pub fn new(buffer: &'a [u8]) -> Self {
+        Self {
+            position: 0,
+            buffer,
         }
     }
 }
 
-// groups are not supported
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+impl<'a> Iterator for TagReader<'a> {
+    type Item = Tag;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (tag, read) = Tag::parse(&self.buffer[self.position..])?;
+        self.position += read;
+        Some(tag)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Tag {
+    field_number: u32,
+    wire_type: WireType,
+}
+
+impl Tag {
+    pub fn field_number(&self) -> u32 {
+        self.field_number
+    }
+
+    pub fn wire_type(&self) -> &WireType {
+        &self.wire_type
+    }
+
+    pub fn parse(buf: &[u8]) -> Option<(Self, usize)> {
+        let (tag, read) = u32::decode_var(buf)?;
+        if read != 1 {
+            return None;
+        }
+
+        let field_number = tag >> 3;
+        let wire_type = tag & 0b111;
+
+        let (wire_type, read) = match wire_type {
+            0 => {
+                let mut data = [0u8; 10];
+                let (_data, read) = u64::decode_var(&buf[1..])?;
+                data[0..read].copy_from_slice(&buf[1..1 + read]);
+
+                (WireType::VarInt(data), read)
+            }
+            1 => {
+                let mut data = [0u8; 8];
+                data.copy_from_slice(&buf[1..9]);
+                (WireType::I64(data), 8)
+            }
+            2 => {
+                let (len, read) = u32::decode_var(&buf[1..])?;
+                let len = len as usize;
+                let data = buf[2..2 + len].to_vec();
+
+                (WireType::LEN(data), read + len)
+            }
+            5 => {
+                let mut data = [0u8; 4];
+                data.copy_from_slice(&buf[1..5]);
+                (WireType::I32(data), 4)
+            }
+            _ => return None,
+        };
+
+        Some((
+            Self {
+                field_number,
+                wire_type,
+            },
+            read + 1,
+        ))
+    }
+}
+
+/// groups are not supported
+#[derive(Debug, Clone)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum WireType {
-    VarInt = 0,
-    I64 = 1,
-    LEN = 2,
-    I32 = 5,
-}
-
-pub trait Tag {
-    fn field_number(&self) -> u64;
-    fn wire_type(&self) -> Option<WireType>;
-}
-
-impl Tag for u64 {
-    fn field_number(&self) -> u64 {
-        self >> 3
-    }
-
-    fn wire_type(&self) -> Option<WireType> {
-        let wire_type = self & 0b111;
-
-        match wire_type {
-            0 => Some(WireType::VarInt),
-            1 => Some(WireType::I64),
-            2 => Some(WireType::LEN),
-            5 => Some(WireType::I32),
-            _ => None,
-        }
-    }
+    VarInt([u8; 10]),
+    I64([u8; 8]),
+    LEN(Vec<u8>),
+    I32([u8; 4]),
 }
 
 #[cfg(test)]
 mod test {
-    use crate::protobuf::{Tag, VarInt};
+    use crate::protobuf::{Tag, TagReader, WireType};
+    use integer_encoding::VarInt;
 
     #[test]
-    fn encode_decode_varint() {
-        let mut buffer = Vec::new();
-
-        let var = 150u64;
-
-        var.encode_writer(&mut buffer).unwrap();
-        assert_eq!([0x96, 0x1], buffer[0..2]);
-
-        let (var, read) = u64::decode_slice(buffer.as_slice()).unwrap();
-
-        assert_eq!(150, var);
-        assert_eq!(2, read);
-    }
-
-    #[test]
-    fn tag() {
-        let tag = 0x8;
-        assert_eq!(Some(super::WireType::VarInt), tag.wire_type());
-        assert_eq!(1, tag.field_number());
-    }
-
-    #[test]
-    fn decode_tag_and_varint() {
+    fn parse_varint_tag() {
+        // field = 1
+        // wire_type = VARINT with u64 = 150
         let buffer = [0x08, 0x96, 0x01];
+        let (tag, _) = Tag::parse(&buffer).unwrap();
 
-        let (tag, read) = u64::decode_slice(buffer.as_slice()).unwrap();
-        assert_eq!(read, 1);
-        assert_eq!(Some(super::WireType::VarInt), tag.wire_type());
         assert_eq!(1, tag.field_number());
+        match tag.wire_type() {
+            WireType::VarInt(data) => {
+                assert_eq!(150u64, u64::decode_var(data).unwrap().0);
+            }
+            _ => panic!("incorrect wire type"),
+        }
+    }
 
-        let (var, read) = u64::decode_slice(&buffer[1..]).unwrap();
-        assert_eq!(150, var);
-        assert_eq!(2, read);
+    #[test]
+    fn parse_len_tag() {
+        // field = 2
+        // wire_type = LEN with [74 65 73 74 69 6e 67]
+        let buffer = [0x12, 0x07, 0x74, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x67];
+        let (tag, _) = Tag::parse(&buffer).unwrap();
+
+        assert_eq!(2, tag.field_number());
+        match tag.wire_type() {
+            WireType::LEN(data) => {
+                let text = String::from_utf8(data.clone()).unwrap();
+                assert_eq!(&text, "testing");
+            }
+            _ => panic!("incorrect wire type"),
+        }
+    }
+
+    #[test]
+    fn parse_multi_tags() {
+        let buffer = [
+            0x22, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x28, 0x01, 0x28, 0x02, 0x28, 0x03,
+        ];
+
+        let mut tag_reader = TagReader::new(&buffer);
+
+        let tag = tag_reader.next().unwrap();
+        assert_eq!(4, tag.field_number);
+        match tag.wire_type() {
+            WireType::LEN(data) => {
+                let text = String::from_utf8(data.clone()).unwrap();
+                assert_eq!(&text, "hello");
+            }
+            _ => panic!("incorrect wire type"),
+        }
+
+        let tag = tag_reader.next().unwrap();
+        assert_eq!(5, tag.field_number);
+        println!("{tag:?}");
+        match tag.wire_type() {
+            WireType::VarInt(data) => {
+                assert_eq!(1u32, u32::decode_var(data).unwrap().0);
+            }
+            _ => panic!("incorrect wire type"),
+        }
+
+        let tag = tag_reader.next().unwrap();
+        assert_eq!(5, tag.field_number);
+        println!("{tag:?}");
+        match tag.wire_type() {
+            WireType::VarInt(data) => {
+                assert_eq!(2u32, u32::decode_var(data).unwrap().0);
+            }
+            _ => panic!("incorrect wire type"),
+        }
+
+        let tag = tag_reader.next().unwrap();
+        assert_eq!(5, tag.field_number);
+        println!("{tag:?}");
+        match tag.wire_type() {
+            WireType::VarInt(data) => {
+                assert_eq!(3u32, u32::decode_var(data).unwrap().0);
+            }
+            _ => panic!("incorrect wire type"),
+        }
+
+        assert!(tag_reader.next().is_none());
     }
 }
