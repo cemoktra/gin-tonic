@@ -7,4 +7,4 @@ pub mod export {
     pub use prost;
 }
 
-pub use gin_tonic_derive::{Enumeration, Message};
+pub use gin_tonic_derive::{Enumeration, Message, OneOf};
