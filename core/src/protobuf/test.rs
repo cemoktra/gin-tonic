@@ -1,5 +1,6 @@
 use crate::protobuf::reader::TagReader;
-use crate::protobuf::{Error, FromWire, IntoWire, ProtocolBuffer, WireTypeView};
+use crate::protobuf::wire::WireType;
+use crate::protobuf::{Error, FromWire, IntoWire, Message, WireTypeView};
 use integer_encoding::VarInt;
 use std::collections::HashMap;
 use std::io::Write;
@@ -314,10 +315,48 @@ struct Test {
     port: Option<u32>,
     protocols: Vec<String>,
     nested: Nested,
+    logging: Logging,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Logging {
+    Human = 1,
+    Json = 2,
+}
+
+impl IntoWire for Logging {
+    fn into_wire(self) -> WireType {
+        match self {
+            Logging::Human => 1u32.into_wire(),
+            Logging::Json => 2u32.into_wire(),
+        }
+    }
+
+    fn size_hint(&self, tag: u32) -> usize {
+        tag.required_space()
+            + match self {
+                Logging::Human => 1u32.required_space(),
+                Logging::Json => 2u32.required_space(),
+            }
+    }
+}
+
+impl FromWire for Logging {
+    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        let n = u32::from_wire(wire)?;
+        match n {
+            1 => Ok(Self::Human),
+            2 => Ok(Self::Json),
+            n => Err(Error::UnknownEnumVariant(n)),
+        }
+    }
 }
 
 // this is a test implementation and should be replaced with a derive macro later
-impl ProtocolBuffer for Test {
+impl Message for Test {
     fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
         let mut written = 0;
 
@@ -340,6 +379,10 @@ impl ProtocolBuffer for Test {
         // nested serialization
         let wire_type = self.nested.into_wire();
         written += wire_type.serialize(4, writer)?;
+
+        // enum serialization
+        let wire_type = self.logging.into_wire();
+        written += wire_type.serialize(5, writer)?;
 
         Ok(written)
     }
@@ -365,7 +408,7 @@ impl ProtocolBuffer for Test {
         // optional deserialization
         let port = field_map
             .remove(&2)
-            .map(|wire| u32::from_wire(wire.into_iter().nth(0).ok_or(Error::MissingField(1))?))
+            .map(|wire| u32::from_wire(wire.into_iter().nth(0).ok_or(Error::MissingField(2))?))
             .transpose()?;
 
         // vector deserialization
@@ -379,17 +422,27 @@ impl ProtocolBuffer for Test {
         // nested deserialization
         let nested = field_map
             .remove(&4)
-            .ok_or(Error::MissingField(1))?
+            .ok_or(Error::MissingField(4))?
             .into_iter()
             .nth(0)
-            .ok_or(Error::MissingField(1))?;
+            .ok_or(Error::MissingField(4))?;
         let nested = Nested::from_wire(nested)?;
+
+        // enum deserialization
+        let logging = field_map
+            .remove(&5)
+            .ok_or(Error::MissingField(5))?
+            .into_iter()
+            .nth(0)
+            .ok_or(Error::MissingField(5))?;
+        let logging = Logging::from_wire(logging)?;
 
         Ok(Self {
             ip,
             port,
             protocols,
             nested,
+            logging,
         })
     }
 
@@ -399,13 +452,14 @@ impl ProtocolBuffer for Test {
         let protocols_size: usize = self.protocols.iter().map(|item| item.size_hint(3)).sum();
         let nested_size = IntoWire::size_hint(&self.nested, 4);
         let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
+        let logging_size = self.logging.size_hint(5);
 
-        ip_size + port_size + protocols_size + nested_size
+        ip_size + port_size + protocols_size + nested_size + logging_size
     }
 }
 
 // this is a test implementation and should be replaced with a derive macro later
-impl ProtocolBuffer for Nested {
+impl Message for Nested {
     fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
         let mut written = 0;
 
@@ -488,8 +542,9 @@ fn basic_serde() {
         port: None,
         protocols: vec![],
         nested: Nested { number: -1 },
+        logging: Logging::Human,
     };
-    let size_hint = ProtocolBuffer::size_hint(&test);
+    let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -502,6 +557,7 @@ fn basic_serde() {
     assert!(test.port.is_none());
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
+    assert_eq!(test.logging, Logging::Human);
 
     // first round with optional field set to Some
     let test = Test {
@@ -509,8 +565,9 @@ fn basic_serde() {
         port: Some(8080),
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: -1 },
+        logging: Logging::Json,
     };
-    let size_hint = ProtocolBuffer::size_hint(&test);
+    let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -524,4 +581,5 @@ fn basic_serde() {
     assert_eq!(test.port, Some(8080));
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, -1);
+    assert_eq!(test.logging, Logging::Json);
 }
