@@ -1,73 +1,13 @@
 use gin_tonic_core::{
     export::VarInt,
-    protobuf::{Error, FromWire, IntoWire, Message, WireType, WireTypeView},
+    protobuf::{Error, Message},
 };
 use std::collections::HashMap;
-use std::ops::Deref;
-
-// in order to implFromWire/IntoWire for foreign types
-#[derive(Debug)]
-struct IpWrapper(std::net::Ipv4Addr);
-
-impl From<std::net::Ipv4Addr> for IpWrapper {
-    fn from(value: std::net::Ipv4Addr) -> Self {
-        Self(value)
-    }
-}
-
-impl From<IpWrapper> for std::net::Ipv4Addr {
-    fn from(value: IpWrapper) -> Self {
-        value.0
-    }
-}
-
-impl Deref for IpWrapper {
-    type Target = std::net::Ipv4Addr;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl FromWire for IpWrapper {
-    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
-    {
-        let ip = match wire {
-            WireTypeView::VarInt(data) => {
-                let (ip, _) = u32::decode_var(data).ok_or(Error::InvalidVarInt)?;
-                ip
-            }
-            WireTypeView::FixedI32(data) => {
-                let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
-                u32::from_be_bytes(array)
-            }
-            _ => return Err(Error::UnexpectedWireType),
-        };
-
-        Ok(std::net::Ipv4Addr::from(ip).into())
-    }
-}
-
-impl IntoWire for IpWrapper {
-    fn into_wire(self) -> WireType {
-        let mut data = [0u8; 10];
-        let ip: u32 = self.0.into();
-        let size = ip.encode_var(&mut data);
-        WireType::VarInt(data, size)
-    }
-
-    fn size_hint(&self, tag: u32) -> usize {
-        let ip: u32 = self.0.into();
-        ip.required_space() + tag.required_space()
-    }
-}
 
 #[derive(Debug, gin_tonic_core::Message)]
 struct Test {
     #[gin(tag = 1)]
-    ip: IpWrapper,
+    ip: std::net::Ipv4Addr,
     #[gin(tag = 2, cardinality = "optional")]
     port: Option<u32>,
     #[gin(tag = 3, cardinality = "repeated")]
@@ -107,7 +47,7 @@ enum OneOf {
 #[test]
 fn pb_serde() {
     let test = Test {
-        ip: std::net::Ipv4Addr::LOCALHOST.into(),
+        ip: std::net::Ipv4Addr::LOCALHOST,
         port: None,
         protocols: vec![],
         nested: Nested { number: -1 },
@@ -125,10 +65,7 @@ fn pb_serde() {
 
     let test = Test::deserialize(&buffer).unwrap();
 
-    assert_eq!(
-        Into::<std::net::Ipv4Addr>::into(test.ip),
-        std::net::Ipv4Addr::LOCALHOST
-    );
+    assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert!(test.port.is_none());
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
@@ -144,7 +81,7 @@ fn pb_serde() {
     map.insert(10, String::from("ten"));
     map.insert(20, String::from("twenty"));
     let test = Test {
-        ip: std::net::Ipv4Addr::LOCALHOST.into(),
+        ip: std::net::Ipv4Addr::LOCALHOST,
         port: Some(8080),
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: -1 },
@@ -162,10 +99,7 @@ fn pb_serde() {
 
     let test = Test::deserialize(&buffer).unwrap();
 
-    assert_eq!(
-        Into::<std::net::Ipv4Addr>::into(test.ip),
-        std::net::Ipv4Addr::LOCALHOST
-    );
+    assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert_eq!(test.port, Some(8080));
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, -1);
