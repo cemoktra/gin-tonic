@@ -146,8 +146,49 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                         let #field_size_ident = self.#field_ident.map(|value| value.size_hint(#tag)).unwrap_or_default();
                     });
                 }
-                Kind::Message => {}
-                Kind::OneOf => {}
+                Kind::Message => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        if let Some(value) = self.#field_ident {
+                            let wire_type = value.into_wire();
+                            written += wire_type.serialize(#tag, writer)?;
+                        }
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let #field_ident = tag_map
+                            .remove(&#tag)
+                            .map(|wire| ::gin_tonic_core::protobuf::FromWire::from_wire(
+                                wire
+                                    .into_iter()
+                                    .nth(0)
+                                    .ok_or(::gin_tonic_core::protobuf::Error::MissingField(#tag))?
+                                )
+                            )
+                            .transpose()?;
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| ::gin_tonic_core::protobuf::nested::size_hint(#tag, value)).unwrap_or_default();
+                    });
+                }
+                Kind::OneOf => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        if let Some(value) = self.#field_ident {
+                            written += value.serialize(writer)?;
+                        }
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let #field_ident = match ::gin_tonic_core::protobuf::Message::deserialize_tags(tag_map) {
+                            Ok(value) => Some(value),
+                            Err(_) => None,
+                        };
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| ::gin_tonic_core::protobuf::Message::size_hint(value)).unwrap_or_default();
+                    });
+                }
                 Kind::Map => {}
             },
             Cardinality::Repeated => match field.kind {
