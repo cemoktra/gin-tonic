@@ -204,7 +204,7 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                         let mut #field_ident = vec![];
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                protocols.push(gin_tonic_core::protobuf::FromWire::from_wire(wire_type)?)
+                                #field_ident.push(gin_tonic_core::protobuf::FromWire::from_wire(wire_type)?)
                             }
                         }
                     });
@@ -213,9 +213,37 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                         let #field_size_ident: usize = self.#field_ident.iter().map(|item| item.size_hint(#tag)).sum();
                     });
                 }
-                Kind::Message => {}
-                Kind::OneOf => {}
-                Kind::Map => {}
+                Kind::Message => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        for item in self.#field_ident {
+                            let wire_type = item.into_wire();
+                            written += wire_type.serialize(#tag, writer)?;
+                        }
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let mut #field_ident = vec![];
+                        if let Some(wire_types) = tag_map.remove(&#tag) {
+                            for wire_type in wire_types {
+                                #field_ident.push(gin_tonic_core::protobuf::FromWire::from_wire(wire_type)?)
+                            }
+                        }
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident: usize = self.#field_ident.iter().map(|item| ::gin_tonic_core::protobuf::nested::size_hint(#tag, item)).sum();
+                    });
+                }
+                Kind::OneOf => {
+                    return quote! {
+                        compile_error!("A repeated OneOf is not a thing")
+                    }
+                }
+                Kind::Map => {
+                    return quote! {
+                        compile_error!("A repeated map is not a thing")
+                    }
+                }
             },
         }
     }
