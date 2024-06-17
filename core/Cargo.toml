@@ -13,8 +13,13 @@ to-str = []
 
 [dependencies]
 gin-tonic-derive = { workspace = true }
+heck = { workspace = true }
 integer-encoding = { workspace = true }
+proc-macro2 = { workspace = true }
 prost = { workspace = true }
+protox = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
 thiserror = { workspace = true }
 
 [lints]
