@@ -2,10 +2,10 @@ use darling::ast::Data;
 use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use syn::{Ident, LitInt, Type};
 
-pub(crate) type MessageDeriveData = Data<(), MessageField>;
+pub(crate) type MessageDeriveData = Data<OneOfVariant, MessageField>;
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(gin), supports(struct_named))]
+#[darling(attributes(gin), supports(struct_named, enum_tuple))]
 pub(crate) struct MessageInput {
     pub(crate) ident: Ident,
     pub(crate) data: MessageDeriveData,
