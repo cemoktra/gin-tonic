@@ -3,6 +3,7 @@ resolver = "2"
 members = ["gin", "core", "derive"]
 
 [workspace.dependencies]
+bytes = "1.6.0"
 darling = "0.20.9"
 gin-tonic-core = { version = "0.1.0", path = "core" }
 gin-tonic-derive = { version = "0.1.0", path = "derive" }
@@ -14,6 +15,8 @@ protox = "0.6.1"
 quote = "1.0.36"
 syn = { version = "2.0.66", features = ["full"] }
 thiserror = "1.0.61"
+tonic = "0.11.0"
+tonic-build = "0.11.0"
 
 [workspace.lints.rust]
 

@@ -1,3 +1,4 @@
+pub mod codec;
 pub mod codegen;
 pub mod impls;
 pub mod protobuf;

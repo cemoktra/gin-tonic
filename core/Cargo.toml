@@ -12,6 +12,7 @@ from-str = []
 to-str = []
 
 [dependencies]
+bytes = { workspace = true }
 gin-tonic-derive = { workspace = true }
 heck = { workspace = true }
 integer-encoding = { workspace = true }
@@ -21,6 +22,8 @@ protox = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true }
 thiserror = { workspace = true }
+tonic = { workspace = true }
+tonic-build = { workspace = true }
 
 [lints]
 workspace = true
