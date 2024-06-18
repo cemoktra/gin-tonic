@@ -1,6 +1,6 @@
 #![doc = r"THIS FILE HAS BEEN GENERATED"]
 #[allow(unused_imports)]
-use ::gin_tonic_core::{Enumeration, Message, OneOf};
+use ::gin_tonic::{Enumeration, Message, OneOf};
 #[doc = r" Generated server implementations."]
 pub mod example_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
@@ -112,7 +112,7 @@ pub mod example_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = echoSvc(inner);
-                        let codec = ::gin_tonic_core::codec::GinCodec::default();
+                        let codec = ::gin_tonic::GinCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
                                 accept_compression_encodings,
@@ -247,7 +247,7 @@ pub mod example_client {
                     format!("Service was not ready: {}", e.into()),
                 )
             })?;
-            let codec = ::gin_tonic_core::codec::GinCodec::default();
+            let codec = ::gin_tonic::GinCodec::default();
             let path = http::uri::PathAndQuery::from_static("/example.Example/echo");
             let mut req = request.into_request();
             req.extensions_mut()
@@ -262,7 +262,7 @@ pub struct EchoRequest {
     #[gin(tag = 1u32)]
     pub echo: String,
 }
-#[derive(Clone, Debug, :: gin_tonic_core :: Message)]
+#[derive(Clone, Debug, :: gin_tonic :: Message)]
 pub enum EchoResponse {
     #[gin(tag = 1u32)]
     Echo(echo_response::Echo),

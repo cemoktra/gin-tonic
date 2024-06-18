@@ -16,7 +16,7 @@ pub fn message_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         .as_ref()
         .map(|path| quote::quote!(#path))
         .unwrap_or(quote::quote! {
-            ::gin_tonic_core
+            ::gin_tonic
         });
 
     codegen::expand_message(&root, input).into()
@@ -37,7 +37,7 @@ pub fn enum_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         .as_ref()
         .map(|path| quote::quote!(#path))
         .unwrap_or(quote::quote! {
-            ::gin_tonic_core
+            ::gin_tonic
         });
 
     codegen::expand_enumeration(&root, input).into()
@@ -58,7 +58,7 @@ pub fn one_of_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .as_ref()
         .map(|path| quote::quote!(#path))
         .unwrap_or(quote::quote! {
-            ::gin_tonic_core
+            ::gin_tonic
         });
 
     codegen::one_of_enumeration(&root, input).into()

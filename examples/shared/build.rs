@@ -1,4 +1,4 @@
-use gin_tonic_core::codegen::{BuildEnvironment, Compiler};
+use gin_tonic::{BuildEnvironment, Compiler};
 use std::path::PathBuf;
 
 pub fn main() -> Result<(), Box<dyn std::error::Error>> {

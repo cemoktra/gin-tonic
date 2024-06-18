@@ -17,7 +17,7 @@ pub(crate) fn generate(parent: &mut module::Module, module_path: &str, svc: Serv
             .route_name(method.name())
             .input_type(format!("super::{}", method.input().name()))
             .output_type(format!("super::{}", method.output().name()))
-            .codec_path("::gin_tonic_core::codec::GinCodec")
+            .codec_path("::gin_tonic::GinCodec")
             .build();
 
         service = service.method(method);

@@ -231,7 +231,7 @@ pub(crate) fn create_child<'a>(
     if module.is_empty() {
         let prelude = quote::quote! {
             #[allow(unused_imports)]
-            use ::gin_tonic_core::{Enumeration, Message, OneOf};
+            use ::gin_tonic::{Enumeration, Message, OneOf};
         };
         module.extend(prelude);
     }

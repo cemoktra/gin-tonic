@@ -93,7 +93,7 @@ pub(crate) fn generate_unwrapped(
     }
 
     let item: syn::ItemEnum = syn::parse_quote! {
-        #[derive(Clone, Debug, ::gin_tonic_core::Message)]
+        #[derive(Clone, Debug, ::gin_tonic::Message)]
         pub enum #ty_name {
             #body
         }
