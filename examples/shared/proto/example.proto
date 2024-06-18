@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package example;
+
+import "gin/proto/gin.proto";
+
+service Example {
+  rpc echo(EchoRequest) returns (EchoResponse);
+}
+
+message EchoRequest {
+  string echo = 1;
+}
+
+message EchoResponse {
+  message Echo {
+    string echo = 1;
+    uint32 ip = 2 [(gin_tonic.v1.rust_type) = "std::net::Ipv4Addr"];
+  }
+  message Error {
+    uint32 code = 1;
+  }
+
+  oneof outcome {
+    Echo echo = 1;
+    Error error = 2;
+  }
+}

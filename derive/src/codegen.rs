@@ -346,7 +346,7 @@ fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream
 
         deserialize_impl.extend(quote_spanned! {span=>
             if let Some(types) = tag_map.remove(&#tag) {
-                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(Error::InvalidOneOf)?)?;
+                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(::gin_tonic_core::protobuf::Error::InvalidOneOf)?)?;
                 return Ok(#ty::#var_ident(value));
             }
         });

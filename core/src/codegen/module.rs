@@ -227,5 +227,13 @@ pub(crate) fn create_child<'a>(
     let module_path = module_path
         .split('.')
         .map(|segment| case::convert(segment, case::Case::Snake));
-    parent.create_child_from_path(module_path)
+    let module = parent.create_child_from_path(module_path);
+    if module.is_empty() {
+        let prelude = quote::quote! {
+            #[allow(unused_imports)]
+            use ::gin_tonic_core::{Enumeration, Message, OneOf};
+        };
+        module.extend(prelude);
+    }
+    module
 }

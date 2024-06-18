@@ -26,6 +26,7 @@ where
     environment: E,
     external_types: Vec<ExternalType>,
     proto_files: Vec<PathBuf>,
+    extra_includes: Vec<PathBuf>,
     well_known_types: bool,
     // TODO:
     // type_attributes: Vec<(String, String)>,
@@ -55,7 +56,14 @@ where
             external_types: vec![],
             proto_files: vec![],
             well_known_types: false,
+            extra_includes: vec![],
         }
+    }
+
+    /// import an external type
+    pub fn include<I: IntoIterator<Item = PathBuf>>(mut self, includes: I) -> Self {
+        self.extra_includes.extend(includes);
+        self
     }
 
     /// import an external type
@@ -79,6 +87,7 @@ where
     /// start compilation
     pub fn compile(self, target: Option<impl Into<PathBuf>>) -> Result<(), CompilerError> {
         let mut include_dirs = self.environment.includes();
+        include_dirs.extend(self.extra_includes);
 
         for proto_file in &self.proto_files {
             println!("cargo:rerun-if-changed={}", proto_file.display());
@@ -125,7 +134,7 @@ pub trait CompilerEnvironment {
 pub struct BuildEnvironment {
     out_dir: PathBuf,
     manifest_dir: PathBuf,
-    workspace_dir: PathBuf,
+    workspace_dir: Option<PathBuf>,
 }
 
 impl BuildEnvironment {
@@ -134,7 +143,10 @@ impl BuildEnvironment {
         Ok(Self {
             out_dir: std::env::var("OUT_DIR")?.into(),
             manifest_dir: std::env::var("CARGO_MANIFEST_DIR")?.into(),
-            workspace_dir: std::env::var("CARGO_WORKSPACE_DIR")?.into(),
+            workspace_dir: match std::env::var("CARGO_WORKSPACE_DIR") {
+                Ok(workspace_dir) => Some(workspace_dir.into()),
+                Err(_) => None,
+            },
         })
     }
 }
@@ -147,7 +159,10 @@ impl CompilerEnvironment for BuildEnvironment {
     fn includes(&self) -> Vec<PathBuf> {
         let mut include_dirs = Vec::new();
         include_dirs.push(self.manifest_dir.clone());
-        include_dirs.push(self.workspace_dir.clone());
+        if let Some(workspace_dir) = self.workspace_dir.as_ref() {
+            include_dirs.push(workspace_dir.clone());
+        }
+
         include_dirs
     }
 }
@@ -284,7 +299,7 @@ pub(crate) fn generate(
 
     for svc in pool.services() {
         let module_path = String::from(svc.package_name());
-        service::generate(&ctx, &mut root, &module_path, svc);
+        service::generate(&mut root, &module_path, svc);
     }
 
     let path = ctx.path;
