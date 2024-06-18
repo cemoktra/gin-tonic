@@ -53,10 +53,7 @@ impl<T: Message + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
     type Error = tonic::Status;
 
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        // TODO: may rewrite Message trait to use bytes::BufMut
-        println!("{item:?}");
         item.serialize(&mut dst.writer())?;
-        println!("{dst:?}");
         Ok(())
     }
 }
@@ -66,10 +63,8 @@ impl<U: Message + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
     type Error = tonic::Status;
 
     fn decode(&mut self, src: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        // TODO: may rewrite Message trait to use bytes::Mut
-        println!("{src:?}");
-        let x = Self::Item::deserialize(src.chunk())?;
-        println!("{x:?}");
-        Ok(Some(Self::Item::deserialize(src.chunk())?))
+        let (decoded, read) = Self::Item::deserialize(src.chunk())?;
+        src.advance(read);
+        Ok(Some(decoded))
     }
 }

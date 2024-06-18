@@ -111,7 +111,10 @@ where
         Self: Sized,
     {
         match wire {
-            WireTypeView::LengthEncoded(data) => T::deserialize(data),
+            WireTypeView::LengthEncoded(data) => {
+                let (value, _) = T::deserialize(data)?;
+                Ok(value)
+            }
             _ => Err(Error::UnexpectedWireType),
         }
     }
