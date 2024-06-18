@@ -4,6 +4,7 @@ use tonic::codec::{DecodeBuf, EncodeBuf};
 
 use crate::protobuf::Message;
 
+#[derive(Debug, Clone, Default)]
 pub struct GinCodec<T, U> {
     _pd: PhantomData<(T, U)>,
 }
