@@ -14,6 +14,16 @@ impl<'a> Tag<'a> {
         (self.field_number, self.wire_type)
     }
 
+    #[cfg(test)]
+    pub fn field_number(&self) -> u32 {
+        self.field_number
+    }
+
+    #[cfg(test)]
+    pub fn wire_type(&self) -> &WireTypeView {
+        &self.wire_type
+    }
+
     /// deserialize a tag
     pub fn deserialize(buf: &'a [u8]) -> Option<(Self, usize)> {
         let (tag, tag_read) = u32::decode_var(buf)?;

@@ -1,9 +1,6 @@
 use crate::protobuf::reader::TagReader;
-use crate::protobuf::wire::WireType;
-use crate::protobuf::{Error, FromWire, IntoWire, Message, WireTypeView};
+use crate::protobuf::WireTypeView;
 use integer_encoding::VarInt;
-use std::collections::HashMap;
-use std::io::Write;
 
 #[test]
 fn proto3_compliance() {

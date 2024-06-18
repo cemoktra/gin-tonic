@@ -1,3 +1,5 @@
+//! case conversion utilities
+
 use std::borrow::Cow;
 
 #[allow(dead_code)]
