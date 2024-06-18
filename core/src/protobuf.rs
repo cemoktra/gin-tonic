@@ -87,7 +87,7 @@ pub mod map {
                     .remove(&1)
                     .ok_or(Error::MissingField(1))?
                     .into_iter()
-                    .nth(0)
+                    .next()
                     .ok_or(Error::MissingField(1))?;
                 let key = K::from_wire(key)?;
 
@@ -95,13 +95,13 @@ pub mod map {
                     .remove(&2)
                     .ok_or(Error::MissingField(2))?
                     .into_iter()
-                    .nth(0)
+                    .next()
                     .ok_or(Error::MissingField(2))?;
                 let value = V::from_wire(value)?;
 
                 Ok((key, value))
             }
-            _ => return Err(Error::UnexpectedWireType),
+            _ => Err(Error::UnexpectedWireType),
         }
     }
 }
@@ -119,7 +119,7 @@ where
         let mut reader = TagReader::new(buffer);
         let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
 
-        while let Some(tag) = reader.next() {
+        for tag in reader.by_ref() {
             let (field_number, wire_type) = tag.into_parts();
             field_map.entry(field_number).or_default().push(wire_type);
         }

@@ -40,8 +40,8 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
             #field_ident,
         });
 
-        match field.cardinality {
-            Cardinality::Required => match field.kind {
+        match field.cardinality.unwrap_or_default() {
+            Cardinality::Required => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     serialize_impl.extend(quote_spanned! { span=>
                         let wire_type = self.#field_ident.into_wire();
@@ -125,7 +125,7 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     });
                 }
             },
-            Cardinality::Optional => match field.kind {
+            Cardinality::Optional => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
@@ -232,7 +232,7 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     });
                 }
             },
-            Cardinality::Repeated => match field.kind {
+            Cardinality::Repeated => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     serialize_impl.extend(quote_spanned! { span=>
                         for item in self.#field_ident {

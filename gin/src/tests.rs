@@ -1,7 +1,4 @@
-use gin_tonic_core::{
-    export::VarInt,
-    protobuf::{Error, Message},
-};
+use gin_tonic_core::{export::VarInt, protobuf::Message};
 use std::collections::HashMap;
 
 #[derive(Debug, gin_tonic_core::Message)]
@@ -63,7 +60,7 @@ fn pb_serde() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let test = Test::deserialize(&buffer).unwrap();
+    let (test, _) = Test::deserialize(&buffer).unwrap();
 
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert!(test.port.is_none());
@@ -97,7 +94,7 @@ fn pb_serde() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let test = Test::deserialize(&buffer).unwrap();
+    let (test, _) = Test::deserialize(&buffer).unwrap();
 
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert_eq!(test.port, Some(8080));
@@ -148,10 +145,10 @@ fn one_of_unwrapping() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
+    let (unwrapped, _) = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
-    let wrapped = ResultMessage::deserialize(&buffer).unwrap();
+    let (wrapped, _) = ResultMessage::deserialize(&buffer).unwrap();
     assert_eq!(wrapped.result, ResultOneOf::Success(1));
 
     // unwrapped to wrapped
@@ -164,9 +161,9 @@ fn one_of_unwrapping() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
+    let (unwrapped, _) = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
-    let wrapped = ResultMessage::deserialize(&buffer).unwrap();
+    let (wrapped, _) = ResultMessage::deserialize(&buffer).unwrap();
     assert_eq!(wrapped.result, ResultOneOf::Success(1));
 }

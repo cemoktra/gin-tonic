@@ -36,15 +36,11 @@ where
     type Decoder = GinDecoder<U>;
 
     fn encoder(&mut self) -> Self::Encoder {
-        GinEncoder {
-            _pd: PhantomData::default(),
-        }
+        GinEncoder { _pd: PhantomData }
     }
 
     fn decoder(&mut self) -> Self::Decoder {
-        GinDecoder {
-            _pd: PhantomData::default(),
-        }
+        GinDecoder { _pd: PhantomData }
     }
 }
 
