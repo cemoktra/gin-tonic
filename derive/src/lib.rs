@@ -11,7 +11,15 @@ pub fn message_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         }
     };
 
-    codegen::expand_message(input).into()
+    let root = input
+        .root
+        .as_ref()
+        .map(|path| quote::quote!(#path))
+        .unwrap_or(quote::quote! {
+            ::gin_tonic_core
+        });
+
+    codegen::expand_message(&root, input).into()
 }
 
 #[proc_macro_derive(Enumeration, attributes(gin))]
@@ -24,7 +32,15 @@ pub fn enum_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
     };
 
-    codegen::expand_enumeration(input).into()
+    let root = input
+        .root
+        .as_ref()
+        .map(|path| quote::quote!(#path))
+        .unwrap_or(quote::quote! {
+            ::gin_tonic_core
+        });
+
+    codegen::expand_enumeration(&root, input).into()
 }
 
 #[proc_macro_derive(OneOf, attributes(gin))]
@@ -37,5 +53,13 @@ pub fn one_of_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         }
     };
 
-    codegen::one_of_enumeration(input).into()
+    let root = input
+        .root
+        .as_ref()
+        .map(|path| quote::quote!(#path))
+        .unwrap_or(quote::quote! {
+            ::gin_tonic_core
+        });
+
+    codegen::one_of_enumeration(&root, input).into()
 }

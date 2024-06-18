@@ -4,16 +4,23 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned};
 use syn::Ident;
 
-pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
+pub(crate) fn expand_message(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::MessageInput,
+) -> TokenStream {
     let ty = input.ident;
 
     match input.data {
-        MessageDeriveData::Enum(variants) => expand_unwrapped_oneof(ty, variants),
-        MessageDeriveData::Struct(fields) => expand_message_message(ty, fields),
+        MessageDeriveData::Enum(variants) => expand_unwrapped_oneof(root, ty, variants),
+        MessageDeriveData::Struct(fields) => expand_message_message(root, ty, fields),
     }
 }
 
-fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStream {
+fn expand_message_message(
+    root: &proc_macro2::TokenStream,
+    ty: Ident,
+    fields: Fields<MessageField>,
+) -> TokenStream {
     let span = ty.span();
 
     let mut serialize_impl = TokenStream::new();
@@ -51,15 +58,15 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     deserialize_impl.extend(quote_spanned! { span=>
                         let wire_type = tag_map
                             .remove(&#tag)
-                            .ok_or(gin_tonic_core::protobuf::Error::MissingField(#tag))?
+                            .ok_or(#root::protobuf::Error::MissingField(#tag))?
                             .into_iter()
                             .nth(0)
-                            .ok_or(gin_tonic_core::protobuf::Error::MissingField(#tag))?;
+                            .ok_or(#root::protobuf::Error::MissingField(#tag))?;
                         let #field_ident = #ty::from_wire(wire_type)?;
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = ::gin_tonic_core::protobuf::IntoWire::size_hint(&self.#field_ident, #tag);
+                        let #field_size_ident = #root::protobuf::IntoWire::size_hint(&self.#field_ident, #tag);
                     });
                 }
                 Kind::Message => {
@@ -71,15 +78,15 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     deserialize_impl.extend(quote_spanned! { span=>
                         let wire_type = tag_map
                             .remove(&#tag)
-                            .ok_or(gin_tonic_core::protobuf::Error::MissingField(#tag))?
+                            .ok_or(#root::protobuf::Error::MissingField(#tag))?
                             .into_iter()
                             .nth(0)
-                            .ok_or(gin_tonic_core::protobuf::Error::MissingField(#tag))?;
+                            .ok_or(#root::protobuf::Error::MissingField(#tag))?;
                         let #field_ident = #ty::from_wire(wire_type)?;
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = ::gin_tonic_core::protobuf::nested::size_hint(#tag, &self.#field_ident);
+                        let #field_size_ident = #root::protobuf::nested::size_hint(#tag, &self.#field_ident);
                     });
                 }
                 Kind::OneOf => {
@@ -92,13 +99,13 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = ::gin_tonic_core::protobuf::Message::size_hint(&self.#field_ident);
+                        let #field_size_ident = #root::protobuf::Message::size_hint(&self.#field_ident);
                     });
                 }
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         for (key, value) in self.#field_ident {
-                            let wire_type = ::gin_tonic_core::protobuf::map::into_wire(key, value)?;
+                            let wire_type = #root::protobuf::map::into_wire(key, value)?;
                             written += wire_type.serialize(#tag, writer)?;
                         }
                     });
@@ -107,7 +114,7 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                         let mut #field_ident = HashMap::new();
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                let (key, value) = ::gin_tonic_core::protobuf::map::from_wire(wire_type)?;
+                                let (key, value) = #root::protobuf::map::from_wire(wire_type)?;
                                 #field_ident.insert(key, value);
                             }
                         }
@@ -137,11 +144,11 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     deserialize_impl.extend(quote_spanned! { span=>
                         let #field_ident = tag_map
                             .remove(&#tag)
-                            .map(|wire| gin_tonic_core::protobuf::FromWire::from_wire(
+                            .map(|wire| #root::protobuf::FromWire::from_wire(
                                 wire
                                     .into_iter()
                                     .nth(0)
-                                    .ok_or(gin_tonic_core::protobuf::Error::MissingField(#tag))?
+                                    .ok_or(#root::protobuf::Error::MissingField(#tag))?
                                 )
                             )
                             .transpose()?;
@@ -162,18 +169,18 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     deserialize_impl.extend(quote_spanned! { span=>
                         let #field_ident = tag_map
                             .remove(&#tag)
-                            .map(|wire| ::gin_tonic_core::protobuf::FromWire::from_wire(
+                            .map(|wire| #root::protobuf::FromWire::from_wire(
                                 wire
                                     .into_iter()
                                     .nth(0)
-                                    .ok_or(::gin_tonic_core::protobuf::Error::MissingField(#tag))?
+                                    .ok_or(#root::protobuf::Error::MissingField(#tag))?
                                 )
                             )
                             .transpose()?;
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = self.#field_ident.as_ref().map(|value| ::gin_tonic_core::protobuf::nested::size_hint(#tag, value)).unwrap_or_default();
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::protobuf::nested::size_hint(#tag, value)).unwrap_or_default();
                     });
                 }
                 Kind::OneOf => {
@@ -184,21 +191,21 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                     });
 
                     deserialize_impl.extend(quote_spanned! { span=>
-                        let #field_ident = match ::gin_tonic_core::protobuf::Message::deserialize_tags(tag_map) {
+                        let #field_ident = match #root::protobuf::Message::deserialize_tags(tag_map) {
                             Ok(value) => Some(value),
                             Err(_) => None,
                         };
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = self.#field_ident.as_ref().map(|value| ::gin_tonic_core::protobuf::Message::size_hint(value)).unwrap_or_default();
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::protobuf::Message::size_hint(value)).unwrap_or_default();
                     });
                 }
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
                             for (key, value) in value {
-                                let wire_type = ::gin_tonic_core::protobuf::map::into_wire(key, value)?;
+                                let wire_type = #root::protobuf::map::into_wire(key, value)?;
                                 written += wire_type.serialize(#tag, writer)?;
                             }
                         }
@@ -208,7 +215,7 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                         let #field_ident = if let Some(wire_types) = tag_map.remove(&#tag) {
                             let mut map = HashMap::new();
                             for wire_type in wire_types {
-                                let (key, value) = ::gin_tonic_core::protobuf::map::from_wire(wire_type)?;
+                                let (key, value) = #root::protobuf::map::from_wire(wire_type)?;
                                 map.insert(key, value);
                             }
                             Some(map)
@@ -245,7 +252,7 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                         let mut #field_ident = vec![];
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                #field_ident.push(gin_tonic_core::protobuf::FromWire::from_wire(wire_type)?)
+                                #field_ident.push(#root::protobuf::FromWire::from_wire(wire_type)?)
                             }
                         }
                     });
@@ -266,13 +273,13 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                         let mut #field_ident = vec![];
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                #field_ident.push(gin_tonic_core::protobuf::FromWire::from_wire(wire_type)?)
+                                #field_ident.push(#root::protobuf::FromWire::from_wire(wire_type)?)
                             }
                         }
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident: usize = self.#field_ident.iter().map(|item| ::gin_tonic_core::protobuf::nested::size_hint(#tag, item)).sum();
+                        let #field_size_ident: usize = self.#field_ident.iter().map(|item| #root::protobuf::nested::size_hint(#tag, item)).sum();
                     });
                 }
                 Kind::OneOf => {
@@ -292,9 +299,9 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl ::gin_tonic_core::protobuf::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, ::gin_tonic_core::protobuf::Error> {
-                use ::gin_tonic_core::protobuf::IntoWire;
+        impl #root::protobuf::Message for #ty {
+            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::protobuf::Error> {
+                use #root::protobuf::IntoWire;
 
                 let mut written = 0;
 
@@ -303,8 +310,8 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<::gin_tonic_core::protobuf::WireTypeView>>) -> Result<Self, ::gin_tonic_core::protobuf::Error> {
-                use ::gin_tonic_core::protobuf::FromWire;
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::protobuf::Error> {
+                use #root::protobuf::FromWire;
 
                 #deserialize_impl
 
@@ -314,8 +321,8 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
             }
 
             fn size_hint(&self) -> usize {
-                use ::gin_tonic_core::protobuf::IntoWire;
-                use ::gin_tonic_core::export::VarInt;
+                use #root::protobuf::IntoWire;
+                use #root::export::VarInt;
 
                 #size_hint_impl
 
@@ -325,7 +332,11 @@ fn expand_message_message(ty: Ident, fields: Fields<MessageField>) -> TokenStrea
     }
 }
 
-fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream {
+fn expand_unwrapped_oneof(
+    root: &proc_macro2::TokenStream,
+    ty: Ident,
+    variants: Vec<OneOfVariant>,
+) -> TokenStream {
     let span = ty.span();
 
     let mut serialize_impl = TokenStream::new();
@@ -346,7 +357,7 @@ fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream
 
         deserialize_impl.extend(quote_spanned! {span=>
             if let Some(types) = tag_map.remove(&#tag) {
-                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(::gin_tonic_core::protobuf::Error::InvalidOneOf)?)?;
+                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(#root::protobuf::Error::InvalidOneOf)?)?;
                 return Ok(#ty::#var_ident(value));
             }
         });
@@ -359,9 +370,9 @@ fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl ::gin_tonic_core::protobuf::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, ::gin_tonic_core::protobuf::Error> {
-                use ::gin_tonic_core::protobuf::IntoWire;
+        impl #root::protobuf::Message for #ty {
+            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::protobuf::Error> {
+                use #root::protobuf::IntoWire;
 
                 let mut written = 0;
 
@@ -372,17 +383,17 @@ fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<::gin_tonic_core::protobuf::WireTypeView>>) -> Result<Self, ::gin_tonic_core::protobuf::Error> {
-                use ::gin_tonic_core::protobuf::FromWire;
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::protobuf::Error> {
+                use #root::protobuf::FromWire;
 
                 #deserialize_impl
 
-                Err(::gin_tonic_core::protobuf::Error::InvalidOneOf)
+                Err(#root::protobuf::Error::InvalidOneOf)
             }
 
             fn size_hint(&self) -> usize {
-                use ::gin_tonic_core::protobuf::IntoWire;
-                use ::gin_tonic_core::export::VarInt;
+                use #root::protobuf::IntoWire;
+                use #root::export::VarInt;
 
                 match self {
                     #size_hint_impl
@@ -392,7 +403,10 @@ fn expand_unwrapped_oneof(ty: Ident, variants: Vec<OneOfVariant>) -> TokenStream
     }
 }
 
-pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenStream {
+pub(crate) fn expand_enumeration(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::EnumerationInput,
+) -> TokenStream {
     let ty = input.ident;
     let span = ty.span();
 
@@ -432,8 +446,8 @@ pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenSt
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl ::gin_tonic_core::protobuf::IntoWire for #ty {
-            fn into_wire(self) -> ::gin_tonic_core::protobuf::WireType {
+        impl #root::protobuf::IntoWire for #ty {
+            fn into_wire(self) -> #root::protobuf::WireType {
                 match self {
                     #into_impl
                 }
@@ -449,21 +463,24 @@ pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenSt
 
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl ::gin_tonic_core::protobuf::FromWire for #ty {
-            fn from_wire(wire: ::gin_tonic_core::protobuf::WireTypeView) -> Result<Self, ::gin_tonic_core::protobuf::Error>
+        impl #root::protobuf::FromWire for #ty {
+            fn from_wire(wire: #root::protobuf::WireTypeView) -> Result<Self, #root::protobuf::Error>
             where
                 Self: Sized,
             {
                 match u32::from_wire(wire)? {
                     #from_impl
-                    n => Err(::gin_tonic_core::protobuf::Error::UnknownEnumVariant(n)),
+                    n => Err(#root::protobuf::Error::UnknownEnumVariant(n)),
                 }
             }
         }
     }
 }
 
-pub(crate) fn one_of_enumeration(input: crate::ast::OneOfInput) -> TokenStream {
+pub(crate) fn one_of_enumeration(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::OneOfInput,
+) -> TokenStream {
     let ty = input.ident;
 
     let variants = input
@@ -471,5 +488,5 @@ pub(crate) fn one_of_enumeration(input: crate::ast::OneOfInput) -> TokenStream {
         .take_enum()
         .expect("OneOF derive only works on newtype enums");
 
-    expand_unwrapped_oneof(ty, variants)
+    expand_unwrapped_oneof(root, ty, variants)
 }
