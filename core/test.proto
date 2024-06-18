@@ -4,6 +4,10 @@ package tests;
 
 import "gin/proto/gin.proto";
 
+service TestSvc {
+  rpc CallTest(Test) returns (Result);
+}
+
 message Test {
   uint32 ip = 1 [(gin_tonic.v1.rust_type) = "std::net::Ipv4Addr"];
   optional uint32 port = 2;

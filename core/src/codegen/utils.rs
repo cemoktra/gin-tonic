@@ -163,7 +163,7 @@ pub fn field_type(ctx: &Context, enclosed_type: &str, field: &FieldDescriptor) -
     let options = field.options();
 
     if let Some(Value::String(rust_type)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {
-        // @TODO jeremy.barrow - 23 Jan 2024: Better error message.
+        // TODO Better error message.
         let path = syn::parse_str::<syn::Type>(rust_type).expect("Invalid path");
         return quote::quote!(#path);
     }
@@ -179,7 +179,7 @@ pub fn field_type(ctx: &Context, enclosed_type: &str, field: &FieldDescriptor) -
         Kind::Uint64 | Kind::Fixed64 => quote::quote!(u64),
         Kind::Bool => quote::quote!(bool),
         Kind::String => quote::quote!(String),
-        // @TODO jeremy.barrow - 19 Jan 2024: Handle bytes
+        // TODO Handle bytes
         Kind::Bytes => quote::quote!(Box<[u8]>),
         Kind::Message(ty) => {
             if cardinality == Cardinality::Repeated && ty.is_map_entry() {
