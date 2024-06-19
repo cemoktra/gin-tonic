@@ -15,6 +15,10 @@ impl<'a> TagReader<'a> {
             buffer,
         }
     }
+
+    pub fn position(&self) -> usize {
+        self.position
+    }
 }
 
 impl<'a> Iterator for TagReader<'a> {

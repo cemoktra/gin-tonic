@@ -115,16 +115,16 @@ where
     fn size_hint(&self) -> usize;
 
     // for deserialization
-    fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
-        let reader = TagReader::new(buffer);
+    fn deserialize(buffer: &[u8]) -> Result<(Self, usize), Error> {
+        let mut reader = TagReader::new(buffer);
         let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
 
-        for tag in reader {
+        while let Some(tag) = reader.next() {
             let (field_number, wire_type) = tag.into_parts();
             field_map.entry(field_number).or_default().push(wire_type);
         }
 
-        Self::deserialize_tags(&mut field_map)
+        Ok((Self::deserialize_tags(&mut field_map)?, reader.position()))
     }
 
     fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error>;
