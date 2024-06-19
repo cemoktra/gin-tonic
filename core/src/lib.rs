@@ -1,24 +1,19 @@
-mod wire;
 mod tags;
+mod wire;
 
 use std::collections::HashMap;
+pub use tags::{reader::TagReader, Tag};
 pub use wire::{
+    map::{from_wire as map_from_wire, into_wire as map_into_wire},
     nested::size_hint as nested_size_hint,
-    map::{
-        into_wire as map_into_wire,
-        from_wire as map_from_wire,
-    },
     wire_type::{WireType, WireTypeView},
-    FromWire, IntoWire, Error
-};
-pub use tags::{
-    Tag, reader::TagReader
+    Error, FromWire, IntoWire,
 };
 
-//! trait for passing a struct as protobuf message
+/// trait for passing a struct as protobuf message
 pub trait Message
-    where
-        Self: Sized,
+where
+    Self: Sized,
 {
     // for serialization
     fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
@@ -40,10 +35,10 @@ pub trait Message
     fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error>;
 }
 
-//! special handling for one ofs
+/// special handling for one ofs
 pub trait OneOf
-    where
-        Self: Sized,
+where
+    Self: Sized,
 {
     fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
     fn deserialize(buffer: &[u8]) -> Result<Self, Error>;
