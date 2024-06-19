@@ -110,3 +110,63 @@ fn pb_serde() {
     }
     assert_eq!(test.map.len(), 2);
 }
+
+#[derive(Debug, gin_tonic_core::Message)]
+struct ResultMessage {
+    #[gin(tag = 0, kind = "one_of")]
+    result: ResultOneOf,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_core::OneOf)]
+enum ResultOneOf {
+    #[gin(tag = 1)]
+    Success(i32),
+    #[gin(tag = 2)]
+    Error(i32),
+}
+
+// this is on protobuf layer identical to ResultMessage and ResultOneOn but simplify the Rust layer
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_core::Message)]
+enum UnwrappedResultOneOf {
+    #[gin(tag = 1)]
+    Success(i32),
+    #[gin(tag = 2)]
+    Error(i32),
+}
+
+#[test]
+fn one_of_unwrapping() {
+    // wrapped to unwrapped
+    let test = ResultMessage {
+        result: ResultOneOf::Success(1),
+    };
+
+    let size_hint = Message::size_hint(&test);
+    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+
+    let actual_size = test.serialize(&mut buffer).unwrap();
+    assert!(actual_size > 0);
+    assert_eq!(actual_size, size_hint);
+
+    let unwrapped = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
+    assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
+
+    let wrapped = ResultMessage::deserialize(&buffer).unwrap();
+    assert_eq!(wrapped.result, ResultOneOf::Success(1));
+
+    // unwrapped to wrapped
+    let test = UnwrappedResultOneOf::Success(1);
+
+    let size_hint = Message::size_hint(&test);
+    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+
+    let actual_size = test.serialize(&mut buffer).unwrap();
+    assert!(actual_size > 0);
+    assert_eq!(actual_size, size_hint);
+
+    let unwrapped = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
+    assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
+
+    let wrapped = ResultMessage::deserialize(&buffer).unwrap();
+    assert_eq!(wrapped.result, ResultOneOf::Success(1));
+}
