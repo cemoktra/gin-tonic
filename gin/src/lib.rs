@@ -1,7 +1,5 @@
 mod codec;
 mod codegen;
-mod impls;
-mod traits;
 
 pub use codec::GinCodec;
 pub use codegen::{BuildEnvironment, Compiler};

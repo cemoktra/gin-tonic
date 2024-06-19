@@ -15,7 +15,7 @@ pub use tags::{
     Tag, reader::TagReader
 };
 
-
+//! trait for passing a struct as protobuf message
 pub trait Message
     where
         Self: Sized,
@@ -40,6 +40,7 @@ pub trait Message
     fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error>;
 }
 
+//! special handling for one ofs
 pub trait OneOf
     where
         Self: Sized,

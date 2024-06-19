@@ -55,7 +55,7 @@ where
             environment,
             external_types: vec![],
             proto_files: vec![],
-            well_known_types: false,
+            well_known_types: true,
             extra_includes: vec![],
         }
     }
@@ -79,7 +79,14 @@ where
         self
     }
 
+    /// add external types for well known types
     pub fn with_well_known_types(mut self) -> Self {
+        self.well_known_types = true;
+        self
+    }
+
+    /// do not add external types for well known types
+    pub fn without_well_known_types(mut self) -> Self {
         self.well_known_types = true;
         self
     }
@@ -124,13 +131,14 @@ where
     }
 }
 
+/// a trait for environments for the compiler
 pub trait CompilerEnvironment {
     fn out_dir(&self) -> &Path;
     /// variables to include directories
     fn includes(&self) -> Vec<PathBuf>;
 }
 
-/// environment variables used by the [Compiler]
+/// environment variables used by the [Compiler] in build scripts
 pub struct BuildEnvironment {
     out_dir: PathBuf,
     manifest_dir: PathBuf,

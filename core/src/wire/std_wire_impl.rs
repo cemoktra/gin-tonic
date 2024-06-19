@@ -1,9 +1,11 @@
+//! [FromWire] and [IntoWire] for Rust std types
+
 use crate::{Error, FromWire, IntoWire, WireType, WireTypeView};
 
 impl FromWire for std::net::Ipv4Addr {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
         let n = u32::from_wire(wire)?;
         Ok(n.into())

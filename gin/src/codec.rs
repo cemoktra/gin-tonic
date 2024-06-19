@@ -1,3 +1,5 @@
+//! [tonic::codec::Codec] implementation for gin-tonic
+
 use bytes::{Buf, BufMut};
 use std::marker::PhantomData;
 use tonic::codec::{DecodeBuf, EncodeBuf};

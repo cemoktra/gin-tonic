@@ -1,3 +1,4 @@
+//! handling the protobuf wire format
 pub mod map;
 pub mod nested;
 mod scalars;

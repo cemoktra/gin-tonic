@@ -1,3 +1,6 @@
+//! [FromWire] and [IntoWire] for [uuid::Uuid]
+
+use crate::{FromWire, IntoWire};
 #[cfg(all(feature = "uuid_string", feature = "uuid_bytes"))]
 compile_error!("cannot use 'uuid_string' and 'uuid_bytes' at the same time");
 
