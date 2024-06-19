@@ -305,10 +305,15 @@ fn proto3_compliance() {
     assert!(reader.next().is_none());
 }
 
+struct Nested {
+    number: i32,
+}
+
 struct Test {
     ip: std::net::Ipv4Addr,
     port: Option<u32>,
     protocols: Vec<String>,
+    nested: Nested,
 }
 
 // this is a test implementation and should be replaced with a derive macro later
@@ -331,6 +336,10 @@ impl ProtocolBuffer for Test {
             let wire_type = item.into_wire();
             written += wire_type.serialize(3, writer)?;
         }
+
+        // nested serialization
+        let wire_type = self.nested.into_wire();
+        written += wire_type.serialize(4, writer)?;
 
         Ok(written)
     }
@@ -367,10 +376,20 @@ impl ProtocolBuffer for Test {
             }
         }
 
+        // nested deserialization
+        let nested = field_map
+            .remove(&4)
+            .ok_or(Error::MissingField(1))?
+            .into_iter()
+            .nth(0)
+            .ok_or(Error::MissingField(1))?;
+        let nested = Nested::from_wire(nested)?;
+
         Ok(Self {
             ip,
             port,
             protocols,
+            nested,
         })
     }
 
@@ -378,8 +397,48 @@ impl ProtocolBuffer for Test {
         let ip_size = self.ip.size_hint(1);
         let port_size = self.port.map(|port| port.size_hint(2)).unwrap_or_default();
         let protocols_size: usize = self.protocols.iter().map(|item| item.size_hint(3)).sum();
+        let nested_size = ProtocolBuffer::size_hint(&self.nested);
+        let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
 
-        ip_size + port_size + protocols_size
+        ip_size + port_size + protocols_size + nested_size
+    }
+}
+
+// this is a test implementation and should be replaced with a derive macro later
+impl ProtocolBuffer for Nested {
+    fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
+        let mut written = 0;
+
+        let wire_type = self.number.into_wire();
+        written += wire_type.serialize(1, writer)?;
+
+        Ok(written)
+    }
+
+    fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
+        let reader = TagReader::new(buffer);
+        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
+
+        for tag in reader {
+            let (field_number, wire_type) = tag.into_parts();
+            field_map.entry(field_number).or_default().push(wire_type);
+        }
+
+        let number = field_map
+            .remove(&1)
+            .ok_or(Error::MissingField(1))?
+            .into_iter()
+            .nth(0)
+            .ok_or(Error::MissingField(1))?;
+        let number = i32::from_wire(number)?;
+
+        Ok(Self { number })
+    }
+
+    fn size_hint(&self) -> usize {
+        let number_size = self.number.size_hint(1);
+
+        number_size
     }
 }
 
@@ -428,8 +487,9 @@ fn basic_serde() {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: None,
         protocols: vec![],
+        nested: Nested { number: -1 },
     };
-    let size_hint = test.size_hint();
+    let size_hint = ProtocolBuffer::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -441,14 +501,16 @@ fn basic_serde() {
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert!(test.port.is_none());
     assert!(test.protocols.is_empty());
+    assert_eq!(test.nested.number, -1);
 
     // first round with optional field set to Some
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: Some(8080),
         protocols: vec![String::from("tcp"), String::from("udp")],
+        nested: Nested { number: -1 },
     };
-    let size_hint = test.size_hint();
+    let size_hint = ProtocolBuffer::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -461,4 +523,5 @@ fn basic_serde() {
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert_eq!(test.port, Some(8080));
     assert_eq!(test.protocols.len(), 2);
+    assert_eq!(test.nested.number, -1);
 }
