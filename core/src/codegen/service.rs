@@ -1,13 +1,8 @@
-use crate::codegen::{case, module, Context};
+use crate::codegen::{case, module};
 use protox::prost_reflect::ServiceDescriptor;
 use tonic_build::CodeGenBuilder;
 
-pub(crate) fn generate(
-    ctx: &Context,
-    parent: &mut module::Module,
-    module_path: &str,
-    svc: ServiceDescriptor,
-) {
+pub(crate) fn generate(parent: &mut module::Module, module_path: &str, svc: ServiceDescriptor) {
     let mut service = tonic_build::manual::Service::builder()
         .name(svc.name())
         .package(svc.package_name());
@@ -20,8 +15,8 @@ pub(crate) fn generate(
         let method = tonic_build::manual::Method::builder()
             .name(route_name)
             .route_name(method.name())
-            .input_type(method.input().name())
-            .output_type(method.output().name())
+            .input_type(format!("super::{}", method.input().name()))
+            .output_type(format!("super::{}", method.output().name()))
             .codec_path("::gin_tonic_core::codec::GinCodec")
             .build();
 
