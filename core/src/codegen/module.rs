@@ -1,8 +1,9 @@
-use proc_macro2::{Ident, TokenStream};
-use quote::ToTokens;
 use std::path::{Path, PathBuf};
 
-use super::CompilerError;
+use proc_macro2::{Ident, TokenStream};
+use quote::ToTokens;
+
+use crate::codegen::{case, module, CompilerError};
 
 pub struct Module {
     pub name: String,
@@ -217,4 +218,24 @@ fn write(tokens: TokenStream, out: impl AsRef<Path>) -> Result<(), CompilerError
     std::fs::write(path, content)?;
 
     Ok(())
+}
+
+pub(crate) fn create_child<'a>(
+    parent: &'a mut module::Module,
+    module_path: &str,
+) -> &'a mut module::Module {
+    let module_path = module_path
+        .split('.')
+        .map(|segment| case::convert(segment, case::Case::Snake));
+    let module = parent.create_child_from_path(module_path);
+    if module.is_empty() {
+        let prelude = quote::quote! {
+            #[allow(unused_imports)]
+            use ::domain_type::DomainType;
+            #[allow(unused_imports)]
+            use ::strum::{EnumString, Display};
+        };
+        module.extend(prelude);
+    }
+    module
 }

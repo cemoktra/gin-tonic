@@ -1,4 +1,5 @@
-#[derive(Clone)]
+/// types that are no generated
+#[derive(Clone, Debug)]
 pub struct ExternalType {
     pub proto_path: String,
     pub rust_path: String,
@@ -28,6 +29,7 @@ impl ExternalType {
     }
 }
 
+// some of the well known google protobuf types
 pub fn well_known_types() -> Vec<ExternalType> {
     vec![
         ExternalType::raw(".google.protobuf", "::prost_types"),

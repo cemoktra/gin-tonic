@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package tests;
+
+import "gin/proto/gin.proto";
+
+message Test {
+  uint32 ip = 1 [(gin_tonic.v1.rust_type) = "std::net::Ipv4Addr"];
+  optional uint32 port = 2;
+  repeated string protocols = 3;
+  Nested nested = 4;
+  Logging logging = 5;
+  oneof one_of {
+    int32 num = 6;
+    string str = 7;
+  }
+  map<uint32, string> mapping = 8;
+}
+
+message Nested {
+  int32 number = 1;
+}
+
+enum Logging {
+  LOGGING_UNSPECIFIED = 0;
+  LOGGING_HUMAN = 1;
+  LOGGING_JSON = 2;
+}
+
+message Result {
+  oneof result {
+    int32 success = 1;
+    int32 error = 2;
+  }
+}
