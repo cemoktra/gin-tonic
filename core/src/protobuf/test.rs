@@ -324,6 +324,7 @@ enum Logging {
     Json = 2,
 }
 
+// this will be implemented via derive macro
 impl IntoWire for Logging {
     fn into_wire(self) -> WireType {
         match self {
@@ -341,6 +342,7 @@ impl IntoWire for Logging {
     }
 }
 
+// this will be implemented via derive macro
 impl FromWire for Logging {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
