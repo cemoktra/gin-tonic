@@ -8,8 +8,7 @@ license = "MIT"
 
 [features]
 default = []
-from-str = []
-to-str = []
+uuid = ["gin-tonic-core/uuid"]
 
 [dependencies]
 bytes = { workspace = true }
