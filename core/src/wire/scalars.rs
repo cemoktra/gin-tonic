@@ -1,7 +1,7 @@
+//! [FromWire] and [IntoWire] for protobuf scalars
+
 use crate::{Error, FromWire, IntoWire, Message, WireType, WireTypeView};
 use integer_encoding::VarInt;
-
-// TODO: use a macro
 
 impl FromWire for u64 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
@@ -33,6 +33,38 @@ impl IntoWire for u64 {
         self.required_space() + tag.required_space()
     }
 }
+
+impl FromWire for i64 {
+    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        match wire {
+            WireTypeView::VarInt(data) => {
+                let (value, _) = i64::decode_var(data).ok_or(Error::InvalidVarInt)?;
+                Ok(value)
+            }
+            WireTypeView::FixedI64(data) => {
+                let array: [u8; 8] = data.try_into().expect("I64 is always 4 bytes");
+                Ok(i64::from_be_bytes(array))
+            }
+            _ => Err(Error::UnexpectedWireType),
+        }
+    }
+}
+
+impl IntoWire for i64 {
+    fn into_wire(self) -> WireType {
+        let mut data = [0u8; 10];
+        let size = self.encode_var(&mut data);
+        WireType::VarInt(data, size)
+    }
+
+    fn size_hint(&self, tag: u32) -> usize {
+        self.required_space() + tag.required_space()
+    }
+}
+
 impl FromWire for u32 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where

@@ -1,7 +1,7 @@
-
-use crate::{TagReader, IntoWire, FromWire, Error,WireType,WireTypeView};
+use crate::{Error, FromWire, IntoWire, TagReader, WireType, WireTypeView};
 use std::collections::HashMap;
 
+/// convert a key-value pair into a [WireType]
 pub fn into_wire<K, V>(key: K, value: V) -> Result<WireType, Error>
 where
     K: IntoWire,
@@ -18,6 +18,7 @@ where
     Ok(WireType::LengthEncoded(map_buffer))
 }
 
+/// read a key-value pair from a [WireTypeView]
 pub fn from_wire<K, V>(wire_type: WireTypeView) -> Result<(K, V), Error>
 where
     K: FromWire,

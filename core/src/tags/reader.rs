@@ -16,6 +16,7 @@ impl<'a> TagReader<'a> {
         }
     }
 
+    /// number of bytes read
     pub fn position(&self) -> usize {
         self.position
     }
