@@ -2,7 +2,7 @@ mod codec;
 mod codegen;
 
 pub use codec::GinCodec;
-pub use codegen::{BuildEnvironment, Compiler};
+pub use codegen::Compiler;
 
 pub use gin_tonic_core;
 pub use gin_tonic_derive;

@@ -1,6 +1,6 @@
 use protox::prost_reflect::{FieldDescriptor, MessageDescriptor, OneofDescriptor};
 
-use crate::codegen::{case, enumeration, messages, module, utils, Context};
+use crate::codegen::{case, enums, messages, module, utils, Context};
 
 pub(crate) fn generate(
     ctx: &Context,
@@ -18,6 +18,11 @@ pub(crate) fn generate(
     }
 
     let qualified_name = ty.full_name();
+    if !ctx.filter(qualified_name) {
+        return;
+    }
+
+    let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);
 
@@ -48,6 +53,7 @@ pub(crate) fn generate(
 
     module.extend(quote::quote! {
         #[derive(Clone, Debug, Eq, PartialEq, OneOf)]
+        #attributes
         pub enum #ty_name {
             #body
         }
@@ -63,6 +69,8 @@ pub(crate) fn generate_unwrapped(
     let parent_message = ty.parent_message();
 
     let qualified_name = parent_message.full_name();
+
+    let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);
 
@@ -94,6 +102,7 @@ pub(crate) fn generate_unwrapped(
 
     let item: syn::ItemEnum = syn::parse_quote! {
         #[derive(Clone, Debug, ::gin_tonic::Message)]
+        #attributes
         pub enum #ty_name {
             #body
         }
@@ -110,7 +119,7 @@ pub(crate) fn generate_unwrapped(
         let module_path = ty.name();
 
         for child in ty.child_enums() {
-            enumeration::generate(ctx, module, module_path, child);
+            enums::generate(ctx, module, module_path, child);
         }
         for child in ty.child_messages() {
             messages::generate(ctx, module, module_path, child);
@@ -120,7 +129,7 @@ pub(crate) fn generate_unwrapped(
 
 /// an unwrappable one of is a message (struct) containing only the oneof field. in this case
 /// we can skip generating the wrapper struct (therefore unwrap the oneof)
-pub(crate) fn is_unwrappable_one_of(ty: MessageDescriptor) -> Option<OneofDescriptor> {
+pub(crate) fn is_unwrappable_one_of(ty: &MessageDescriptor) -> Option<OneofDescriptor> {
     let field_count = ty.fields().count();
 
     for one_of in ty.oneofs() {

@@ -1,6 +1,6 @@
 use protox::prost_reflect::{Cardinality, Kind, MessageDescriptor};
 
-use crate::codegen::{case, enumeration, module, one_of, utils, Context};
+use crate::codegen::{case, enums, module, one_of, utils, Context};
 
 /// generate message
 pub(crate) fn generate(
@@ -19,11 +19,16 @@ pub(crate) fn generate(
     if ctx.resolve_ident(qualified_name).is_some() {
         return;
     }
+    if !ctx.filter(qualified_name) {
+        return;
+    }
 
-    if let Some(one_of) = one_of::is_unwrappable_one_of(ty.clone()) {
+    if let Some(one_of) = one_of::is_unwrappable_one_of(&ty) {
         one_of::generate_unwrapped(ctx, parent, module_path, one_of);
         return;
     }
+
+    let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);
 
@@ -110,6 +115,7 @@ pub(crate) fn generate(
 
     module.extend(quote::quote! {
         #[derive(Clone, Debug, Message)]
+        #attributes
         pub struct #name {
             #body
         }
@@ -119,7 +125,7 @@ pub(crate) fn generate(
         let module_path = ty.name();
 
         for child in ty.child_enums() {
-            enumeration::generate(ctx, module, module_path, child);
+            enums::generate(ctx, module, module_path, child);
         }
         for child in ty.child_messages() {
             generate(ctx, module, module_path, child);

@@ -42,10 +42,10 @@ pub fn common_prefix<'a, 'b>(
 
     loop {
         let (Some(left), Some(right)) = (left_raw[index..].find('.'), right_raw[index..].find('.'))
-        else {
-            // One has more '.' than the other.
-            break;
-        };
+            else {
+                // One has more '.' than the other.
+                break;
+            };
 
         // Offset the indices, as we only inspect the slice after the previous index.
         let left = index + left;
@@ -209,6 +209,28 @@ pub fn field_type(ctx: &Context, enclosed_type: &str, field: &FieldDescriptor) -
     }
 }
 
+// Checks whether a path pattern matches a given path.
+pub(crate) fn match_name(pattern: &str, path: &str) -> bool {
+    // @HACK jeremy.barrow - 19 Jan 2024: Just a stupid hack for now.
+    let path = format!(".{}", path);
+    if pattern == "." || pattern == path {
+        true
+    } else {
+        let pattern_segments = pattern.split('.').collect::<Vec<_>>();
+        let path_segments = path.split('.').collect::<Vec<_>>();
+
+        if pattern_segments.len() > path_segments.len() {
+            false
+        } else if &pattern[..1] == "." {
+            // prefix match
+            pattern_segments[..] == path_segments[..pattern_segments.len()]
+        } else {
+            // suffix match
+            pattern_segments[..] == path_segments[path_segments.len() - pattern_segments.len()..]
+        }
+    }
+}
+
 /// Checks `ts == ()`
 pub(crate) fn is_unit_type(ts: &TokenStream) -> bool {
     let mut iter = ts.clone().into_iter();
@@ -216,4 +238,16 @@ pub(crate) fn is_unit_type(ts: &TokenStream) -> bool {
         return false;
     };
     grp.delimiter() == Delimiter::Parenthesis && grp.stream().is_empty() && iter.next().is_none()
+}
+
+const CARGO_TOML: &str = "Cargo.toml";
+
+pub fn manifests(
+    path: &std::path::Path,
+) -> impl Iterator<Item = std::path::PathBuf> + '_ {
+    path.ancestors()
+        .filter_map(|path| {
+            let manifest = path.join(CARGO_TOML);
+            manifest.exists().then_some(manifest)
+        })
 }
