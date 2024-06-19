@@ -15,6 +15,10 @@ pub(crate) fn generate(
     if ctx.resolve_ident(qualified_name).is_some() {
         return;
     }
+    if !ctx.filter(qualified_name) {
+        return;
+    }
+    let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);
 
@@ -48,6 +52,7 @@ pub(crate) fn generate(
 
     let item: syn::ItemEnum = syn::parse_quote! {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Enumeration)]
+        #attributes
         pub enum #name {
             #body
         }
