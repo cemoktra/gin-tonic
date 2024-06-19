@@ -72,7 +72,7 @@ impl Module {
         let target = target.into();
         let module_path = self.write_inner(target)?;
 
-        // @TODO jeremy.barrow - 08 Feb 2024: Add a way to disable this.
+        // TODO - add a way to disable this.
         let output = std::process::Command::new("rustfmt")
             .arg(module_path)
             .output()
@@ -113,7 +113,7 @@ impl Module {
 
                 file.items.extend(mods);
 
-                // @TODO jeremy.barrow - 03 Jan 2024: Should we only sort `use` up to the first non-`use` item?
+                // TODO: Should we only sort `use` up to the first non-`use` item?
                 file.items.sort_by_key(|item| match item {
                     syn::Item::Use(_) => 16u8,
                     syn::Item::Mod(_) => 32,
@@ -227,15 +227,5 @@ pub(crate) fn create_child<'a>(
     let module_path = module_path
         .split('.')
         .map(|segment| case::convert(segment, case::Case::Snake));
-    let module = parent.create_child_from_path(module_path);
-    if module.is_empty() {
-        let prelude = quote::quote! {
-            #[allow(unused_imports)]
-            use ::domain_type::DomainType;
-            #[allow(unused_imports)]
-            use ::strum::{EnumString, Display};
-        };
-        module.extend(prelude);
-    }
-    module
+    parent.create_child_from_path(module_path)
 }

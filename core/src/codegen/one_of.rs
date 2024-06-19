@@ -71,9 +71,6 @@ pub(crate) fn generate_unwrapped(
 
     let mut body = quote::quote!();
 
-    // @FIXME jeremy.barrow - 01 Feb 2024: We track these separately so we can add the `into_result()` helper.
-    let mut variant_types = vec![];
-
     for variant in ty.fields() {
         let tag = variant.number();
         let variant_name = case::convert(variant.name(), case::Case::Pascal);
@@ -81,7 +78,7 @@ pub(crate) fn generate_unwrapped(
 
         let variant_type = utils::field_type(ctx, qualified_name, &variant);
 
-        // @HACK jeremy.barrow - 15 Apr 2024: Probably need a better way to detect this...
+        // TODO: Probably need a better way to detect this...
         if variant_type.to_string() == "()" {
             body.extend(quote::quote! {
                 #[gin(tag = #tag)]
@@ -93,8 +90,6 @@ pub(crate) fn generate_unwrapped(
                 #variant_name(#variant_type),
             });
         }
-
-        variant_types.push((variant_name, variant_type));
     }
 
     let item: syn::ItemEnum = syn::parse_quote! {

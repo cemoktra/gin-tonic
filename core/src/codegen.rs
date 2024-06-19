@@ -4,6 +4,7 @@ pub mod external_type;
 pub(crate) mod messages;
 pub(crate) mod module;
 pub(crate) mod one_of;
+pub(crate) mod service;
 #[cfg(test)]
 mod test;
 pub(crate) mod utils;
@@ -279,6 +280,11 @@ pub(crate) fn generate(
 
         let module_path = String::from(ty.package_name());
         messages::generate(&ctx, &mut root, &module_path, ty);
+    }
+
+    for svc in pool.services() {
+        let module_path = String::from(svc.package_name());
+        service::generate(&ctx, &mut root, &module_path, svc);
     }
 
     let path = ctx.path;
