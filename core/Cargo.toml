@@ -5,7 +5,8 @@ edition = "2021"
 
 [features]
 default = []
-uuid = ["dep:uuid"]
+uuid_string = ["dep:uuid"]
+uuid_bytes = ["dep:uuid"]
 
 [dependencies]
 integer-encoding = { workspace = true }
