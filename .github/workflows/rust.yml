@@ -16,5 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Run tests
-        run: cargo test
+      - name: Run tests [uuid_string]
+        run: cargo test --features uuid_string
+      - name: Run tests [uuid_bytes]
+        run: cargo test --features uuid_bytes
