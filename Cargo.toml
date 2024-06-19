@@ -27,6 +27,6 @@ unwrap_used = "deny"
 cast_possible_truncation = "warn"
 
 [patch.crates-io]
-gin-tonic = { version = "0.1.0", path = "gin" }
-gin-tonic-core = { version = "0.1.0", path = "core" }
-gin-tonic-derive = { version = "0.1.0", path = "derive" }
+gin-tonic = { path = "gin" }
+gin-tonic-core = { path = "core" }
+gin-tonic-derive = { path = "derive" }
