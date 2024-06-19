@@ -307,15 +307,22 @@ fn proto3_compliance() {
 }
 
 struct Nested {
+    // 1
     number: i32,
 }
 
 struct Test {
+    // 1
     ip: std::net::Ipv4Addr,
+    // 2
     port: Option<u32>,
+    // 3
     protocols: Vec<String>,
+    // 4
     nested: Nested,
+    // 5
     logging: Logging,
+    // 6 + 7
     oneof: Oneof,
 }
 
@@ -330,39 +337,40 @@ enum Oneof {
     Str(String),
 }
 
-impl IntoWire for Oneof {
-    fn into_wire(self) -> WireType {
+impl Message for Oneof {
+    fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
+        let mut written = 0;
+
         match self {
-            Oneof::Num(n) => n.into_wire(),
-            Oneof::Str(s) => s.into_wire(),
+            Oneof::Num(n) => {
+                let wire_type = n.into_wire();
+                written += wire_type.serialize(6, writer)?;
+            }
+            Oneof::Str(s) => {
+                let wire_type = s.into_wire();
+                written += wire_type.serialize(7, writer)?;
+            }
+        }
+
+        Ok(written)
+    }
+
+    fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
+        if let Some(types) = tag_map.remove(&6) {
+            let n = i32::from_wire(types.into_iter().nth(0).ok_or(Error::InvalidOneOf)?)?;
+            Ok(Self::Num(n))
+        } else if let Some(types) = tag_map.remove(&7) {
+            let s = String::from_wire(types.into_iter().nth(0).ok_or(Error::InvalidOneOf)?)?;
+            Ok(Self::Str(s))
+        } else {
+            Err(Error::InvalidOneOf)
         }
     }
 
-    fn size_hint(&self, tag: u32) -> usize {
+    fn size_hint(&self) -> usize {
         match self {
-            Oneof::Num(n) => n.size_hint(tag),
-            Oneof::Str(s) => s.size_hint(tag),
-        }
-    }
-}
-
-impl FromWire for Oneof {
-    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
-    {
-        // TODO: this is not as easy in this trait, likely it needs another trait
-        match wire {
-            WireTypeView::VarInt(data) => {
-                let (value, _) = i32::decode_var(data).ok_or(Error::InvalidVarInt)?;
-                Ok(Self::Num(value))
-            }
-            WireTypeView::FixedI32(data) => {
-                let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
-                Ok(Self::Num(i32::from_be_bytes(array)))
-            }
-            WireTypeView::LengthEncoded(data) => Ok(Self::Str(String::from_wire(wire)?)),
-            _ => Err(Error::UnexpectedWireType),
+            Oneof::Num(n) => n.size_hint(6),
+            Oneof::Str(s) => s.size_hint(7),
         }
     }
 }
@@ -430,23 +438,14 @@ impl Message for Test {
         written += wire_type.serialize(5, writer)?;
 
         // oneof serialization
-        let wire_type = self.oneof.into_wire();
-        written += wire_type.serialize(6, writer)?;
+        written += self.oneof.serialize(writer)?;
 
         Ok(written)
     }
 
-    fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
-        let reader = TagReader::new(buffer);
-        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
-
-        for tag in reader {
-            let (field_number, wire_type) = tag.into_parts();
-            field_map.entry(field_number).or_default().push(wire_type);
-        }
-
+    fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
         // normal deserialization
-        let ip = field_map
+        let ip = tag_map
             .remove(&1)
             .ok_or(Error::MissingField(1))?
             .into_iter()
@@ -455,21 +454,21 @@ impl Message for Test {
         let ip = std::net::Ipv4Addr::from_wire(ip)?;
 
         // optional deserialization
-        let port = field_map
+        let port = tag_map
             .remove(&2)
             .map(|wire| u32::from_wire(wire.into_iter().nth(0).ok_or(Error::MissingField(2))?))
             .transpose()?;
 
         // vector deserialization
         let mut protocols = vec![];
-        if let Some(wires) = field_map.remove(&3) {
+        if let Some(wires) = tag_map.remove(&3) {
             for wire in wires {
                 protocols.push(String::from_wire(wire)?)
             }
         }
 
         // nested deserialization
-        let nested = field_map
+        let nested = tag_map
             .remove(&4)
             .ok_or(Error::MissingField(4))?
             .into_iter()
@@ -478,7 +477,7 @@ impl Message for Test {
         let nested = Nested::from_wire(nested)?;
 
         // enum deserialization
-        let logging = field_map
+        let logging = tag_map
             .remove(&5)
             .ok_or(Error::MissingField(5))?
             .into_iter()
@@ -487,14 +486,7 @@ impl Message for Test {
         let logging = Logging::from_wire(logging)?;
 
         // oneof deserialization
-        let oneof = field_map
-            .remove(&6)
-            .ok_or(Error::MissingField(6))?
-            .into_iter()
-            // last one wins
-            .last()
-            .ok_or(Error::MissingField(6))?;
-        let oneof = Oneof::from_wire(oneof)?;
+        let oneof = Oneof::deserialize_tags(tag_map)?;
 
         Ok(Self {
             ip,
@@ -513,7 +505,7 @@ impl Message for Test {
         let nested_size = IntoWire::size_hint(&self.nested, 4);
         let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
         let logging_size = self.logging.size_hint(5);
-        let oneof_size = self.oneof.size_hint(6);
+        let oneof_size = Message::size_hint(&self.oneof);
 
         ip_size + port_size + protocols_size + nested_size + logging_size + oneof_size
     }
@@ -530,16 +522,8 @@ impl Message for Nested {
         Ok(written)
     }
 
-    fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
-        let reader = TagReader::new(buffer);
-        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
-
-        for tag in reader {
-            let (field_number, wire_type) = tag.into_parts();
-            field_map.entry(field_number).or_default().push(wire_type);
-        }
-
-        let number = field_map
+    fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
+        let number = tag_map
             .remove(&1)
             .ok_or(Error::MissingField(1))?
             .into_iter()

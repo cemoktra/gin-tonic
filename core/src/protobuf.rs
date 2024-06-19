@@ -6,7 +6,9 @@ mod scalar;
 #[cfg(test)]
 mod test;
 
+use crate::protobuf::reader::TagReader;
 use crate::protobuf::wire::{WireType, WireTypeView};
+use std::collections::HashMap;
 
 /// error enumeration for problems occuring when converting a [WireTypeView] into an actual type
 #[derive(Debug, thiserror::Error)]
@@ -26,9 +28,35 @@ pub enum Error {
     Conversion(Box<dyn std::error::Error>),
     #[error("enum variant {0} is not known")]
     UnknownEnumVariant(u32),
+    #[error("invalid oneof")]
+    InvalidOneOf,
 }
 
 pub trait Message
+where
+    Self: Sized,
+{
+    // for serialization
+    fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
+    fn size_hint(&self) -> usize;
+
+    // for deserialization
+    fn deserialize(buffer: &[u8]) -> Result<Self, Error> {
+        let reader = TagReader::new(buffer);
+        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
+
+        for tag in reader {
+            let (field_number, wire_type) = tag.into_parts();
+            field_map.entry(field_number).or_default().push(wire_type);
+        }
+
+        Self::deserialize_tags(&mut field_map)
+    }
+
+    fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error>;
+}
+
+pub trait OneOf
 where
     Self: Sized,
 {
