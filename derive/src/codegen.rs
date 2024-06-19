@@ -189,7 +189,43 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                         let #field_size_ident = self.#field_ident.as_ref().map(|value| ::gin_tonic_core::protobuf::Message::size_hint(value)).unwrap_or_default();
                     });
                 }
-                Kind::Map => {}
+                Kind::Map => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        if let Some(value) = self.#field_ident {
+                            for (key, value) in value {
+                                let wire_type = ::gin_tonic_core::protobuf::map::into_wire(key, value)?;
+                                written += wire_type.serialize(#tag, writer)?;
+                            }
+                        }
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let #field_ident = if let Some(wire_types) = tag_map.remove(&#tag) {
+                            let mut map = HashMap::new();
+                            for wire_type in wire_types {
+                                let (key, value) = ::gin_tonic_core::protobuf::map::from_wire(wire_type)?;
+                                map.insert(key, value);
+                            }
+                            Some(map)
+                        } else {
+                            None
+                        };
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident = if let Some(map) = self.#field_ident.as_ref() {
+                            map
+                                .iter()
+                                .map(|(key, value)| {
+                                    let message_size = key.size_hint(1) + value.size_hint(2);
+                                    message_size + message_size.required_space() + #tag.required_space()
+                                })
+                                .sum()
+                        } else {
+                            0usize
+                        };
+                    });
+                }
             },
             Cardinality::Repeated => match field.kind {
                 Kind::Primitive => {
