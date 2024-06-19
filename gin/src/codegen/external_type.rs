@@ -1,4 +1,4 @@
-/// types that are no generated
+/// types that are not generated
 #[derive(Clone, Debug)]
 pub struct ExternalType {
     pub proto_path: String,
