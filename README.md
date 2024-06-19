@@ -3,13 +3,14 @@
 `gin-tonic` offers:
 
 - a protobuf de-/serialization (like [`prost`](docs.rs/prost))
+- a replacement for [`prost-build`](docs.rs/prost-build))
 - a [`tonic`](docs.rs/tonic) codec implementation
-- a replacement for [`tonic-build`](docs.rs/tonic-build)
+- a wrapper for [`tonic-build`](docs.rs/tonic-build) adding some extra extra features
 
 While all this can be achieved using the mentioned crates; `gin-tonic` also offers traits for
-converting any Rust type into a protobuf wire type.
+converting any Rust type into a protobuf wire type. You are asking why?
 
-An example you can pass a UUID via protobuf as:
+If you want to pass a UUID via protobuf you likely end up doing:
 
 ```protobuf
 message Foo {
@@ -17,7 +18,8 @@ message Foo {
 }
 ```
 
-Using [`prost`](docs.rs/prost) and [`tonic-build`](docs.rs/tonic-build) this will generate a Rust struct:
+Using [`prost-build`](docs.rs/prost-build) and [`tonic-build`](docs.rs/tonic-build) this will
+generate the following Rust struct:
 
 ```rust
 struct Foo {
@@ -25,10 +27,10 @@ struct Foo {
 }
 ```
 
-As you notice the Rust type here is a string, but in your actual code you want to use to uuid as
-actual [`uuid::Uuid`](docs.rs/uuid). Now you have to do a fallible conversion.
+As you notice the Rust type here is `String`, but in your actual code you want to use an actual
+[`uuid::Uuid`](docs.rs/uuid). Now you have to do a fallible conversion into your code.
 
-`gin-tonic` solves this by annotating the protobuf file:
+`gin-tonic` solves this by adding options to the protobuf file:
 
 ```protobuf
 import "gin/proto/gin.proto";
