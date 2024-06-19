@@ -1,5 +1,5 @@
 use crate::protobuf::wire::{WireType, WireTypeView};
-use crate::protobuf::{Error, FromWire, IntoWire, ProtocolBuffer};
+use crate::protobuf::{Error, FromWire, IntoWire, Message};
 use integer_encoding::VarInt;
 
 impl FromWire for u32 {
@@ -89,10 +89,9 @@ impl IntoWire for String {
 
 impl<T> IntoWire for T
 where
-    T: ProtocolBuffer,
+    T: Message,
 {
     fn into_wire(self) -> WireType {
-        println!("message requires {} bytes", self.size_hint());
         let mut buffer = Vec::with_capacity(self.size_hint());
         self.serialize(&mut buffer).expect("must work");
         WireType::LengthEncoded(buffer)
@@ -105,7 +104,7 @@ where
 
 impl<T> FromWire for T
 where
-    T: ProtocolBuffer,
+    T: Message,
 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where

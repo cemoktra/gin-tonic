@@ -24,9 +24,11 @@ pub enum Error {
     MissingField(u32),
     #[error(transparent)]
     Conversion(Box<dyn std::error::Error>),
+    #[error("enum variant {0} is not known")]
+    UnknownEnumVariant(u32),
 }
 
-pub trait ProtocolBuffer
+pub trait Message
 where
     Self: Sized,
 {
