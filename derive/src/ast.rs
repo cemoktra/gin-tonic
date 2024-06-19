@@ -1,14 +1,14 @@
 use darling::ast::Data;
-use darling::{FromDeriveInput, FromField, FromMeta};
+use darling::{FromDeriveInput, FromField, FromMeta, FromVariant};
 use syn::{Ident, LitInt, Type};
 
-pub(crate) type DeriveData = Data<(), MessageField>;
+pub(crate) type MessageDeriveData = Data<(), MessageField>;
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(gin), supports(struct_named))]
 pub(crate) struct MessageInput {
     pub(crate) ident: Ident,
-    pub(crate) data: DeriveData,
+    pub(crate) data: MessageDeriveData,
 }
 
 #[derive(Clone, Debug, FromField)]
@@ -39,4 +39,20 @@ pub(crate) enum Kind {
     Message,
     OneOf,
     Map,
+}
+
+pub(crate) type EnumDeriveData = Data<EnumVariant, ()>;
+
+#[derive(Debug, FromDeriveInput)]
+#[darling(attributes(gin), supports(enum_unit))]
+pub(crate) struct EnumerationInput {
+    pub(crate) ident: Ident,
+    pub(crate) data: EnumDeriveData,
+}
+
+#[derive(Clone, Debug, FromVariant)]
+#[darling(attributes(gin))]
+pub(crate) struct EnumVariant {
+    pub(crate) ident: Ident,
+    pub(crate) tag: LitInt,
 }
