@@ -2,10 +2,10 @@
 
 `gin-tonic` offers:
 
-- a protobuf de-/serialization (like [`prost`](docs.rs/prost))
-- a replacement for [`prost-build`](docs.rs/prost-build))
-- a [`tonic`](docs.rs/tonic) codec implementation
-- a wrapper for [`tonic-build`](docs.rs/tonic-build) adding some extra extra features
+- a protobuf de-/serialization (like [`prost`](http://docs.rs/prost))
+- a replacement for [`prost-build`](http://docs.rs/prost-build))
+- a [`tonic`](http://docs.rs/tonic) codec implementation
+- a wrapper for [`tonic-build`](http://docs.rs/tonic-build) adding some extra extra features
 
 While all this can be achieved using the mentioned crates; `gin-tonic` also offers traits for
 converting any Rust type into a protobuf wire type. You are asking why?
@@ -18,7 +18,7 @@ message Foo {
 }
 ```
 
-Using [`prost-build`](docs.rs/prost-build) and [`tonic-build`](docs.rs/tonic-build) this will
+Using [`prost-build`](http://docs.rs/prost-build) and [`tonic-build`](http://docs.rs/tonic-build) this will
 generate the following Rust struct:
 
 ```rust
