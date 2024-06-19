@@ -334,6 +334,7 @@ enum Logging {
     Json = 2,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Oneof {
     Num(i32),
     Str(String),
@@ -444,15 +445,7 @@ impl Message for Test {
 
         // map serialization
         for (key, value) in self.map {
-            let mut map_buffer = Vec::with_capacity(key.size_hint(1) + value.size_hint(2));
-
-            let wire_type = key.into_wire();
-            wire_type.serialize(1, &mut map_buffer)?;
-
-            let wire_type = value.into_wire();
-            wire_type.serialize(2, &mut map_buffer)?;
-
-            let wire_type = WireType::LengthEncoded(map_buffer);
+            let wire_type = crate::protobuf::map::into_wire(key, value)?;
             written += wire_type.serialize(8, writer)?;
         }
 
@@ -508,36 +501,8 @@ impl Message for Test {
         let mut map = HashMap::new();
         if let Some(wires) = tag_map.remove(&8) {
             for wire in wires {
-                match wire {
-                    WireTypeView::LengthEncoded(data) => {
-                        let reader = TagReader::new(data);
-                        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
-
-                        for tag in reader {
-                            let (field_number, wire_type) = tag.into_parts();
-                            field_map.entry(field_number).or_default().push(wire_type);
-                        }
-
-                        let key = field_map
-                            .remove(&1)
-                            .ok_or(Error::MissingField(1))?
-                            .into_iter()
-                            .nth(0)
-                            .ok_or(Error::MissingField(1))?;
-                        let key = u32::from_wire(key)?;
-
-                        let value = field_map
-                            .remove(&2)
-                            .ok_or(Error::MissingField(2))?
-                            .into_iter()
-                            .nth(0)
-                            .ok_or(Error::MissingField(2))?;
-                        let value = String::from_wire(value)?;
-
-                        map.insert(key, value);
-                    }
-                    _ => return Err(Error::UnexpectedWireType),
-                }
+                let (key, value) = crate::protobuf::map::from_wire(wire)?;
+                map.insert(key, value);
             }
         }
 
