@@ -4,6 +4,9 @@ mod scalars;
 mod std_wire_impl;
 pub mod wire_type;
 
+#[cfg(any(feature = "uuid-string", feature = "uuid-u64-pair"))]
+mod uuid;
+
 /// error enumeration for problems occuring when converting a [WireTypeView] into an actual type
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

@@ -78,4 +78,29 @@ impl WireType {
 
         Ok(written)
     }
+
+    pub fn size_hint(&self, tag: u32) -> usize {
+        match self {
+            WireType::VarInt(_, size) => tag.required_space() + size,
+            WireType::FixedI64(_) => tag.required_space() + 8,
+            WireType::SGroup => tag.required_space(),
+            WireType::EGroup => tag.required_space(),
+            WireType::LengthEncoded(data) => {
+                let data_len = data.len();
+                tag.required_space() + data_len.required_space() + data_len
+            }
+            WireType::FixedI32(_) => tag.required_space() + 8,
+        }
+    }
+
+    pub fn as_view(&self) -> WireTypeView {
+        match self {
+            WireType::VarInt(data, _) => WireTypeView::VarInt(data),
+            WireType::FixedI64(data) => WireTypeView::FixedI64(data),
+            WireType::SGroup => WireTypeView::SGroup,
+            WireType::EGroup => WireTypeView::EGroup,
+            WireType::LengthEncoded(data) => WireTypeView::LengthEncoded(data),
+            WireType::FixedI32(data) => WireTypeView::FixedI32(data),
+        }
+    }
 }
