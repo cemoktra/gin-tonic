@@ -397,7 +397,7 @@ impl ProtocolBuffer for Test {
         let ip_size = self.ip.size_hint(1);
         let port_size = self.port.map(|port| port.size_hint(2)).unwrap_or_default();
         let protocols_size: usize = self.protocols.iter().map(|item| item.size_hint(3)).sum();
-        let nested_size = ProtocolBuffer::size_hint(&self.nested);
+        let nested_size = IntoWire::size_hint(&self.nested, 4);
         let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
 
         ip_size + port_size + protocols_size + nested_size
@@ -494,7 +494,7 @@ fn basic_serde() {
 
     let actual_size = test.serialize(&mut buffer).unwrap();
     assert!(actual_size > 0);
-    assert!(actual_size <= size_hint);
+    assert_eq!(actual_size, size_hint);
 
     let test = Test::deserialize(&buffer).unwrap();
 
@@ -516,7 +516,7 @@ fn basic_serde() {
     let actual_size = test.serialize(&mut buffer).unwrap();
 
     assert!(actual_size > 0);
-    assert!(actual_size <= size_hint);
+    assert_eq!(actual_size, size_hint);
 
     let test = Test::deserialize(&buffer).unwrap();
 

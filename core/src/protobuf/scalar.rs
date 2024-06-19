@@ -99,8 +99,7 @@ where
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        let size = self.size_hint();
-        tag.required_space() + size.required_space() + size
+        tag.required_space() + self.size_hint().required_space()
     }
 }
 
