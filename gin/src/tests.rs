@@ -76,11 +76,10 @@ struct Test {
     nested: Nested,
     #[gin(tag = 5)]
     logging: Logging,
-    // // 6 + 7
-    //#[gin(tag = 0)]
-    // oneof: Oneof,
-    //#[gin(tag = 8)]
-    // map: HashMap<u32, String>,
+    #[gin(tag = 0, kind = "one_of")]
+    one_of: OneOf,
+    #[gin(tag = 8, kind = "map")]
+    map: HashMap<u32, String>,
 }
 
 #[derive(Debug, gin_tonic_core::Message)]
@@ -96,12 +95,14 @@ enum Logging {
     #[gin(tag = 2)]
     Json,
 }
-//
-// #[derive(Clone, Debug, Eq, PartialEq)]
-// enum Oneof {
-//     Num(i32),
-//     Str(String),
-// }
+
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_core::OneOf)]
+enum OneOf {
+    #[gin(tag = 6)]
+    Num(i32),
+    #[gin(tag = 7)]
+    Str(String),
+}
 
 #[test]
 fn pb_serde() {
@@ -111,8 +112,8 @@ fn pb_serde() {
         protocols: vec![],
         nested: Nested { number: -1 },
         logging: Logging::Human,
-        // oneof: Oneof::Num(123),
-        // map: HashMap::new(),
+        one_of: OneOf::Num(123),
+        map: HashMap::new(),
     };
 
     let size_hint = Message::size_hint(&test);
@@ -132,11 +133,11 @@ fn pb_serde() {
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
     assert_eq!(test.logging, Logging::Human);
-    // match test.oneof {
-    //     Oneof::Num(n) => assert_eq!(n, 123),
-    //     _ => panic!("wrong oneof"),
-    // }
-    // assert!(test.map.is_empty());
+    match test.one_of {
+        OneOf::Num(n) => assert_eq!(n, 123),
+        _ => panic!("wrong one_of"),
+    }
+    assert!(test.map.is_empty());
 
     // first round with optional field set to Some
     let mut map = HashMap::new();
@@ -148,8 +149,8 @@ fn pb_serde() {
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: -1 },
         logging: Logging::Json,
-        // oneof: Oneof::Str(String::from("hello")),
-        // map,
+        one_of: OneOf::Str(String::from("hello")),
+        map,
     };
     let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -169,9 +170,9 @@ fn pb_serde() {
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, -1);
     assert_eq!(test.logging, Logging::Json);
-    // match test.oneof {
-    //     Oneof::Str(s) => assert_eq!(s, "hello"),
-    //     _ => panic!("wrong oneof"),
-    // }
-    // assert_eq!(test.map.len(), 2);
+    match test.one_of {
+        OneOf::Str(s) => assert_eq!(s, "hello"),
+        _ => panic!("wrong one_of"),
+    }
+    assert_eq!(test.map.len(), 2);
 }

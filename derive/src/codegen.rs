@@ -77,8 +77,48 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
                         let #field_size_ident = ::gin_tonic_core::protobuf::nested::size_hint(#tag, &self.#field_ident);
                     });
                 }
-                Kind::OneOf => {}
-                Kind::Map => {}
+                Kind::OneOf => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        written += self.#field_ident.serialize(writer)?;
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let #field_ident = #ty::deserialize_tags(tag_map)?;
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident = ::gin_tonic_core::protobuf::Message::size_hint(&self.#field_ident);
+                    });
+                }
+                Kind::Map => {
+                    serialize_impl.extend(quote_spanned! { span=>
+                        for (key, value) in self.#field_ident {
+                            let wire_type = ::gin_tonic_core::protobuf::map::into_wire(key, value)?;
+                            written += wire_type.serialize(#tag, writer)?;
+                        }
+                    });
+
+                    deserialize_impl.extend(quote_spanned! { span=>
+                        let mut #field_ident = HashMap::new();
+                        if let Some(wire_types) = tag_map.remove(&#tag) {
+                            for wire_type in wire_types {
+                                let (key, value) = ::gin_tonic_core::protobuf::map::from_wire(wire_type)?;
+                                #field_ident.insert(key, value);
+                            }
+                        }
+                    });
+
+                    size_hint_impl.extend(quote_spanned! { span=>
+                        let #field_size_ident: usize = self
+                            .#field_ident
+                            .iter()
+                            .map(|(key, value)| {
+                                let message_size = key.size_hint(1) + value.size_hint(2);
+                                message_size + message_size.required_space() + #tag.required_space()
+                            })
+                            .sum();
+                    });
+                }
             },
             Cardinality::Optional => match field.kind {
                 Kind::Primitive => {
@@ -141,6 +181,7 @@ pub(crate) fn expand_message(input: crate::ast::MessageInput) -> TokenStream {
 
     quote_spanned! {span=>
         #[automatically_derived]
+        #[allow(unused_imports)]
         impl ::gin_tonic_core::protobuf::Message for #ty {
             fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, ::gin_tonic_core::protobuf::Error> {
                 use ::gin_tonic_core::protobuf::IntoWire;
@@ -213,6 +254,7 @@ pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenSt
 
     quote_spanned! {span=>
         #[automatically_derived]
+        #[allow(unused_imports)]
         impl ::gin_tonic_core::protobuf::IntoWire for #ty {
             fn into_wire(self) -> ::gin_tonic_core::protobuf::WireType {
                 match self {
@@ -229,6 +271,7 @@ pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenSt
         }
 
         #[automatically_derived]
+        #[allow(unused_imports)]
         impl ::gin_tonic_core::protobuf::FromWire for #ty {
             fn from_wire(wire: ::gin_tonic_core::protobuf::WireTypeView) -> Result<Self, ::gin_tonic_core::protobuf::Error>
             where
@@ -237,6 +280,79 @@ pub(crate) fn expand_enumeration(input: crate::ast::EnumerationInput) -> TokenSt
                 match u32::from_wire(wire)? {
                     #from_impl
                     n => Err(::gin_tonic_core::protobuf::Error::UnknownEnumVariant(n)),
+                }
+            }
+        }
+    }
+}
+
+pub(crate) fn one_of_enumeration(input: crate::ast::OneOfInput) -> TokenStream {
+    let ty = input.ident;
+    let span = ty.span();
+
+    let variants = input
+        .data
+        .take_enum()
+        .expect("OneOF derive only works on newtype enums");
+
+    let mut serialize_impl = TokenStream::new();
+    let mut deserialize_impl = TokenStream::new();
+    let mut size_hint_impl = TokenStream::new();
+
+    for variant in variants {
+        let var_ident = variant.ident;
+        let span = var_ident.span();
+        let tag = variant.tag;
+
+        serialize_impl.extend(quote_spanned! {span=>
+            #ty::#var_ident(v) => {
+                let wire_type = v.into_wire();
+                written += wire_type.serialize(#tag, writer)?;
+            }
+        });
+
+        deserialize_impl.extend(quote_spanned! {span=>
+            if let Some(types) = tag_map.remove(&#tag) {
+                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(Error::InvalidOneOf)?)?;
+                return Ok(#ty::#var_ident(value));
+            }
+        });
+
+        size_hint_impl.extend(quote_spanned! {span=>
+            #ty::#var_ident(v) => v.size_hint(#tag),
+        });
+    }
+
+    quote_spanned! {span=>
+        #[automatically_derived]
+        #[allow(unused_imports)]
+        impl ::gin_tonic_core::protobuf::Message for #ty {
+            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, ::gin_tonic_core::protobuf::Error> {
+                use ::gin_tonic_core::protobuf::IntoWire;
+
+                let mut written = 0;
+
+                match self {
+                    #serialize_impl
+                }
+
+                Ok(written)
+            }
+
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<::gin_tonic_core::protobuf::WireTypeView>>) -> Result<Self, ::gin_tonic_core::protobuf::Error> {
+                use ::gin_tonic_core::protobuf::FromWire;
+
+                #deserialize_impl
+
+                Err(::gin_tonic_core::protobuf::Error::InvalidOneOf)
+            }
+
+            fn size_hint(&self) -> usize {
+                use ::gin_tonic_core::protobuf::IntoWire;
+                use ::gin_tonic_core::export::VarInt;
+
+                match self {
+                    #size_hint_impl
                 }
             }
         }

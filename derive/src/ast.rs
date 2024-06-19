@@ -56,3 +56,19 @@ pub(crate) struct EnumVariant {
     pub(crate) ident: Ident,
     pub(crate) tag: LitInt,
 }
+
+pub(crate) type OneOfDeriveData = Data<OneOfVariant, ()>;
+
+#[derive(Debug, FromDeriveInput)]
+#[darling(attributes(gin), supports(enum_tuple))]
+pub(crate) struct OneOfInput {
+    pub(crate) ident: Ident,
+    pub(crate) data: OneOfDeriveData,
+}
+
+#[derive(Clone, Debug, FromVariant)]
+#[darling(attributes(gin))]
+pub(crate) struct OneOfVariant {
+    pub(crate) ident: Ident,
+    pub(crate) tag: LitInt,
+}
