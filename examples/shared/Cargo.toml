@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gin-tonic = { path = "../../gin", version = "0.1.0", features = ["uuid"] }
+gin-tonic = { path = "../../gin", version = "0.1.0", features = ["uuid_bytes"] }
 tonic = "0.11.0"
 uuid = "1.8.0"
 

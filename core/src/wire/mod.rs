@@ -4,7 +4,7 @@ mod scalars;
 mod std_wire_impl;
 pub mod wire_type;
 
-#[cfg(feature = "uuid")]
+#[cfg(any(feature = "uuid_string", feature = "uuid_bytes"))]
 mod uuid;
 
 /// error enumeration for problems occuring when converting a [WireTypeView] into an actual type

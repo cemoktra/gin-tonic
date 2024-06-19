@@ -8,7 +8,8 @@ license = "MIT"
 
 [features]
 default = []
-uuid = ["gin-tonic-core/uuid"]
+uuid_string = ["gin-tonic-core/uuid_string"]
+uuid_bytes = ["gin-tonic-core/uuid_bytes"]
 
 [dependencies]
 bytes = { workspace = true }
