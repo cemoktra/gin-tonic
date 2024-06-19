@@ -7,3 +7,7 @@ description = "gin-tonic - useful tonic/prost extensions"
 license = "MIT"
 
 [dependencies]
+gin-tonic-core = { workspace = true }
+
+[lints]
+workspace = true
