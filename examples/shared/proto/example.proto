@@ -10,6 +10,7 @@ service Example {
 
 message EchoRequest {
   string echo = 1;
+  string request_id = 2 [(gin_tonic.v1.rust_type) = "uuid::Uuid"];
 }
 
 message EchoResponse {
