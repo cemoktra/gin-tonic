@@ -2,7 +2,7 @@ use bytes::{Buf, BufMut};
 use std::marker::PhantomData;
 use tonic::codec::{DecodeBuf, EncodeBuf};
 
-use crate::protobuf::Message;
+use gin_tonic_core::Message;
 
 #[derive(Debug, Clone)]
 pub struct GinCodec<T, U> {
@@ -49,7 +49,7 @@ impl<T: Message + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
     type Error = tonic::Status;
 
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        item.serialize(&mut dst.writer())?;
+        item.serialize(&mut dst.writer()).map_err(map_core_err)?;
         Ok(())
     }
 }
@@ -59,8 +59,12 @@ impl<U: Message + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
     type Error = tonic::Status;
 
     fn decode(&mut self, src: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        let (decoded, read) = Self::Item::deserialize(src.chunk())?;
+        let (decoded, read) = Self::Item::deserialize(src.chunk()).map_err(map_core_err)?;
         src.advance(read);
         Ok(Some(decoded))
     }
+}
+
+fn map_core_err(err: gin_tonic_core::Error) -> tonic::Status {
+    tonic::Status::internal(err.to_string())
 }

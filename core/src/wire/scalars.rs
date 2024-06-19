@@ -1,11 +1,10 @@
-use crate::protobuf::wire::{WireType, WireTypeView};
-use crate::protobuf::{Error, FromWire, IntoWire, Message};
+use crate::{WireType, WireTypeView,Error, FromWire, IntoWire, Message};
 use integer_encoding::VarInt;
 
 impl FromWire for u32 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         match wire {
             WireTypeView::VarInt(data) => {
@@ -35,8 +34,8 @@ impl IntoWire for u32 {
 
 impl FromWire for i32 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         match wire {
             WireTypeView::VarInt(data) => {
@@ -66,8 +65,8 @@ impl IntoWire for i32 {
 
 impl FromWire for String {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         match wire {
             WireTypeView::LengthEncoded(data) => Ok(String::from_utf8(data.to_vec())?),
@@ -88,8 +87,8 @@ impl IntoWire for String {
 }
 
 impl<T> IntoWire for T
-where
-    T: Message,
+    where
+        T: Message,
 {
     fn into_wire(self) -> WireType {
         let mut buffer = Vec::with_capacity(self.size_hint());
@@ -103,12 +102,12 @@ where
 }
 
 impl<T> FromWire for T
-where
-    T: Message,
+    where
+        T: Message,
 {
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
-    where
-        Self: Sized,
+        where
+            Self: Sized,
     {
         match wire {
             WireTypeView::LengthEncoded(data) => {

@@ -13,6 +13,7 @@ to-str = []
 
 [dependencies]
 bytes = { workspace = true }
+gin-tonic-core = { workspace = true }
 gin-tonic-derive = { workspace = true }
 heck = { workspace = true }
 integer-encoding = { workspace = true }

@@ -1,4 +1,6 @@
-use crate::protobuf::wire::WireTypeView;
+pub mod reader;
+
+use crate::WireTypeView;
 use integer_encoding::VarInt;
 
 /// representation of a deserialized [Tag]
@@ -14,12 +16,10 @@ impl<'a> Tag<'a> {
         (self.field_number, self.wire_type)
     }
 
-    #[cfg(test)]
     pub fn field_number(&self) -> u32 {
         self.field_number
     }
 
-    #[cfg(test)]
     pub fn wire_type(&self) -> &WireTypeView {
         &self.wire_type
     }

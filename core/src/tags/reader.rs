@@ -1,4 +1,4 @@
-use crate::protobuf::tag::Tag;
+use super::Tag;
 
 /// [TagReader] implements an [Iterator] over [Tag]s and can be used to read all [Tag]s from a slice
 /// of bytes
