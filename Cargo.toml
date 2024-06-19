@@ -1,11 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["gin", "core", "derive", "examples/client", "examples/server", "examples/shared"]
+members = ["gin", "derive", "examples/client", "examples/server", "examples/shared"]
 
 [workspace.dependencies]
 bytes = "1.6.0"
 darling = "0.20.9"
-gin-tonic-core = { version = "0.1.0", path = "core" }
+gin-tonic = { version = "0.1.0", path = "gin" }
 gin-tonic-derive = { version = "0.1.0", path = "derive" }
 heck = "0.5.0"
 integer-encoding = "4.0.0"

@@ -58,15 +58,15 @@ fn expand_message_message(
                     deserialize_impl.extend(quote_spanned! { span=>
                         let wire_type = tag_map
                             .remove(&#tag)
-                            .ok_or(#root::protobuf::Error::MissingField(#tag))?
+                            .ok_or(#root::Error::MissingField(#tag))?
                             .into_iter()
                             .nth(0)
-                            .ok_or(#root::protobuf::Error::MissingField(#tag))?;
+                            .ok_or(#root::Error::MissingField(#tag))?;
                         let #field_ident = #ty::from_wire(wire_type)?;
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = #root::protobuf::IntoWire::size_hint(&self.#field_ident, #tag);
+                        let #field_size_ident = #root::IntoWire::size_hint(&self.#field_ident, #tag);
                     });
                 }
                 Kind::Message => {
@@ -78,10 +78,10 @@ fn expand_message_message(
                     deserialize_impl.extend(quote_spanned! { span=>
                         let wire_type = tag_map
                             .remove(&#tag)
-                            .ok_or(#root::protobuf::Error::MissingField(#tag))?
+                            .ok_or(#root::Error::MissingField(#tag))?
                             .into_iter()
                             .nth(0)
-                            .ok_or(#root::protobuf::Error::MissingField(#tag))?;
+                            .ok_or(#root::Error::MissingField(#tag))?;
                         let #field_ident = #ty::from_wire(wire_type)?;
                     });
 
@@ -144,11 +144,11 @@ fn expand_message_message(
                     deserialize_impl.extend(quote_spanned! { span=>
                         let #field_ident = tag_map
                             .remove(&#tag)
-                            .map(|wire| #root::protobuf::FromWire::from_wire(
+                            .map(|wire| #root::FromWire::from_wire(
                                 wire
                                     .into_iter()
                                     .nth(0)
-                                    .ok_or(#root::protobuf::Error::MissingField(#tag))?
+                                    .ok_or(#root::Error::MissingField(#tag))?
                                 )
                             )
                             .transpose()?;
@@ -169,11 +169,11 @@ fn expand_message_message(
                     deserialize_impl.extend(quote_spanned! { span=>
                         let #field_ident = tag_map
                             .remove(&#tag)
-                            .map(|wire| #root::protobuf::FromWire::from_wire(
+                            .map(|wire| #root::FromWire::from_wire(
                                 wire
                                     .into_iter()
                                     .nth(0)
-                                    .ok_or(#root::protobuf::Error::MissingField(#tag))?
+                                    .ok_or(#root::Error::MissingField(#tag))?
                                 )
                             )
                             .transpose()?;
@@ -252,7 +252,7 @@ fn expand_message_message(
                         let mut #field_ident = vec![];
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                #field_ident.push(#root::protobuf::FromWire::from_wire(wire_type)?)
+                                #field_ident.push(#root::FromWire::from_wire(wire_type)?)
                             }
                         }
                     });
@@ -273,7 +273,7 @@ fn expand_message_message(
                         let mut #field_ident = vec![];
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                #field_ident.push(#root::protobuf::FromWire::from_wire(wire_type)?)
+                                #field_ident.push(#root::FromWire::from_wire(wire_type)?)
                             }
                         }
                     });
@@ -300,8 +300,8 @@ fn expand_message_message(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::protobuf::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::protobuf::Error> {
-                use #root::protobuf::IntoWire;
+            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
+                use #root::IntoWire;
 
                 let mut written = 0;
 
@@ -310,8 +310,8 @@ fn expand_message_message(
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::protobuf::Error> {
-                use #root::protobuf::FromWire;
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::Error> {
+                use #root::FromWire;
 
                 #deserialize_impl
 
@@ -321,7 +321,7 @@ fn expand_message_message(
             }
 
             fn size_hint(&self) -> usize {
-                use #root::protobuf::IntoWire;
+                use #root::IntoWire;
                 use #root::export::VarInt;
 
                 #size_hint_impl
@@ -357,7 +357,7 @@ fn expand_unwrapped_oneof(
 
         deserialize_impl.extend(quote_spanned! {span=>
             if let Some(types) = tag_map.remove(&#tag) {
-                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(#root::protobuf::Error::InvalidOneOf)?)?;
+                let value = FromWire::from_wire(types.into_iter().nth(0).ok_or(#root::Error::InvalidOneOf)?)?;
                 return Ok(#ty::#var_ident(value));
             }
         });
@@ -371,8 +371,8 @@ fn expand_unwrapped_oneof(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::protobuf::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::protobuf::Error> {
-                use #root::protobuf::IntoWire;
+            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
+                use #root::IntoWire;
 
                 let mut written = 0;
 
@@ -383,16 +383,16 @@ fn expand_unwrapped_oneof(
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::protobuf::Error> {
-                use #root::protobuf::FromWire;
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::Error> {
+                use #root::FromWire;
 
                 #deserialize_impl
 
-                Err(#root::protobuf::Error::InvalidOneOf)
+                Err(#root::Error::InvalidOneOf)
             }
 
             fn size_hint(&self) -> usize {
-                use #root::protobuf::IntoWire;
+                use #root::IntoWire;
                 use #root::export::VarInt;
 
                 match self {
@@ -446,7 +446,7 @@ pub(crate) fn expand_enumeration(
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::protobuf::IntoWire for #ty {
+        impl #root::IntoWire for #ty {
             fn into_wire(self) -> #root::protobuf::WireType {
                 match self {
                     #into_impl
@@ -463,14 +463,14 @@ pub(crate) fn expand_enumeration(
 
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::protobuf::FromWire for #ty {
-            fn from_wire(wire: #root::protobuf::WireTypeView) -> Result<Self, #root::protobuf::Error>
+        impl #root::FromWire for #ty {
+            fn from_wire(wire: #root::protobuf::WireTypeView) -> Result<Self, #root::Error>
             where
                 Self: Sized,
             {
                 match u32::from_wire(wire)? {
                     #from_impl
-                    n => Err(#root::protobuf::Error::UnknownEnumVariant(n)),
+                    n => Err(#root::Error::UnknownEnumVariant(n)),
                 }
             }
         }

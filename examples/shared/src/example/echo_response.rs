@@ -1,6 +1,6 @@
 #![doc = r"THIS FILE HAS BEEN GENERATED"]
 #[allow(unused_imports)]
-use ::gin_tonic_core::{Enumeration, Message, OneOf};
+use ::gin_tonic::{Enumeration, Message, OneOf};
 #[derive(Clone, Debug, Message)]
 pub struct Echo {
     #[gin(tag = 1u32)]

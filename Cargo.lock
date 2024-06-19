@@ -317,13 +317,6 @@ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
 name = "gin-tonic"
 version = "0.1.0"
 dependencies = [
- "gin-tonic-core",
-]
-
-[[package]]
-name = "gin-tonic-core"
-version = "0.1.0"
-dependencies = [
  "bytes",
  "gin-tonic-derive",
  "heck",
@@ -949,7 +942,7 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
- "gin-tonic-core",
+ "gin-tonic",
  "tonic",
 ]
 
