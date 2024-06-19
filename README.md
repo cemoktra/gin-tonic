@@ -1,3 +1,5 @@
+![crates.io](https://img.shields.io/crates/v/gin-tonic.svg)
+
 # gin-tonic
 
 `gin-tonic` offers:
