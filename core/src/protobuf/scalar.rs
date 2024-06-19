@@ -28,7 +28,30 @@ impl IntoWire for u32 {
         WireType::VarInt(data, size)
     }
 
-    fn size_hint(&self) -> usize {
-        self.required_space()
+    fn size_hint(&self, tag: u32) -> usize {
+        self.required_space() + tag.required_space()
+    }
+}
+
+impl FromWire for String {
+    fn from_wire(wire: WireTypeView) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        match wire {
+            WireTypeView::LengthEncoded(data) => Ok(String::from_utf8(data.to_vec())?),
+            _ => Err(Error::UnexpectedWireType),
+        }
+    }
+}
+
+impl IntoWire for String {
+    fn into_wire(self) -> WireType {
+        WireType::LengthEncoded(self.into_bytes())
+    }
+
+    fn size_hint(&self, tag: u32) -> usize {
+        let len = self.len();
+        len.required_space() + tag.required_space() + len
     }
 }
