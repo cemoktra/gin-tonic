@@ -1,3 +1,4 @@
+pub mod codegen;
 pub mod impls;
 pub mod protobuf;
 pub mod traits;

@@ -1,18 +1,16 @@
 [workspace]
 resolver = "2"
-members = [
-    "gin",
-    "core",
-    "derive"
-]
+members = ["gin", "core", "derive"]
 
 [workspace.dependencies]
 darling = "0.20.9"
 gin-tonic-core = { version = "0.1.0", path = "core" }
 gin-tonic-derive = { version = "0.1.0", path = "derive" }
+heck = "0.5.0"
 integer-encoding = "4.0.0"
 proc-macro2 = "1.0.85"
 prost = "0.12.6"
+protox = "0.6.1"
 quote = "1.0.36"
 syn = "2.0.66"
 thiserror = "1.0.61"
