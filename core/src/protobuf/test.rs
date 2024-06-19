@@ -324,6 +324,8 @@ struct Test {
     logging: Logging,
     // 6 + 7
     oneof: Oneof,
+    // 8
+    map: HashMap<u32, String>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -440,6 +442,20 @@ impl Message for Test {
         // oneof serialization
         written += self.oneof.serialize(writer)?;
 
+        // map serialization
+        for (key, value) in self.map {
+            let mut map_buffer = Vec::with_capacity(key.size_hint(1) + value.size_hint(2));
+
+            let wire_type = key.into_wire();
+            wire_type.serialize(1, &mut map_buffer)?;
+
+            let wire_type = value.into_wire();
+            wire_type.serialize(2, &mut map_buffer)?;
+
+            let wire_type = WireType::LengthEncoded(map_buffer);
+            written += wire_type.serialize(8, writer)?;
+        }
+
         Ok(written)
     }
 
@@ -488,6 +504,43 @@ impl Message for Test {
         // oneof deserialization
         let oneof = Oneof::deserialize_tags(tag_map)?;
 
+        // map deserialization
+        let mut map = HashMap::new();
+        if let Some(wires) = tag_map.remove(&8) {
+            for wire in wires {
+                match wire {
+                    WireTypeView::LengthEncoded(data) => {
+                        let reader = TagReader::new(data);
+                        let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
+
+                        for tag in reader {
+                            let (field_number, wire_type) = tag.into_parts();
+                            field_map.entry(field_number).or_default().push(wire_type);
+                        }
+
+                        let key = field_map
+                            .remove(&1)
+                            .ok_or(Error::MissingField(1))?
+                            .into_iter()
+                            .nth(0)
+                            .ok_or(Error::MissingField(1))?;
+                        let key = u32::from_wire(key)?;
+
+                        let value = field_map
+                            .remove(&2)
+                            .ok_or(Error::MissingField(2))?
+                            .into_iter()
+                            .nth(0)
+                            .ok_or(Error::MissingField(2))?;
+                        let value = String::from_wire(value)?;
+
+                        map.insert(key, value);
+                    }
+                    _ => return Err(Error::UnexpectedWireType),
+                }
+            }
+        }
+
         Ok(Self {
             ip,
             port,
@@ -495,6 +548,7 @@ impl Message for Test {
             nested,
             logging,
             oneof,
+            map,
         })
     }
 
@@ -506,8 +560,16 @@ impl Message for Test {
         let nested_size = 4u32.required_space() + nested_size.required_space() + nested_size;
         let logging_size = self.logging.size_hint(5);
         let oneof_size = Message::size_hint(&self.oneof);
+        let map_size: usize = self
+            .map
+            .iter()
+            .map(|(key, value)| {
+                let message_size = key.size_hint(1) + value.size_hint(2);
+                message_size + message_size.required_space() + 8.required_space()
+            })
+            .sum();
 
-        ip_size + port_size + protocols_size + nested_size + logging_size + oneof_size
+        ip_size + port_size + protocols_size + nested_size + logging_size + oneof_size + map_size
     }
 }
 
@@ -589,6 +651,7 @@ fn basic_serde() {
         nested: Nested { number: -1 },
         logging: Logging::Human,
         oneof: Oneof::Num(123),
+        map: HashMap::new(),
     };
     let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -608,8 +671,12 @@ fn basic_serde() {
         Oneof::Num(n) => assert_eq!(n, 123),
         _ => panic!("wrong oneof"),
     }
+    assert!(test.map.is_empty());
 
     // first round with optional field set to Some
+    let mut map = HashMap::new();
+    map.insert(10, String::from("ten"));
+    map.insert(20, String::from("twenty"));
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: Some(8080),
@@ -617,6 +684,7 @@ fn basic_serde() {
         nested: Nested { number: -1 },
         logging: Logging::Json,
         oneof: Oneof::Str(String::from("hello")),
+        map,
     };
     let size_hint = Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
@@ -637,4 +705,5 @@ fn basic_serde() {
         Oneof::Str(s) => assert_eq!(s, "hello"),
         _ => panic!("wrong oneof"),
     }
+    assert_eq!(test.map.len(), 2);
 }
