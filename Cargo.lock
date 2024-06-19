@@ -318,6 +318,7 @@ name = "gin-tonic"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "gin-tonic-core",
  "gin-tonic-derive",
  "heck",
  "integer-encoding",
@@ -329,6 +330,14 @@ dependencies = [
  "thiserror",
  "tonic",
  "tonic-build",
+]
+
+[[package]]
+name = "gin-tonic-core"
+version = "0.1.0"
+dependencies = [
+ "integer-encoding",
+ "thiserror",
 ]
 
 [[package]]

@@ -86,7 +86,7 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = #root::protobuf::nested::size_hint(#tag, &self.#field_ident);
+                        let #field_size_ident = #root::gin_tonic_core::nested_size_hint(#tag, &self.#field_ident);
                     });
                 }
                 Kind::OneOf => {
@@ -99,13 +99,13 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = #root::protobuf::Message::size_hint(&self.#field_ident);
+                        let #field_size_ident = #root::gin_tonic_core::Message::size_hint(&self.#field_ident);
                     });
                 }
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         for (key, value) in self.#field_ident {
-                            let wire_type = #root::protobuf::map::into_wire(key, value)?;
+                            let wire_type = #root::gin_tonic_core::map_into_wire(key, value)?;
                             written += wire_type.serialize(#tag, writer)?;
                         }
                     });
@@ -114,7 +114,7 @@ fn expand_message_message(
                         let mut #field_ident = HashMap::new();
                         if let Some(wire_types) = tag_map.remove(&#tag) {
                             for wire_type in wire_types {
-                                let (key, value) = #root::protobuf::map::from_wire(wire_type)?;
+                                let (key, value) = #root::gin_tonic_core::map_from_wire(wire_type)?;
                                 #field_ident.insert(key, value);
                             }
                         }
@@ -180,7 +180,7 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::protobuf::nested::size_hint(#tag, value)).unwrap_or_default();
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::gin_tonic_core::nested_size_hint(#tag, value)).unwrap_or_default();
                     });
                 }
                 Kind::OneOf => {
@@ -191,21 +191,21 @@ fn expand_message_message(
                     });
 
                     deserialize_impl.extend(quote_spanned! { span=>
-                        let #field_ident = match #root::protobuf::Message::deserialize_tags(tag_map) {
+                        let #field_ident = match #root::gin_tonic_core::Message::deserialize_tags(tag_map) {
                             Ok(value) => Some(value),
                             Err(_) => None,
                         };
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::protobuf::Message::size_hint(value)).unwrap_or_default();
+                        let #field_size_ident = self.#field_ident.as_ref().map(|value| #root::gin_tonic_core::Message::size_hint(value)).unwrap_or_default();
                     });
                 }
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
                             for (key, value) in value {
-                                let wire_type = #root::protobuf::map::into_wire(key, value)?;
+                                let wire_type = #root::gin_tonic_core::map_into_wire(key, value)?;
                                 written += wire_type.serialize(#tag, writer)?;
                             }
                         }
@@ -215,7 +215,7 @@ fn expand_message_message(
                         let #field_ident = if let Some(wire_types) = tag_map.remove(&#tag) {
                             let mut map = HashMap::new();
                             for wire_type in wire_types {
-                                let (key, value) = #root::protobuf::map::from_wire(wire_type)?;
+                                let (key, value) = #root::gin_tonic_core::map_from_wire(wire_type)?;
                                 map.insert(key, value);
                             }
                             Some(map)
@@ -279,7 +279,7 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident: usize = self.#field_ident.iter().map(|item| #root::protobuf::nested::size_hint(#tag, item)).sum();
+                        let #field_size_ident: usize = self.#field_ident.iter().map(|item| #root::gin_tonic_core::nested_size_hint(#tag, item)).sum();
                     });
                 }
                 Kind::OneOf => {
@@ -299,7 +299,7 @@ fn expand_message_message(
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::protobuf::Message for #ty {
+        impl #root::gin_tonic_core::Message for #ty {
             fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
                 use #root::IntoWire;
 
@@ -310,7 +310,7 @@ fn expand_message_message(
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::Error> {
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::gin_tonic_core::WireTypeView>>) -> Result<Self, #root::Error> {
                 use #root::FromWire;
 
                 #deserialize_impl
@@ -370,7 +370,7 @@ fn expand_unwrapped_oneof(
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::protobuf::Message for #ty {
+        impl #root::gin_tonic_core::Message for #ty {
             fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
                 use #root::IntoWire;
 
@@ -383,7 +383,7 @@ fn expand_unwrapped_oneof(
                 Ok(written)
             }
 
-            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::protobuf::WireTypeView>>) -> Result<Self, #root::Error> {
+            fn deserialize_tags(tag_map: &mut std::collections::HashMap<u32, Vec<#root::gin_tonic_core::WireTypeView>>) -> Result<Self, #root::Error> {
                 use #root::FromWire;
 
                 #deserialize_impl
@@ -447,7 +447,7 @@ pub(crate) fn expand_enumeration(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::IntoWire for #ty {
-            fn into_wire(self) -> #root::protobuf::WireType {
+            fn into_wire(self) -> #root::gin_tonic_core::WireType {
                 match self {
                     #into_impl
                 }
@@ -464,7 +464,7 @@ pub(crate) fn expand_enumeration(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::FromWire for #ty {
-            fn from_wire(wire: #root::protobuf::WireTypeView) -> Result<Self, #root::Error>
+            fn from_wire(wire: #root::gin_tonic_core::WireTypeView) -> Result<Self, #root::Error>
             where
                 Self: Sized,
             {
