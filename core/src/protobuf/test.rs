@@ -306,25 +306,21 @@ fn proto3_compliance() {
     assert!(reader.next().is_none());
 }
 
+#[derive(Debug)]
 struct Nested {
-    // 1
+    #[gin(tag = 1)]
     number: i32,
 }
 
+#[derive(Debug)]
 struct Test {
-    // 1
     ip: std::net::Ipv4Addr,
-    // 2
     port: Option<u32>,
-    // 3
     protocols: Vec<String>,
-    // 4
     nested: Nested,
-    // 5
     logging: Logging,
     // 6 + 7
     oneof: Oneof,
-    // 8
     map: HashMap<u32, String>,
 }
 
