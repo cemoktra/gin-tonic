@@ -44,9 +44,41 @@ impl VarInt for u64 {
     }
 }
 
+// groups are not supported
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum WireType {
+    VarInt = 0,
+    I64 = 1,
+    LEN = 2,
+    I32 = 5,
+}
+
+pub trait Tag {
+    fn field_number(&self) -> u64;
+    fn wire_type(&self) -> Option<WireType>;
+}
+
+impl Tag for u64 {
+    fn field_number(&self) -> u64 {
+        self >> 3
+    }
+
+    fn wire_type(&self) -> Option<WireType> {
+        let wire_type = self & 0b111;
+
+        match wire_type {
+            0 => Some(WireType::VarInt),
+            1 => Some(WireType::I64),
+            2 => Some(WireType::LEN),
+            5 => Some(WireType::I32),
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
-    use crate::protobuf::VarInt;
+    use crate::protobuf::{Tag, VarInt};
 
     #[test]
     fn encode_decode_varint() {
@@ -59,6 +91,27 @@ mod test {
 
         let (var, read) = u64::decode_slice(buffer.as_slice()).unwrap();
 
+        assert_eq!(150, var);
+        assert_eq!(2, read);
+    }
+
+    #[test]
+    fn tag() {
+        let tag = 0x8;
+        assert_eq!(Some(super::WireType::VarInt), tag.wire_type());
+        assert_eq!(1, tag.field_number());
+    }
+
+    #[test]
+    fn decode_tag_and_varint() {
+        let buffer = [0x08, 0x96, 0x01];
+
+        let (tag, read) = u64::decode_slice(buffer.as_slice()).unwrap();
+        assert_eq!(read, 1);
+        assert_eq!(Some(super::WireType::VarInt), tag.wire_type());
+        assert_eq!(1, tag.field_number());
+
+        let (var, read) = u64::decode_slice(&buffer[1..]).unwrap();
         assert_eq!(150, var);
         assert_eq!(2, read);
     }
