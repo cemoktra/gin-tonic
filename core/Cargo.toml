@@ -6,4 +6,9 @@ repository = "https://github.com/cemoktra/gin-tonic/"
 description = "core functionality for gin-tonic"
 license = "MIT"
 
+[features]
+default = []
+from-str = []
+to-str = []
+
 [dependencies]
