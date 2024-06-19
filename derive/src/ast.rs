@@ -13,15 +13,14 @@ pub(crate) struct MessageInput {
 
 #[derive(Clone, Debug, FromField)]
 #[darling(attributes(gin))]
+#[allow(clippy::manual_unwrap_or_default)]
 pub(crate) struct MessageField {
     pub(crate) ident: Option<Ident>,
     pub(crate) ty: Type,
 
     pub(crate) tag: LitInt,
-    #[darling(default)]
-    pub(crate) cardinality: Cardinality,
-    #[darling(default)]
-    pub(crate) kind: Kind,
+    pub(crate) cardinality: Option<Cardinality>,
+    pub(crate) kind: Option<Kind>,
 }
 
 #[derive(Clone, Copy, Default, Debug, FromMeta)]

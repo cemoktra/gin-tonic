@@ -103,7 +103,7 @@ where
 
         let out = target
             .map(Into::into)
-            .unwrap_or_else(|| PathBuf::from(self.environment.out_dir().to_owned()));
+            .unwrap_or_else(|| self.environment.out_dir().to_owned());
         std::fs::create_dir_all(&out)?;
 
         let resolver = Resolver::new(include_dirs);

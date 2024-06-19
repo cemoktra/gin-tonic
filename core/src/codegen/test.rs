@@ -16,7 +16,7 @@ impl CompilerEnvironment for TestEnvironment {
 #[test]
 fn test_compiler() {
     Compiler::new(TestEnvironment("..".into()))
-        .add_proto_files(&["test.proto"])
+        .add_proto_files(["test.proto"])
         .with_well_known_types()
         .compile(Some("./test_codegen"))
         .unwrap();

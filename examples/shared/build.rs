@@ -5,7 +5,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     Compiler::new(BuildEnvironment::new()?)
         .include([PathBuf::from("../..")])
         .with_well_known_types()
-        .add_proto_files(&["proto/example.proto"])
+        .add_proto_files(["proto/example.proto"])
         .compile(Some("./src"))?;
 
     Ok(())
