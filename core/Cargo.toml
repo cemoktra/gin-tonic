@@ -3,9 +3,15 @@ name = "gin-tonic-core"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+uuid-string = ["dep:uuid"]
+uuid-u64-pair = ["dep:uuid"]
+
 [dependencies]
 integer-encoding = { workspace = true }
 thiserror = { workspace = true }
+uuid = { workspace = true, optional = true }
 
 [lints]
 workspace = true
