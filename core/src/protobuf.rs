@@ -151,3 +151,19 @@ pub trait IntoWire {
     fn into_wire(self) -> WireType;
     fn size_hint(&self, tag: u32) -> usize;
 }
+
+impl From<Error> for tonic::Status {
+    fn from(_value: Error) -> Self {
+        tonic::Status::internal("TODO")
+        // match value {
+        //     Error::Io(_) => tonic::Status::
+        //     Error::Utf8(_) => {}
+        //     Error::UnexpectedWireType => {}
+        //     Error::InvalidVarInt => {}
+        //     Error::MissingField(_) => {}
+        //     Error::Conversion(_) => {}
+        //     Error::UnknownEnumVariant(_) => {}
+        //     Error::InvalidOneOf => {}
+        // }
+    }
+}
