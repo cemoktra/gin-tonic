@@ -9,6 +9,7 @@ pub(crate) type MessageDeriveData = Data<OneOfVariant, MessageField>;
 pub(crate) struct MessageInput {
     pub(crate) ident: Ident,
     pub(crate) data: MessageDeriveData,
+    pub(crate) root: Option<syn::Path>,
 }
 
 #[derive(Clone, Debug, FromField)]
@@ -47,6 +48,7 @@ pub(crate) type EnumDeriveData = Data<EnumVariant, ()>;
 pub(crate) struct EnumerationInput {
     pub(crate) ident: Ident,
     pub(crate) data: EnumDeriveData,
+    pub(crate) root: Option<syn::Path>,
 }
 
 #[derive(Clone, Debug, FromVariant)]
@@ -63,6 +65,7 @@ pub(crate) type OneOfDeriveData = Data<OneOfVariant, ()>;
 pub(crate) struct OneOfInput {
     pub(crate) ident: Ident,
     pub(crate) data: OneOfDeriveData,
+    pub(crate) root: Option<syn::Path>,
 }
 
 #[derive(Clone, Debug, FromVariant)]
