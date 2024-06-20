@@ -218,12 +218,15 @@ impl FromWire for bool {
 impl IntoWire for bool {
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = if self { 1i32 } else { 0i32 }.encode_var(&mut data);
+        let size = if self { 1u32 } else { 0u32 }.encode_var(&mut data);
+
+        println!("encoded bool: {data:x?}");
+
         WireType::VarInt(data, size)
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        if *self { 1i32 } else { 0i32 }.required_space() + tag.required_space()
+        if *self { 1u32 } else { 0u32 }.required_space() + tag.required_space()
     }
 }
 

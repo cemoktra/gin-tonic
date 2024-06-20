@@ -1,4 +1,4 @@
-use crate::{FromWire, IntoWire, TagReader, WireTypeView};
+use crate::{FromWire, IntoWire, Tag, TagReader, WireTypeView};
 use integer_encoding::VarInt;
 
 #[test]
@@ -309,7 +309,17 @@ fn wire_type_bool() {
     let wire = value.into_wire();
     assert_eq!(wire.size_hint(1), 2);
     assert_eq!(value.size_hint(1), wire.size_hint(1));
+
     let wire_value = bool::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 2];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = bool::from_wire(wire).unwrap();
     assert_eq!(value, wire_value);
 }
 
@@ -322,6 +332,17 @@ fn wire_type_u32() {
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = u32::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 3];
+    println!("{buffer:02x?}");
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    println!("{buffer:02x?}");
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer[0..]).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = u32::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
 }
 
 #[test]
@@ -332,6 +353,15 @@ fn wire_type_i32() {
     assert_eq!(wire.size_hint(1), 3);
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = i32::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 3];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = i32::from_wire(wire).unwrap();
     assert_eq!(value, wire_value);
 }
 
@@ -344,6 +374,15 @@ fn wire_type_u64() {
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = u64::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 4];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = u64::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
 }
 
 #[test]
@@ -354,6 +393,15 @@ fn wire_type_i64() {
     assert_eq!(wire.size_hint(1), 4);
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = i64::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 4];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = i64::from_wire(wire).unwrap();
     assert_eq!(value, wire_value);
 }
 
@@ -366,6 +414,15 @@ fn wire_type_f32() {
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = f32::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 5];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = f32::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
 }
 
 #[test]
@@ -376,5 +433,34 @@ fn wire_type_f64() {
     assert_eq!(wire.size_hint(1), 9);
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = f64::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 9];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = f64::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_string() {
+    let value = String::from("Test");
+
+    let wire = value.clone().into_wire();
+    assert_eq!(wire.size_hint(1), 6);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = String::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 6];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = String::from_wire(wire).unwrap();
     assert_eq!(value, wire_value);
 }
