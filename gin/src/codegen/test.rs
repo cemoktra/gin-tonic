@@ -1,6 +1,6 @@
 #[test]
 fn test_compiler() {
-    crate::codegen::Compiler::new()
+    crate::codegen::CompileConfig::new()
         .add_proto_file("test.proto")
         .with_well_known_types()
         // .include(&[".."])

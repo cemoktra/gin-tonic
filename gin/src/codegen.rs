@@ -18,9 +18,8 @@ use external_type::ExternalType;
 use protox::file::{ChainFileResolver, GoogleFileResolver, IncludeFileResolver};
 use protox::prost_reflect::DescriptorPool;
 
-/// [Compiler] transforming `*.proto` files into Rust code
-// @TODO jeremy.barrow - 19 June 2024: This is effectively a config, we should probably name it as such.
-pub struct Compiler {
+/// [CompileConfig] transforming `*.proto` files into Rust code
+pub struct CompileConfig {
     type_filter: Box<dyn for<'a> Fn(&'a str) -> bool>,
     type_attributes: Vec<(String, String)>,
 
@@ -31,7 +30,7 @@ pub struct Compiler {
     well_known_types: bool,
 }
 
-impl Compiler {
+impl CompileConfig {
     pub fn new() -> Self {
         Self::with_filter(|_| true)
     }
@@ -181,9 +180,9 @@ impl Compiler {
     }
 }
 
-impl Default for Compiler {
+impl Default for CompileConfig {
     fn default() -> Self {
-        Compiler::new()
+        CompileConfig::new()
     }
 }
 
@@ -234,8 +233,8 @@ pub struct Context {
 }
 
 impl Context {
-    fn from_config(config: Compiler) -> Self {
-        let Compiler {
+    fn from_config(config: CompileConfig) -> Self {
+        let CompileConfig {
             type_filter,
             type_attributes,
             includes: _,

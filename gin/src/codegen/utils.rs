@@ -42,10 +42,10 @@ pub fn common_prefix<'a, 'b>(
 
     loop {
         let (Some(left), Some(right)) = (left_raw[index..].find('.'), right_raw[index..].find('.'))
-            else {
-                // One has more '.' than the other.
-                break;
-            };
+        else {
+            // One has more '.' than the other.
+            break;
+        };
 
         // Offset the indices, as we only inspect the slice after the previous index.
         let left = index + left;
@@ -179,8 +179,7 @@ pub fn field_type(ctx: &Context, enclosed_type: &str, field: &FieldDescriptor) -
         Kind::Uint64 | Kind::Fixed64 => quote::quote!(u64),
         Kind::Bool => quote::quote!(bool),
         Kind::String => quote::quote!(String),
-        // TODO Handle bytes
-        Kind::Bytes => quote::quote!(Box<[u8]>),
+        Kind::Bytes => quote::quote!(Vec<u8>),
         Kind::Message(ty) => {
             if cardinality == Cardinality::Repeated && ty.is_map_entry() {
                 let key_ty = field_type(ctx, enclosed_type, &ty.map_entry_key_field());
@@ -242,12 +241,9 @@ pub(crate) fn is_unit_type(ts: &TokenStream) -> bool {
 
 const CARGO_TOML: &str = "Cargo.toml";
 
-pub fn manifests(
-    path: &std::path::Path,
-) -> impl Iterator<Item = std::path::PathBuf> + '_ {
-    path.ancestors()
-        .filter_map(|path| {
-            let manifest = path.join(CARGO_TOML);
-            manifest.exists().then_some(manifest)
-        })
+pub fn manifests(path: &std::path::Path) -> impl Iterator<Item = std::path::PathBuf> + '_ {
+    path.ancestors().filter_map(|path| {
+        let manifest = path.join(CARGO_TOML);
+        manifest.exists().then_some(manifest)
+    })
 }

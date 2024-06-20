@@ -86,8 +86,7 @@ pub(crate) fn generate_unwrapped(
 
         let variant_type = utils::field_type(ctx, qualified_name, &variant);
 
-        // TODO: Probably need a better way to detect this...
-        if variant_type.to_string() == "()" {
+        if utils::is_unit_type(&variant_type) {
             body.extend(quote::quote! {
                 #[gin(tag = #tag)]
                 #variant_name,

@@ -1,7 +1,7 @@
-use gin_tonic::Compiler;
+use gin_tonic::CompileConfig;
 
 pub fn main() -> Result<(), Box<dyn std::error::Error>> {
-    Compiler::new()
+    CompileConfig::new()
         .with_well_known_types()
         .add_proto_file("proto/example.proto")
         .compile_into("./src")?;
