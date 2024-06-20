@@ -335,9 +335,7 @@ fn wire_type_u32() {
     assert_eq!(value, wire_value);
 
     let mut buffer = [0u8; 3];
-    println!("{buffer:02x?}");
     let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    println!("{buffer:02x?}");
     assert_eq!(written, wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer[0..]).unwrap().0.into_parts();
@@ -541,7 +539,6 @@ mod test_messages {
         }
 
         fn size_hint(&self) -> usize {
-            println!("{}", self.whatever.size_hint(1));
             self.whatever.size_hint(1)
         }
 
@@ -563,12 +560,10 @@ mod test_messages {
             let mut written = 0;
             for (key, value) in self.map {
                 let wire_type = crate::wire::map::into_wire(key, value)?;
-                println!("serialize map entry => {wire_type:?}");
                 written += wire_type.serialize(1, writer)?;
             }
 
             let wire_type = self.nested.into_wire();
-            println!("serialize nested => {wire_type:?}");
             written += wire_type.serialize(2, writer)?;
 
             Ok(written)
@@ -585,8 +580,6 @@ mod test_messages {
                 .sum();
 
             let nested_size = crate::wire::nested::size_hint(2, &self.nested);
-
-            println!("{map_size} + {nested_size}");
 
             map_size + nested_size
         }
