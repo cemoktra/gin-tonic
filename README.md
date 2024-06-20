@@ -38,7 +38,9 @@ As you notice the Rust type here is `String`, but in your actual code you want t
 import "gin/proto/gin.proto";
 
 message Foo {
-  string my_uuid = 1 [(gin_tonic.v1.rust_type) = "uuid::Uuid"];
+  gin_tonic.v1.Uuid my_uuid = 1;
+  // alternatively you can specify the type as:
+  // string my_uuid = 1 [(gin_tonic.v1.rust_type) = "uuid::Uuid"];
 }
 ```
 
