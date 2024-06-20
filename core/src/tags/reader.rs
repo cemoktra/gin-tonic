@@ -27,6 +27,10 @@ impl<'a> Iterator for TagReader<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (tag, read) = Tag::deserialize(&self.buffer[self.position..])?;
+        tracing::debug!(
+            "next tag has {read} bytes and field number {}",
+            tag.field_number()
+        );
         self.position += read;
         Some(tag)
     }

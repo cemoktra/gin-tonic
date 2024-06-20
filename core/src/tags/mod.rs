@@ -35,9 +35,12 @@ impl<'a> Tag<'a> {
         let field_number = tag >> 3;
         let wire_type = tag & 0b111;
 
+        tracing::debug!("deserializing field number {field_number} with wire type {wire_type}",);
+
         let (wire_type, read) = match wire_type {
             0 => {
                 let (_data, read) = u64::decode_var(&buf[tag_read..])?;
+                tracing::debug!("var int with {read} bytes",);
                 (WireTypeView::VarInt(&buf[tag_read..tag_read + read]), read)
             }
             1 => (WireTypeView::FixedI64(&buf[tag_read..9]), 8),
@@ -45,6 +48,8 @@ impl<'a> Tag<'a> {
                 let (len, read) = u32::decode_var(&buf[tag_read..])?;
                 let len = len as usize;
                 let offset = tag_read + read;
+
+                tracing::debug!("length encoded data with {} bytes", read + len);
 
                 (
                     WireTypeView::LengthEncoded(&buf[offset..offset + len]),
