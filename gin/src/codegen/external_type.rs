@@ -30,7 +30,7 @@ pub fn well_known_types() -> Vec<ExternalType> {
         ExternalType::raw(".google.protobuf.Int64Value", "i64"),
         ExternalType::raw(
             ".google.protobuf.StringValue",
-            "::prost::alloc::string::String",
+            "::gin_tonic::alloc::string::String",
         ),
         ExternalType::raw(".google.protobuf.UInt32Value", "u32"),
         ExternalType::raw(".google.protobuf.UInt64Value", "u64"),

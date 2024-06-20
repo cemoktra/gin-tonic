@@ -202,7 +202,6 @@ dependencies = [
  "heck",
  "integer-encoding",
  "proc-macro2",
- "prost",
  "protox",
  "quote",
  "syn",
