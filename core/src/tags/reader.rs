@@ -27,6 +27,7 @@ impl<'a> Iterator for TagReader<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (tag, read) = Tag::deserialize(&self.buffer[self.position..])?;
+        println!("read: bytes = {read} - tag {tag:?}");
         self.position += read;
         Some(tag)
     }

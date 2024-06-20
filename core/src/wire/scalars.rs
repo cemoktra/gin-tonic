@@ -11,7 +11,7 @@ impl FromWire for f64 {
         match wire {
             WireTypeView::FixedI64(data) => {
                 let array: [u8; 8] = data.try_into().expect("I64 is always 8 bytes");
-                Ok(f64::from_be_bytes(array))
+                Ok(f64::from_le_bytes(array))
             }
             _ => Err(Error::UnexpectedWireType),
         }
@@ -20,7 +20,7 @@ impl FromWire for f64 {
 
 impl IntoWire for f64 {
     fn into_wire(self) -> WireType {
-        WireType::FixedI64(self.to_be_bytes())
+        WireType::FixedI64(self.to_le_bytes())
     }
 
     fn size_hint(&self, tag: u32) -> usize {
@@ -36,7 +36,7 @@ impl FromWire for f32 {
         match wire {
             WireTypeView::FixedI32(data) => {
                 let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
-                Ok(f32::from_be_bytes(array))
+                Ok(f32::from_le_bytes(array))
             }
             _ => Err(Error::UnexpectedWireType),
         }
@@ -45,7 +45,7 @@ impl FromWire for f32 {
 
 impl IntoWire for f32 {
     fn into_wire(self) -> WireType {
-        WireType::FixedI32(self.to_be_bytes())
+        WireType::FixedI32(self.to_le_bytes())
     }
 
     fn size_hint(&self, tag: u32) -> usize {
@@ -62,10 +62,6 @@ impl FromWire for u64 {
             WireTypeView::VarInt(data) => {
                 let (value, _) = u64::decode_var(data).ok_or(Error::InvalidVarInt)?;
                 Ok(value)
-            }
-            WireTypeView::FixedI64(data) => {
-                let array: [u8; 8] = data.try_into().expect("I64 is always 8 bytes");
-                Ok(u64::from_be_bytes(array))
             }
             _ => Err(Error::UnexpectedWireType),
         }
@@ -94,10 +90,6 @@ impl FromWire for i64 {
                 let (value, _) = i64::decode_var(data).ok_or(Error::InvalidVarInt)?;
                 Ok(value)
             }
-            WireTypeView::FixedI64(data) => {
-                let array: [u8; 8] = data.try_into().expect("I64 is always 8 bytes");
-                Ok(i64::from_be_bytes(array))
-            }
             _ => Err(Error::UnexpectedWireType),
         }
     }
@@ -125,10 +117,6 @@ impl FromWire for u32 {
                 let (value, _) = u32::decode_var(data).ok_or(Error::InvalidVarInt)?;
                 Ok(value)
             }
-            WireTypeView::FixedI32(data) => {
-                let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
-                Ok(u32::from_be_bytes(array))
-            }
             _ => Err(Error::UnexpectedWireType),
         }
     }
@@ -155,10 +143,6 @@ impl FromWire for i32 {
             WireTypeView::VarInt(data) => {
                 let (value, _) = i32::decode_var(data).ok_or(Error::InvalidVarInt)?;
                 Ok(value)
-            }
-            WireTypeView::FixedI32(data) => {
-                let array: [u8; 4] = data.try_into().expect("I32 is always 4 bytes");
-                Ok(i32::from_be_bytes(array))
             }
             _ => Err(Error::UnexpectedWireType),
         }
@@ -220,8 +204,6 @@ impl IntoWire for bool {
         let mut data = [0u8; 10];
         let size = if self { 1u32 } else { 0u32 }.encode_var(&mut data);
 
-        println!("encoded bool: {data:x?}");
-
         WireType::VarInt(data, size)
     }
 
@@ -241,7 +223,7 @@ where
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        tag.required_space() + self.size_hint().required_space()
+        tag.required_space() + self.size_hint()
     }
 }
 

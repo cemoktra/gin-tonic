@@ -1,5 +1,6 @@
-use crate::{FromWire, IntoWire, Tag, TagReader, WireTypeView};
+use crate::{FromWire, IntoWire, Tag, TagReader, WireType, WireTypeView};
 use integer_encoding::VarInt;
+use std::collections::HashMap;
 
 #[test]
 fn proto3_compliance() {
@@ -462,5 +463,178 @@ fn wire_type_string() {
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
     let wire_value = String::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_sgroup() {
+    let mut buffer = [0u8; 1];
+    let wire = WireType::SGroup;
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    match wire {
+        WireTypeView::SGroup => {}
+        _ => panic!("wrong wire type"),
+    }
+}
+
+#[test]
+fn wire_type_egroup() {
+    let mut buffer = [0u8; 1];
+    let wire = WireType::EGroup;
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    match wire {
+        WireTypeView::EGroup => {}
+        _ => panic!("wrong wire type"),
+    }
+}
+
+#[test]
+fn wire_type_ipv4() {
+    let value = std::net::Ipv4Addr::LOCALHOST;
+
+    let wire = value.clone().into_wire();
+    assert_eq!(wire.size_hint(1), 6);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = std::net::Ipv4Addr::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 6];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = std::net::Ipv4Addr::from_wire(wire).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+/// test messages with manual Message implementation which would usually be derived
+mod test_messages {
+    use crate::{Error, FromWire, IntoWire, WireTypeView};
+    use integer_encoding::VarInt;
+    use std::collections::HashMap;
+    use std::io::Write;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub(super) struct Nested {
+        pub(super) whatever: f64,
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub(super) struct Test {
+        pub(super) map: HashMap<u32, bool>,
+        pub(super) nested: Nested,
+    }
+
+    impl crate::Message for Nested {
+        fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
+            let wire_type = self.whatever.into_wire();
+            Ok(wire_type.serialize(1, writer)?)
+        }
+
+        fn size_hint(&self) -> usize {
+            println!("{}", self.whatever.size_hint(1));
+            self.whatever.size_hint(1)
+        }
+
+        fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
+            let wire = tag_map
+                .remove(&1)
+                .ok_or(Error::MissingField(1))?
+                .into_iter()
+                .next()
+                .ok_or(Error::MissingField(1))?;
+
+            let whatever = f64::from_wire(wire)?;
+            Ok(Self { whatever })
+        }
+    }
+
+    impl crate::Message for Test {
+        fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
+            let mut written = 0;
+            for (key, value) in self.map {
+                let wire_type = crate::wire::map::into_wire(key, value)?;
+                println!("serialize map entry => {wire_type:?}");
+                written += wire_type.serialize(1, writer)?;
+            }
+
+            let wire_type = self.nested.into_wire();
+            println!("serialize nested => {wire_type:?}");
+            written += wire_type.serialize(2, writer)?;
+
+            Ok(written)
+        }
+
+        fn size_hint(&self) -> usize {
+            let map_size: usize = self
+                .map
+                .iter()
+                .map(|(key, value)| {
+                    let message_size = key.size_hint(1) + value.size_hint(2);
+                    message_size + message_size.required_space() + 1.required_space()
+                })
+                .sum();
+
+            let nested_size = crate::wire::nested::size_hint(2, &self.nested);
+
+            println!("{map_size} + {nested_size}");
+
+            map_size + nested_size
+        }
+
+        fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
+            let mut map = HashMap::new();
+            if let Some(wire_types) = tag_map.remove(&1) {
+                for wire_type in wire_types {
+                    let (key, value) = crate::wire::map::from_wire(wire_type)?;
+                    map.insert(key, value);
+                }
+            }
+
+            let wire_type = tag_map
+                .remove(&2)
+                .ok_or(Error::MissingField(2))?
+                .into_iter()
+                .nth(0)
+                .ok_or(Error::MissingField(2))?;
+            let nested = Nested::from_wire(wire_type)?;
+
+            Ok(Self { map, nested })
+        }
+    }
+}
+
+#[test]
+fn wire_type_message() {
+    let mut map = HashMap::new();
+    map.insert(0, false);
+    map.insert(1, true);
+    let value = test_messages::Test {
+        map,
+        nested: test_messages::Nested { whatever: 3.14 },
+    };
+
+    let wire = value.clone().into_wire();
+    assert_eq!(wire.size_hint(1), 25);
+    assert_eq!(IntoWire::size_hint(&value, 1), wire.size_hint(1));
+    let wire_value = test_messages::Test::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+
+    let mut buffer = [0u8; 25];
+    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
+    assert_eq!(written, wire.size_hint(1));
+
+    let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
+    assert_eq!(tag, 1);
+    let wire_value = test_messages::Test::from_wire(wire).unwrap();
     assert_eq!(value, wire_value);
 }
