@@ -244,7 +244,6 @@ impl Context {
         } = config;
 
         let mut external_types = external_types;
-        external_types.extend(external_type::gin_types());
         if well_known_types {
             external_types.extend(external_type::well_known_types());
         }
