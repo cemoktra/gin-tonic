@@ -9,8 +9,8 @@ pub(crate) mod service;
 mod test;
 pub(crate) mod utils;
 
-use std::path::PathBuf;
 use proc_macro2::TokenStream;
+use std::path::PathBuf;
 
 use crate::codegen::case::{convert, Case};
 use crate::codegen::module::Module;
@@ -37,8 +37,8 @@ impl Compiler {
     }
 
     pub fn with_filter<F>(filter: F) -> Self
-        where
-            F: for<'a> Fn(&'a str) -> bool + 'static,
+    where
+        F: for<'a> Fn(&'a str) -> bool + 'static,
     {
         Self {
             type_filter: Box::new(filter),
@@ -175,11 +175,7 @@ impl Compiler {
 
         let ctx = Context::from_config(self);
 
-        generate(
-            &compiler.descriptor_pool(),
-            ctx,
-            &target,
-        )?;
+        generate(&compiler.descriptor_pool(), ctx, &target)?;
 
         Ok(())
     }
@@ -249,6 +245,7 @@ impl Context {
         } = config;
 
         let mut external_types = external_types;
+        external_types.extend(external_type::gin_types());
         if well_known_types {
             external_types.extend(external_type::well_known_types());
         }
@@ -289,8 +286,7 @@ impl Context {
             .iter()
             .find(|item| item.proto_path == identifier)
         {
-            let rust_type = path.rust_type.as_deref().unwrap_or(&*path.rust_path);
-            return Some(rust_type.to_string());
+            return Some(path.rust_path.clone());
         }
 
         for (index, _) in identifier.rmatch_indices('.') {
@@ -311,7 +307,7 @@ impl Context {
                 .next_back()
                 .map(|item| convert(item, Case::Pascal).to_string());
 
-            let type_path = path.rust_type.as_deref().unwrap_or(&*path.rust_path);
+            let type_path = path.rust_path.clone();
 
             let segments = type_path
                 .split("::")

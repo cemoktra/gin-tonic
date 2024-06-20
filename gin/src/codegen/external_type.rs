@@ -3,7 +3,6 @@
 pub struct ExternalType {
     pub proto_path: String,
     pub rust_path: String,
-    pub rust_type: Option<String>,
 }
 
 impl ExternalType {
@@ -11,20 +10,6 @@ impl ExternalType {
         Self {
             proto_path: proto_path.into(),
             rust_path: rust_path.into(),
-            rust_type: None,
-        }
-    }
-
-    pub fn new(proto_rust_package_name: &str, proto_version: &str, proto_type: &str) -> Self {
-        let proto = format!(".{proto_rust_package_name}.{proto_version}.{proto_type}");
-        let rust = format!("{proto_rust_package_name}::proto::{proto_rust_package_name}_{proto_version}::{proto_type}");
-        Self::raw(proto, rust)
-    }
-
-    pub fn rust_type(self, rust_type: impl Into<String>) -> Self {
-        Self {
-            rust_type: Some(rust_type.into()),
-            ..self
         }
     }
 }
@@ -49,5 +34,13 @@ pub fn well_known_types() -> Vec<ExternalType> {
         ),
         ExternalType::raw(".google.protobuf.UInt32Value", "u32"),
         ExternalType::raw(".google.protobuf.UInt64Value", "u64"),
+    ]
+}
+
+pub fn gin_types() -> Vec<ExternalType> {
+    vec![
+        ExternalType::raw(".gin_tonic.v1.IpV4", "std::net::Ipv4Addr"),
+        #[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
+        ExternalType::raw(".gin_tonic.v1.Uuid", "uuid::Uuid"),
     ]
 }

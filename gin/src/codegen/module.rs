@@ -37,13 +37,6 @@ impl Module {
         self.content.is_empty()
     }
 
-    pub fn all_segments(&self) -> Vec<String> {
-        let mut segments: Vec<_> = self.path.clone();
-
-        segments.push(self.name.clone());
-        segments
-    }
-
     pub fn all_idents(&self) -> Vec<Ident> {
         let mut segments: Vec<_> = self
             .path
@@ -53,19 +46,6 @@ impl Module {
 
         segments.push(quote::format_ident!("{}", self.name));
         segments
-    }
-
-    pub fn full_path(&self) -> TokenStream {
-        let idents = self.all_idents();
-        quote::quote! {
-            #(#idents)::*
-        }
-    }
-
-    pub fn prepend(&mut self, token_stream: impl ToTokens) {
-        let mut token_stream = token_stream.to_token_stream();
-        std::mem::swap(&mut self.content, &mut token_stream);
-        self.content.extend(token_stream);
     }
 
     pub fn write(&self, target: impl Into<PathBuf>) -> Result<(), CompilerError> {
@@ -146,10 +126,6 @@ impl Module {
         }
 
         Ok(module_path)
-    }
-
-    pub fn create_child(&mut self, name: &str) -> &mut Module {
-        self.create_child_from_path(std::iter::once(name))
     }
 
     pub fn create_child_from_path(

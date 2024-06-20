@@ -12,13 +12,17 @@ message EchoRequest {
   string echo = 1;
   // use string or bytes depending on feature uuid_string/uuid_bytes
   // the string representation takes 34 bytes while the bytes representation has a max of 22 bytes
-  bytes request_id = 2 [(gin_tonic.v1.rust_type) = "uuid::Uuid"];
+  gin_tonic.v1.Uuid request_id = 2;
+  // alternatively you can specify the type as:
+  // bytes request_id = 2 [(gin_tonic.v1.rust_type) = "uuid::Uuid"];
 }
 
 message EchoResponse {
   message Echo {
     string echo = 1;
-    uint32 ip = 2 [(gin_tonic.v1.rust_type) = "std::net::Ipv4Addr"];
+    gin_tonic.v1.IpV4 ip = 2;
+    // alternatively you can specify the type as:
+    // uint32 ip = 2 [(gin_tonic.v1.rust_type) = "std::net::Ipv4Addr"];
   }
   message Error {
     uint32 code = 1;
