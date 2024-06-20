@@ -20,3 +20,5 @@ jobs:
         run: cargo test --features uuid_string
       - name: Run tests [uuid_bytes]
         run: cargo test --features uuid_bytes
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets

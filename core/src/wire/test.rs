@@ -408,7 +408,7 @@ fn wire_type_i64() {
 
 #[test]
 fn wire_type_f32() {
-    let value = 3.14f32;
+    let value = std::f32::consts::PI;
 
     let wire = value.into_wire();
     assert_eq!(wire.size_hint(1), 5);
@@ -428,7 +428,7 @@ fn wire_type_f32() {
 
 #[test]
 fn wire_type_f64() {
-    let value = 3.14f64;
+    let value = std::f64::consts::PI;
 
     let wire = value.into_wire();
     assert_eq!(wire.size_hint(1), 9);
@@ -500,7 +500,7 @@ fn wire_type_egroup() {
 fn wire_type_ipv4() {
     let value = std::net::Ipv4Addr::LOCALHOST;
 
-    let wire = value.clone().into_wire();
+    let wire = value.into_wire();
     assert_eq!(wire.size_hint(1), 6);
     assert_eq!(value.size_hint(1), wire.size_hint(1));
     let wire_value = std::net::Ipv4Addr::from_wire(wire.as_view()).unwrap();
@@ -620,7 +620,9 @@ fn wire_type_message() {
     map.insert(1, true);
     let value = test_messages::Test {
         map,
-        nested: test_messages::Nested { whatever: 3.14 },
+        nested: test_messages::Nested {
+            whatever: std::f64::consts::PI,
+        },
     };
 
     let wire = value.clone().into_wire();
