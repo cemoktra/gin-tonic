@@ -316,7 +316,7 @@ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
 
 [[package]]
 name = "gin-tonic"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bytes",
  "gin-tonic-core",
@@ -335,9 +335,9 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e1c0bfa612e991195669a8e7a52b0a8bfe270ccc0981853801b238ac2aa11c0"
+checksum = "d85e793856def863495de22de8ac877a543a7c865cbda7fc1ff6065cf11bcfdc"
 dependencies = [
  "integer-encoding",
  "thiserror",
@@ -346,9 +346,9 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-derive"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b129bd4cee2a11463a72bae1791ea2410d04a90b0ec77e82243e837a7783861"
+checksum = "f5420d1967cd003ca41f56e260144e17b62a9f42afec7bffcbb88c89b92f4123"
 dependencies = [
  "darling",
  "proc-macro2",
