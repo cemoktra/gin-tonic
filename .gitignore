@@ -1,4 +1,6 @@
 /target
 **/target
+/examples/client/Cargo.lock
+/examples/server/Cargo.lock
 /.idea
 /gin/test_codegen
