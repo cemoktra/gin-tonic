@@ -1,4 +1,4 @@
-use crate::{TagReader, WireTypeView};
+use crate::{FromWire, IntoWire, TagReader, WireTypeView};
 use integer_encoding::VarInt;
 
 #[test]
@@ -300,4 +300,81 @@ fn proto3_compliance() {
     }
 
     assert!(reader.next().is_none());
+}
+
+#[test]
+fn wire_type_bool() {
+    let value = true;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 2);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = bool::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_u32() {
+    let value = 1234u32;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 3);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = u32::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_i32() {
+    let value = -1234i32;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 3);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = i32::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_u64() {
+    let value = 123456u64;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 4);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = u64::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_i64() {
+    let value = -123456i64;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 4);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = i64::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_f32() {
+    let value = 3.14f32;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 5);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = f32::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
+}
+
+#[test]
+fn wire_type_f64() {
+    let value = 3.14f64;
+
+    let wire = value.into_wire();
+    assert_eq!(wire.size_hint(1), 9);
+    assert_eq!(value.size_hint(1), wire.size_hint(1));
+    let wire_value = f64::from_wire(wire.as_view()).unwrap();
+    assert_eq!(value, wire_value);
 }

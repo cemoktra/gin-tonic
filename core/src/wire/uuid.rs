@@ -42,6 +42,7 @@ mod uuid_string {
             let new_uuid = Uuid::new_v4();
             let wire = new_uuid.into_wire();
             assert_eq!(34, wire.size_hint(1));
+            assert_eq!(new_uuid.size_hint(1), wire.size_hint(1));
             let wire_uuid = Uuid::from_wire(wire.as_view()).unwrap();
             assert_eq!(new_uuid, wire_uuid);
         }
@@ -100,6 +101,7 @@ mod uuid_bytes {
             let new_uuid = Uuid::new_v4();
             let wire = new_uuid.into_wire();
             assert!(wire.size_hint(1) <= 22);
+            assert_eq!(new_uuid.size_hint(1), wire.size_hint(1));
             let wire_uuid = Uuid::from_wire(wire.as_view()).unwrap();
             assert_eq!(new_uuid, wire_uuid);
         }

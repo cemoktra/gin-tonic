@@ -89,7 +89,7 @@ impl WireType {
                 let data_len = data.len();
                 tag.required_space() + data_len.required_space() + data_len
             }
-            WireType::FixedI32(_) => tag.required_space() + 8,
+            WireType::FixedI32(_) => tag.required_space() + 4,
         }
     }
 
