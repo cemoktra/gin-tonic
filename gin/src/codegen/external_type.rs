@@ -36,11 +36,3 @@ pub fn well_known_types() -> Vec<ExternalType> {
         ExternalType::raw(".google.protobuf.UInt64Value", "u64"),
     ]
 }
-
-pub fn gin_types() -> Vec<ExternalType> {
-    vec![
-        ExternalType::raw(".gin_tonic.v1.IpV4", "std::net::Ipv4Addr"),
-        #[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
-        ExternalType::raw(".gin_tonic.v1.Uuid", "uuid::Uuid"),
-    ]
-}
