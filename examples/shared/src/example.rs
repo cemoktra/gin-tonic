@@ -261,7 +261,7 @@ pub mod echo_response;
 pub struct EchoRequest {
     #[gin(tag = 1u32)]
     pub echo: String,
-    #[gin(tag = 2u32, kind = "message")]
+    #[gin(tag = 2u32)]
     pub request_id: uuid::Uuid,
 }
 #[derive(Clone, Debug, :: gin_tonic :: Message)]

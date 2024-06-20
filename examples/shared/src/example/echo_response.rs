@@ -5,7 +5,7 @@ use ::gin_tonic::{Enumeration, Message, OneOf};
 pub struct Echo {
     #[gin(tag = 1u32)]
     pub echo: String,
-    #[gin(tag = 2u32, kind = "message")]
+    #[gin(tag = 2u32)]
     pub ip: std::net::Ipv4Addr,
 }
 #[derive(Clone, Debug, Message)]
