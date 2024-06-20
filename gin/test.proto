@@ -32,8 +32,11 @@ enum Logging {
 }
 
 message Result {
+  message Error {
+    int32 code = 1;
+  }
   oneof result {
     int32 success = 1;
-    int32 error = 2;
+    Error error = 2;
   }
 }
