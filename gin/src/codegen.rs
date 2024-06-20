@@ -39,6 +39,7 @@ impl CompileConfig {
     where
         F: for<'a> Fn(&'a str) -> bool + 'static,
     {
+        tracing::info!("adding filter function");
         Self {
             type_filter: Box::new(filter),
             type_attributes: vec![],
@@ -63,7 +64,9 @@ impl CompileConfig {
     ) -> Self {
         let pattern = pattern.into();
         if !pattern.is_empty() {
-            self.type_attributes.push((pattern, attribute.into()));
+            let attribute = attribute.into();
+            tracing::info!("adding attribute '{attribute}' with pattern '{pattern}'",);
+            self.type_attributes.push((pattern, attribute));
         }
         self
     }
@@ -82,12 +85,22 @@ impl CompileConfig {
 
     /// import an external type
     pub fn import<I: IntoIterator<Item = ExternalType>>(mut self, paths: I) -> Self {
-        self.external_types.extend(paths);
+        for path in paths.into_iter() {
+            tracing::info!(
+                "importing external type: {} => {}",
+                path.proto_path,
+                path.rust_path
+            );
+            self.external_types.push(path);
+        }
+
         self
     }
 
     pub fn include(mut self, path: impl Into<PathBuf>) -> Self {
-        self.includes.push(path.into());
+        let path = path.into();
+        tracing::info!("adding include '{}'", path.display());
+        self.includes.push(path);
         self
     }
 
@@ -97,43 +110,50 @@ impl CompileConfig {
         self
     }
 
-    /// add `*.proto` files
+    /// add `*.proto` file
     pub fn add_proto_file(mut self, path: impl Into<PathBuf>) -> Self {
-        self.proto_files.push(path.into());
+        let path = path.into();
+        tracing::info!("adding proto file '{}'", path.display());
+        self.proto_files.push(path);
         self
     }
 
     /// add `*.proto` files
     pub fn add_proto_files(mut self, paths: impl IntoIterator<Item = impl Into<PathBuf>>) -> Self {
-        let paths = paths.into_iter().map(Into::into);
-        self.proto_files.extend(paths);
+        for path in paths.into_iter() {
+            self = self.add_proto_file(path)
+        }
         self
     }
 
     /// add external types for well known types
     pub fn with_well_known_types(mut self) -> Self {
+        tracing::info!("with well known types");
         self.well_known_types = true;
         self
     }
 
     /// do not add external types for well known types
     pub fn without_well_known_types(mut self) -> Self {
+        tracing::info!("without well known types");
         self.well_known_types = false;
         self
     }
 
     pub fn compile(self) -> Result<(), CompilerError> {
-        // Unable to locate output directory.
-        // @TODO jeremy.barrow - 19 June 2024: Add something about unable to find output directory to the logs or something.
-        let out_dir = std::env::var("OUT_DIR")?;
+        let out_dir = std::env::var("OUT_DIR").inspect_err(|err| {
+            tracing::error!("failed to read OUT_DIR environment variable: {err}")
+        })?;
         let out_dir = PathBuf::from(out_dir);
         self.compile_into(out_dir)
     }
 
     /// Generates all the files into the target directory.
     pub fn compile_into(mut self, target: impl Into<PathBuf>) -> Result<(), CompilerError> {
-        let proto_files = std::mem::take(&mut self.proto_files);
+        let target = target.into();
+        tracing::info!("compiling to target '{}'", target.display());
 
+        let proto_files = std::mem::take(&mut self.proto_files);
         let mut include_dirs = std::mem::take(&mut self.includes);
 
         for proto_file in &proto_files {
@@ -148,8 +168,8 @@ impl CompileConfig {
             );
         }
 
-        let target = target.into();
-        std::fs::create_dir_all(&target)?;
+        std::fs::create_dir_all(&target)
+            .inspect_err(|err| tracing::error!("failed to create target directory: {err}"))?;
 
         match std::env::current_dir() {
             Ok(directory) => {
@@ -159,9 +179,8 @@ impl CompileConfig {
                     }
                 }
             }
-            Err(_err) => {
-                // @TODO jeremy.barrow - 19 June 2024: Log something out?
-                // Continue?
+            Err(err) => {
+                tracing::warn!("Failed to retrieve current directory: {err}");
             }
         }
 
@@ -170,7 +189,8 @@ impl CompileConfig {
         let compiler = compiler
             .include_source_info(true)
             .include_imports(true)
-            .open_files(proto_files)?;
+            .open_files(proto_files)
+            .inspect_err(|err| tracing::error!("compiler failed open files: {err}"))?;
 
         let ctx = Context::from_config(self);
 

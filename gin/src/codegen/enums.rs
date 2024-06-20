@@ -18,6 +18,9 @@ pub(crate) fn generate(
     if !ctx.filter(qualified_name) {
         return;
     }
+
+    tracing::info!("generating enumeration: {qualified_name}");
+
     let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);

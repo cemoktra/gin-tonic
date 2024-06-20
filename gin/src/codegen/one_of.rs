@@ -22,6 +22,8 @@ pub(crate) fn generate(
         return;
     }
 
+    tracing::info!("generating wrapped one of: {qualified_name}");
+
     let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);
@@ -67,8 +69,9 @@ pub(crate) fn generate_unwrapped(
     ty: OneofDescriptor,
 ) {
     let parent_message = ty.parent_message();
-
     let qualified_name = parent_message.full_name();
+
+    tracing::info!("generating unwrapped one of: {qualified_name}");
 
     let attributes = ctx.attributes(qualified_name);
 

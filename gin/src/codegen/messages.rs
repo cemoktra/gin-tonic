@@ -28,6 +28,8 @@ pub(crate) fn generate(
         return;
     }
 
+    tracing::info!("generating message: {qualified_name}");
+
     let attributes = ctx.attributes(qualified_name);
 
     let module = module::create_child(parent, module_path);

@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::codegen::{case, module, CompilerError};
@@ -13,7 +13,6 @@ pub struct Module {
     pub children: Vec<Module>,
 }
 
-#[allow(unused)]
 impl Module {
     pub fn new(name: impl Into<String>) -> Self {
         Self::new_with_path(name, Vec::<String>::new())
@@ -35,17 +34,6 @@ impl Module {
 
     pub fn is_empty(&self) -> bool {
         self.content.is_empty()
-    }
-
-    pub fn all_idents(&self) -> Vec<Ident> {
-        let mut segments: Vec<_> = self
-            .path
-            .iter()
-            .map(|segment| quote::format_ident!("{}", segment))
-            .collect();
-
-        segments.push(quote::format_ident!("{}", self.name));
-        segments
     }
 
     pub fn write(&self, target: impl Into<PathBuf>) -> Result<(), CompilerError> {
@@ -73,10 +61,15 @@ impl Module {
     fn write_inner(&self, target: impl AsRef<Path>) -> Result<PathBuf, CompilerError> {
         let target = target.as_ref();
 
-        std::fs::create_dir_all(target)?;
+        std::fs::create_dir_all(target).inspect_err(|err| {
+            tracing::error!("Failed to create directory '{}': {err}", target.display())
+        })?;
 
         // We need to write the file, so the developer can figure out what was generated incorrectly.
-        let file: Result<syn::File, _> = syn::parse2(self.content.clone()).map_err(Into::into);
+        let file: Result<syn::File, _> = syn::parse2(self.content.clone()).map_err(|err| {
+            tracing::error!("Failed to parse content: {err}");
+            err.into()
+        });
 
         let (content, parse_err): (TokenStream, Option<CompilerError>) = match file {
             Ok(mut file) => {
