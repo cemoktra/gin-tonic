@@ -31,3 +31,8 @@ cast_possible_truncation = "warn"
 gin-tonic = { path = "gin" }
 gin-tonic-core = { path = "core" }
 gin-tonic-derive = { path = "derive" }
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+strip = "none"
