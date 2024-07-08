@@ -1,8 +1,8 @@
-#[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
+#[cfg(feature = "uuid_bytes")]
 use gin_tonic::Message;
 
 /// this would normally be generated
-#[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
+#[cfg(feature = "uuid_bytes")]
 #[derive(Clone, Debug, Message)]
 pub struct GinTonic {
     #[gin(tag = 1u32)]
@@ -16,7 +16,7 @@ fn main() {
 }
 
 #[divan::bench]
-#[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
+#[cfg(feature = "uuid_bytes")]
 fn ser(bencher: divan::Bencher) {
     use gin_tonic::gin_tonic_core::Message;
 
@@ -33,7 +33,7 @@ fn ser(bencher: divan::Bencher) {
 }
 
 #[divan::bench]
-#[cfg(any(feature = "uuid_bytes", feature = "uuid_string"))]
+#[cfg(feature = "uuid_bytes")]
 fn de(bencher: divan::Bencher) {
     use gin_tonic::gin_tonic_core::Message;
 
