@@ -28,5 +28,18 @@ tonic = { workspace = true }
 tonic-build = { workspace = true }
 tracing = { workspace = true }
 
+[dev-dependencies]
+divan = "0.1.14"
+prost = "0.12.6"
+uuid = { workspace = true }
+
 [lints]
 workspace = true
+
+[[bench]]
+name = "gin_tonic"
+harness = false
+
+[[bench]]
+name = "prost"
+harness = false
