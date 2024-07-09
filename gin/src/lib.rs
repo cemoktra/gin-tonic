@@ -17,3 +17,6 @@ pub mod export {
 // Re-export the alloc crate for use within derived code.
 #[doc(hidden)]
 pub extern crate alloc;
+
+#[cfg(test)]
+mod test;

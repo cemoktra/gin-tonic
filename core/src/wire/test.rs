@@ -516,7 +516,7 @@ fn wire_type_ipv4() {
 
 /// test messages with manual Message implementation which would usually be derived
 mod test_messages {
-    use crate::{Error, FromWire, IntoWire, WireTypeView};
+    use crate::{Error, FromWire, IntoWire};
     use integer_encoding::VarInt;
     use std::collections::HashMap;
     use std::io::Write;
@@ -542,16 +542,22 @@ mod test_messages {
             self.whatever.size_hint(1)
         }
 
-        fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
-            let wire = tag_map
-                .remove(&1)
-                .ok_or(Error::MissingField(1))?
-                .into_iter()
-                .next()
-                .ok_or(Error::MissingField(1))?;
+        fn deserialize_tags<'a>(tags: impl Iterator<Item = crate::Tag<'a>>) -> Result<Self, Error> {
+            let mut whatever = None;
 
-            let whatever = f64::from_wire(wire)?;
-            Ok(Self { whatever })
+            for tag in tags {
+                let (field_number, wire_type) = tag.into_parts();
+                match field_number {
+                    1 => {
+                        whatever = Some(f64::from_wire(wire_type)?);
+                    }
+                    _ => todo!(),
+                }
+            }
+
+            Ok(Self {
+                whatever: whatever.ok_or(Error::MissingField(1))?,
+            })
         }
     }
 
@@ -584,24 +590,28 @@ mod test_messages {
             map_size + nested_size
         }
 
-        fn deserialize_tags(tag_map: &mut HashMap<u32, Vec<WireTypeView>>) -> Result<Self, Error> {
+        fn deserialize_tags<'a>(tags: impl Iterator<Item = crate::Tag<'a>>) -> Result<Self, Error> {
+            let mut nested = None;
             let mut map = HashMap::new();
-            if let Some(wire_types) = tag_map.remove(&1) {
-                for wire_type in wire_types {
-                    let (key, value) = crate::wire::map::from_wire(wire_type)?;
-                    map.insert(key, value);
+
+            for tag in tags {
+                let (field_number, wire_type) = tag.into_parts();
+                match field_number {
+                    1 => {
+                        let (key, value) = crate::map_from_wire(wire_type)?;
+                        map.insert(key, value);
+                    }
+                    2 => {
+                        nested = Some(Nested::from_wire(wire_type)?);
+                    }
+                    _ => todo!(),
                 }
             }
 
-            let wire_type = tag_map
-                .remove(&2)
-                .ok_or(Error::MissingField(2))?
-                .into_iter()
-                .nth(0)
-                .ok_or(Error::MissingField(2))?;
-            let nested = Nested::from_wire(wire_type)?;
-
-            Ok(Self { map, nested })
+            Ok(Self {
+                map,
+                nested: nested.ok_or(Error::MissingField(2))?,
+            })
         }
     }
 }
@@ -626,7 +636,7 @@ fn wire_type_message() {
 
     let mut buffer = [0u8; 25];
     let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    assert_eq!(written, 25);
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);

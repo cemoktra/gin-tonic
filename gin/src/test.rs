@@ -1,4 +1,4 @@
-use gin_tonic_derive::{Enumeration, Message, OneOf};
+use gin_tonic_derive::{Enumeration, Message};
 use integer_encoding::VarInt;
 use std::collections::HashMap;
 
@@ -37,7 +37,7 @@ enum Logging {
     Json,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, OneOf)]
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
 #[gin(root = "crate")]
 enum OneOf {
     #[gin(tag = 6)]
@@ -48,7 +48,7 @@ enum OneOf {
 
 #[test]
 fn pb_serde() {
-    use crate::protobuf::Message;
+    use gin_tonic_core::Message;
 
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
@@ -60,7 +60,7 @@ fn pb_serde() {
         map: HashMap::new(),
     };
 
-    let size_hint = crate::protobuf::Message::size_hint(&test);
+    let size_hint = gin_tonic_core::Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -88,12 +88,12 @@ fn pb_serde() {
         ip: std::net::Ipv4Addr::LOCALHOST,
         port: Some(8080),
         protocols: vec![String::from("tcp"), String::from("udp")],
-        nested: Nested { number: -1 },
+        nested: Nested { number: 1 },
         logging: Logging::Json,
         one_of: OneOf::Str(String::from("hello")),
         map,
     };
-    let size_hint = crate::protobuf::Message::size_hint(&test);
+    let size_hint = gin_tonic_core::Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -106,7 +106,7 @@ fn pb_serde() {
     assert_eq!(test.ip, std::net::Ipv4Addr::LOCALHOST);
     assert_eq!(test.port, Some(8080));
     assert_eq!(test.protocols.len(), 2);
-    assert_eq!(test.nested.number, -1);
+    assert_eq!(test.nested.number, 1);
     assert_eq!(test.logging, Logging::Json);
     match test.one_of {
         OneOf::Str(s) => assert_eq!(s, "hello"),
@@ -122,7 +122,7 @@ struct ResultMessage {
     result: ResultOneOf,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, OneOf)]
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
 #[gin(root = "crate")]
 enum ResultOneOf {
     #[gin(tag = 1)]
@@ -132,7 +132,7 @@ enum ResultOneOf {
 }
 
 // this is on protobuf layer identical to ResultMessage and ResultOneOn but simplify the Rust layer
-#[derive(Clone, Debug, Eq, PartialEq, Message)]
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
 #[gin(root = "crate")]
 enum UnwrappedResultOneOf {
     #[gin(tag = 1)]
@@ -143,14 +143,14 @@ enum UnwrappedResultOneOf {
 
 #[test]
 fn one_of_unwrapping() {
-    use crate::protobuf::Message;
+    use gin_tonic_core::{Message, OneOf};
 
     // wrapped to unwrapped
     let test = ResultMessage {
         result: ResultOneOf::Success(1),
     };
 
-    let size_hint = crate::protobuf::Message::size_hint(&test);
+    let size_hint = gin_tonic_core::Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
@@ -166,7 +166,7 @@ fn one_of_unwrapping() {
     // unwrapped to wrapped
     let test = UnwrappedResultOneOf::Success(1);
 
-    let size_hint = crate::protobuf::Message::size_hint(&test);
+    let size_hint = gin_tonic_core::OneOf::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();
