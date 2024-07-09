@@ -11,15 +11,15 @@ gin-tonic-derive = "0.4.7"
 heck = "0.5.0"
 integer-encoding = "4.0.0"
 proc-macro2 = "1.0.85"
-prost = "0.12.6"
-protox = "0.6.1"
+prost = "0.13.1"
+protox = "0.7.0"
 quote = "1.0.36"
 syn = { version = "2.0.66", features = ["full"] }
 thiserror = "1.0.61"
-tonic = { version = "0.11.0", default-features = false, features = ["codegen"] }
-tonic-build = "0.11.0"
+tonic = { version = "0.12.0", default-features = false, features = ["codegen"] }
+tonic-build = "0.12.0"
 tracing = "0.1.40"
-uuid = { version = "1.8.0", features = ["v4"] }
+uuid = { version = "1.10.0", features = ["v4"] }
 
 [workspace.lints.rust]
 

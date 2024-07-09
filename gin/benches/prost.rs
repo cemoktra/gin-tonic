@@ -1,6 +1,9 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use prost::Message;
+
+criterion_main!(benches);
 
 /// this would normally be generated
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -81,12 +84,9 @@ impl From<RustNested> for ProstNested {
     }
 }
 
-fn main() {
-    divan::main();
-}
+criterion_group!(benches, de, ser);
 
-#[divan::bench(min_time = std::time::Duration::from_secs(1))]
-fn ser(bencher: divan::Bencher) {
+fn ser(c: &mut Criterion) {
     let mut counts = HashMap::new();
     counts.insert("a".into(), 1);
     counts.insert("b".into(), 2);
@@ -94,7 +94,7 @@ fn ser(bencher: divan::Bencher) {
     counts.insert("d".into(), 4);
     counts.insert("e".into(), 5);
 
-    let data = divan::black_box(Rust {
+    let data = black_box(Rust {
         uuid: uuid::Uuid::new_v4(),
         ip: vec![
             std::net::Ipv4Addr::LOCALHOST,
@@ -115,17 +115,19 @@ fn ser(bencher: divan::Bencher) {
     let prost_data: Prost = data.clone().into();
 
     let size = prost_data.encoded_len();
-    let mut buffer = divan::black_box(Vec::with_capacity(size));
-    let buffer_ref = divan::black_box(&mut buffer);
+    let mut buffer = black_box(Vec::with_capacity(size));
+    let buffer_ref = black_box(&mut buffer);
 
-    bencher.bench_local(move || {
-        let prost_data: Prost = data.clone().into();
-        prost_data.encode(buffer_ref)
+    c.bench_function("prost_ser", |b| {
+        let data = data.clone();
+        b.iter(|| {
+            let prost_data: Prost = data.clone().into();
+            prost_data.encode(buffer_ref)
+        })
     });
 }
 
-#[divan::bench(min_time = std::time::Duration::from_secs(1))]
-fn de(bencher: divan::Bencher) {
+fn de(c: &mut Criterion) {
     let mut counts = HashMap::new();
     counts.insert("a".into(), 1);
     counts.insert("b".into(), 2);
@@ -133,7 +135,7 @@ fn de(bencher: divan::Bencher) {
     counts.insert("d".into(), 4);
     counts.insert("e".into(), 5);
 
-    let data = divan::black_box(Rust {
+    let data = black_box(Rust {
         uuid: uuid::Uuid::new_v4(),
         ip: vec![
             std::net::Ipv4Addr::LOCALHOST,
@@ -155,12 +157,14 @@ fn de(bencher: divan::Bencher) {
 
     let size = prost_data.encoded_len();
 
-    let mut buffer = divan::black_box(bytes::BytesMut::with_capacity(size));
+    let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
     prost_data.encode(&mut buffer).expect("benchmark works");
-    let buffer = divan::black_box(buffer.freeze());
+    let buffer = black_box(buffer.freeze());
 
-    bencher.bench_local(move || {
-        let prost_data = Prost::decode(&*buffer).expect("benchmark works");
-        let _data: Rust = prost_data.into();
+    c.bench_function("prost_de", |b| {
+        b.iter(|| {
+            let prost_data = Prost::decode(&*buffer).expect("benchmark works");
+            let _data: Rust = prost_data.into();
+        });
     });
 }

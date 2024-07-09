@@ -1,13 +1,15 @@
-fn main() {
-    divan::main();
-}
+use criterion::criterion_main;
+
+criterion_main!(crate::gin_bench::benches);
 
 #[cfg(feature = "uuid_bytes")]
 mod gin_bench {
-
     use std::{collections::HashMap, path::PathBuf};
 
+    use criterion::{black_box, criterion_group, Criterion};
     use gin_tonic::Message;
+
+    criterion_group!(benches, de, ser);
 
     /// this would normally be generated
     #[derive(Clone, Debug, Message)]
@@ -28,8 +30,7 @@ mod gin_bench {
         pub counts: HashMap<PathBuf, u64>,
     }
 
-    #[divan::bench(min_time = std::time::Duration::from_secs(1))]
-    fn ser(bencher: divan::Bencher) {
+    fn ser(c: &mut Criterion) {
         use gin_tonic::gin_tonic_core::Message;
 
         let mut counts = HashMap::new();
@@ -39,7 +40,7 @@ mod gin_bench {
         counts.insert("d".into(), 4);
         counts.insert("e".into(), 5);
 
-        let data = divan::black_box(GinTonic {
+        let data = black_box(GinTonic {
             uuid: uuid::Uuid::new_v4(),
             ip: vec![
                 std::net::Ipv4Addr::LOCALHOST,
@@ -58,14 +59,16 @@ mod gin_bench {
         });
 
         let size = data.size_hint();
-        let mut buffer = divan::black_box(bytes::BytesMut::with_capacity(size));
-        let buffer_ref = divan::black_box(&mut buffer);
+        let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
+        let buffer_ref = black_box(&mut buffer);
 
-        bencher.bench_local(move || data.clone().serialize(buffer_ref));
+        c.bench_function("gin_ser", |b| {
+            let data = data.clone();
+            b.iter(|| data.clone().serialize(buffer_ref))
+        });
     }
 
-    #[divan::bench(min_time = std::time::Duration::from_secs(1))]
-    fn de(bencher: divan::Bencher) {
+    fn de(c: &mut Criterion) {
         use gin_tonic::gin_tonic_core::Message;
 
         let mut counts = HashMap::new();
@@ -75,7 +78,7 @@ mod gin_bench {
         counts.insert("d".into(), 4);
         counts.insert("e".into(), 5);
 
-        let data = divan::black_box(GinTonic {
+        let data = black_box(GinTonic {
             uuid: uuid::Uuid::new_v4(),
             ip: vec![
                 std::net::Ipv4Addr::LOCALHOST,
@@ -94,12 +97,12 @@ mod gin_bench {
         });
 
         let size = data.size_hint();
-        let mut buffer = divan::black_box(bytes::BytesMut::with_capacity(size));
-        let buffer_ref = divan::black_box(&mut buffer);
+        let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
+        let buffer_ref = black_box(&mut buffer);
         data.clone().serialize(buffer_ref);
 
-        bencher.bench_local(move || {
-            GinTonic::deserialize(&buffer).expect("benchmark works");
+        c.bench_function("gin_de", |b| {
+            b.iter(|| GinTonic::deserialize(&buffer).expect("benchmark works"));
         });
     }
 }

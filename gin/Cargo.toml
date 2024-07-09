@@ -29,8 +29,8 @@ tonic-build = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-divan = "0.1.14"
-prost = "0.12.6"
+criterion = "0.5.1"
+prost = { workspace = true }
 uuid = { workspace = true }
 
 [lints]
