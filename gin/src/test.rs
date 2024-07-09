@@ -143,7 +143,7 @@ enum UnwrappedResultOneOf {
 
 #[test]
 fn one_of_unwrapping() {
-    use gin_tonic_core::{Message, OneOf};
+    use gin_tonic_core::Message;
 
     // wrapped to unwrapped
     let test = ResultMessage {
@@ -166,7 +166,7 @@ fn one_of_unwrapping() {
     // unwrapped to wrapped
     let test = UnwrappedResultOneOf::Success(1);
 
-    let size_hint = gin_tonic_core::OneOf::size_hint(&test);
+    let size_hint = gin_tonic_core::Message::size_hint(&test);
     let mut buffer = Vec::<u8>::with_capacity(size_hint);
 
     let actual_size = test.serialize(&mut buffer).unwrap();

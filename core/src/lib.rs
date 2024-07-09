@@ -30,29 +30,20 @@ where
 }
 
 /// special handling for one ofs
-pub trait OneOf
+pub trait OneOf: Message
 where
     Self: Sized,
 {
-    // for serialization
-    fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
-    fn size_hint(&self) -> usize;
-
     // for deserialization
     fn matches_tag(tag: u32) -> bool;
     fn deserialize_wire(tag: u32, wire_type: WireTypeView) -> Result<Self, Error>;
-
-    fn deserialize(buffer: &[u8]) -> Result<(Self, usize), Error> {
-        let mut reader = TagReader::new(buffer);
-        match reader.next() {
-            Some(tag) => {
-                let (field_number, wire_type) = tag.into_parts();
-                Ok((
-                    Self::deserialize_wire(field_number, wire_type)?,
-                    reader.position(),
-                ))
-            }
-            None => Err(Error::InvalidOneOf),
-        }
-    }
+    // fn deserialize_tags<'a>(mut tags: impl Iterator<Item = Tag<'a>>) -> Result<Self, Error> {
+    //     match tags.next() {
+    //         Some(tag) => {
+    //             let (field_number, wire_type) = tag.into_parts();
+    //             Ok(Self::deserialize_wire(field_number, wire_type)?)
+    //         }
+    //         None => Err(Error::InvalidOneOf),
+    //     }
+    // }
 }
