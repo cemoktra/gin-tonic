@@ -1,7 +1,7 @@
 use crate::{Error, FromWire, IntoWire, TagReader, WireType, WireTypeView};
-use std::collections::HashMap;
 
 /// convert a key-value pair into a [WireType]
+#[inline(always)]
 pub fn into_wire<K, V>(key: K, value: V) -> WireType
 where
     K: IntoWire,
@@ -19,6 +19,7 @@ where
 }
 
 /// read a key-value pair from a [WireTypeView]
+#[inline(always)]
 pub fn from_wire<K, V>(wire_type: WireTypeView) -> Result<(K, V), Error>
 where
     K: FromWire,
@@ -26,28 +27,15 @@ where
 {
     match wire_type {
         WireTypeView::LengthEncoded(data) => {
-            let reader = TagReader::new(data);
-            let mut field_map = HashMap::<u32, Vec<WireTypeView>>::new();
+            let mut reader = TagReader::new(data);
 
-            for tag in reader {
-                let (field_number, wire_type) = tag.into_parts();
-                field_map.entry(field_number).or_default().push(wire_type);
-            }
+            let key_tag = reader.next().ok_or(Error::MissingField(1))?;
+            let value_tag = reader.next().ok_or(Error::MissingField(2))?;
 
-            let key = field_map
-                .remove(&1)
-                .ok_or(Error::MissingField(1))?
-                .into_iter()
-                .next()
-                .ok_or(Error::MissingField(1))?;
+            let (_, key) = key_tag.into_parts();
+            let (_, value) = value_tag.into_parts();
+
             let key = K::from_wire(key)?;
-
-            let value = field_map
-                .remove(&2)
-                .ok_or(Error::MissingField(2))?
-                .into_iter()
-                .next()
-                .ok_or(Error::MissingField(2))?;
             let value = V::from_wire(value)?;
 
             Ok((key, value))

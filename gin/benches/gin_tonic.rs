@@ -1,5 +1,10 @@
+#[cfg(not(feature = "uuid_bytes"))]
+fn main() {}
+
+#[cfg(feature = "uuid_bytes")]
 use criterion::criterion_main;
 
+#[cfg(feature = "uuid_bytes")]
 criterion_main!(crate::gin_bench::benches);
 
 #[cfg(feature = "uuid_bytes")]

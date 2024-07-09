@@ -29,6 +29,7 @@ impl<'a> Tag<'a> {
     }
 
     /// deserialize a tag
+    #[inline(always)]
     pub fn deserialize(buf: &'a [u8]) -> Option<(Self, usize)> {
         let (tag, tag_read) = u32::decode_var(buf)?;
 

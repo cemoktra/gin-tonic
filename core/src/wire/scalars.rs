@@ -4,6 +4,7 @@ use crate::{Error, FromWire, IntoWire, Message, WireType, WireTypeView};
 use integer_encoding::VarInt;
 
 impl FromWire for f64 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -19,6 +20,7 @@ impl FromWire for f64 {
 }
 
 impl IntoWire for f64 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         WireType::FixedI64(self.to_le_bytes())
     }
@@ -29,6 +31,7 @@ impl IntoWire for f64 {
 }
 
 impl FromWire for f32 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -44,6 +47,7 @@ impl FromWire for f32 {
 }
 
 impl IntoWire for f32 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         WireType::FixedI32(self.to_le_bytes())
     }
@@ -54,6 +58,7 @@ impl IntoWire for f32 {
 }
 
 impl FromWire for u64 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -69,6 +74,7 @@ impl FromWire for u64 {
 }
 
 impl IntoWire for u64 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
         let size = self.encode_var(&mut data);
@@ -81,6 +87,7 @@ impl IntoWire for u64 {
 }
 
 impl FromWire for i64 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -96,6 +103,7 @@ impl FromWire for i64 {
 }
 
 impl IntoWire for i64 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
         let size = self.encode_var(&mut data);
@@ -108,6 +116,7 @@ impl IntoWire for i64 {
 }
 
 impl FromWire for u32 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -123,6 +132,7 @@ impl FromWire for u32 {
 }
 
 impl IntoWire for u32 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
         let size = self.encode_var(&mut data);
@@ -135,6 +145,7 @@ impl IntoWire for u32 {
 }
 
 impl FromWire for i32 {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -150,6 +161,7 @@ impl FromWire for i32 {
 }
 
 impl IntoWire for i32 {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
         let size = self.encode_var(&mut data);
@@ -162,6 +174,7 @@ impl IntoWire for i32 {
 }
 
 impl FromWire for String {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -174,6 +187,7 @@ impl FromWire for String {
 }
 
 impl IntoWire for String {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         WireType::LengthEncoded(self.into_bytes().into())
     }
@@ -185,6 +199,7 @@ impl IntoWire for String {
 }
 
 impl FromWire for bool {
+    #[inline(always)]
     fn from_wire(wire: WireTypeView) -> Result<Self, Error>
     where
         Self: Sized,
@@ -200,6 +215,7 @@ impl FromWire for bool {
 }
 
 impl IntoWire for bool {
+    #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
         let size = if self { 1u32 } else { 0u32 }.encode_var(&mut data);
