@@ -49,7 +49,7 @@ fn expand_message_message(
                 Kind::Primitive => {
                     serialize_impl.extend(quote_spanned! { span=>
                         let wire_type = self.#field_ident.into_wire();
-                        written += wire_type.serialize(#tag, writer)?;
+                        wire_type.serialize(#tag, writer);
                     });
 
                     deserialize_init.extend(quote_spanned! { span=>
@@ -73,7 +73,7 @@ fn expand_message_message(
                 Kind::Message => {
                     serialize_impl.extend(quote_spanned! { span=>
                         let wire_type = self.#field_ident.into_wire();
-                        written += wire_type.serialize(#tag, writer)?;
+                        wire_type.serialize(#tag, writer);
                     });
 
                     deserialize_init.extend(quote_spanned! { span=>
@@ -96,7 +96,7 @@ fn expand_message_message(
                 }
                 Kind::OneOf => {
                     serialize_impl.extend(quote_spanned! { span=>
-                        written += #root::gin_tonic_core::Message::serialize(self.#field_ident, writer)?;
+                        #root::gin_tonic_core::Message::serialize(self.#field_ident, writer);
                     });
 
                     deserialize_init.extend(quote_spanned! { span=>
@@ -120,8 +120,8 @@ fn expand_message_message(
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         for (key, value) in self.#field_ident {
-                            let wire_type = #root::gin_tonic_core::map_into_wire(key, value)?;
-                            written += wire_type.serialize(#tag, writer)?;
+                            let wire_type = #root::gin_tonic_core::map_into_wire(key, value);
+                            wire_type.serialize(#tag, writer);
                         }
                     });
 
@@ -157,7 +157,7 @@ fn expand_message_message(
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
                             let wire_type = value.into_wire();
-                            written += wire_type.serialize(#tag, writer)?;
+                            wire_type.serialize(#tag, writer);
                         }
                     });
 
@@ -183,7 +183,7 @@ fn expand_message_message(
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
                             let wire_type = value.into_wire();
-                            written += wire_type.serialize(#tag, writer)?;
+                            wire_type.serialize(#tag, writer);
                         }
                     });
 
@@ -208,7 +208,7 @@ fn expand_message_message(
                 Kind::OneOf => {
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
-                            written += #root::gin_tonic_core::Message::serialize(value, writer)?;
+                            #root::gin_tonic_core::Message::serialize(value, writer);
                         }
                     });
 
@@ -234,8 +234,8 @@ fn expand_message_message(
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
                             for (key, value) in value {
-                                let wire_type = #root::gin_tonic_core::map_into_wire(key, value)?;
-                                written += wire_type.serialize(#tag, writer)?;
+                                let wire_type = #root::gin_tonic_core::map_into_wire(key, value);
+                                wire_type.serialize(#tag, writer);
                             }
                         }
                     });
@@ -284,7 +284,7 @@ fn expand_message_message(
                     serialize_impl.extend(quote_spanned! { span=>
                         for item in self.#field_ident {
                             let wire_type = item.into_wire();
-                            written += wire_type.serialize(#tag, writer)?;
+                            wire_type.serialize(#tag, writer);
                         }
                     });
 
@@ -310,7 +310,7 @@ fn expand_message_message(
                     serialize_impl.extend(quote_spanned! { span=>
                         for item in self.#field_ident {
                             let wire_type = item.into_wire();
-                            written += wire_type.serialize(#tag, writer)?;
+                            wire_type.serialize(#tag, writer);
                         }
                     });
 
@@ -350,14 +350,11 @@ fn expand_message_message(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::gin_tonic_core::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
+            #[inline(always)]
+            fn serialize(self, writer: &mut impl #root::gin_tonic_core::bytes::BufMut) {
                 use #root::IntoWire;
 
-                let mut written = 0;
-
                 #serialize_impl
-
-                Ok(written)
             }
 
             fn deserialize_tags<'a>(
@@ -419,7 +416,7 @@ fn expand_unwrapped_oneof(
         serialize_impl.extend(quote_spanned! {span=>
             #ty::#var_ident(v) => {
                 let wire_type = v.into_wire();
-                written += wire_type.serialize(#tag, writer)?;
+                wire_type.serialize(#tag, writer);
             }
         });
 
@@ -441,16 +438,12 @@ fn expand_unwrapped_oneof(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::gin_tonic_core::Message for #ty {
-            fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, #root::Error> {
+            fn serialize(self, writer: &mut impl #root::gin_tonic_core::bytes::BufMut) {
                 use #root::IntoWire;
-
-                let mut written = 0;
 
                 match self {
                     #serialize_impl
                 }
-
-                Ok(written)
             }
 
             fn size_hint(&self) -> usize {
@@ -470,7 +463,7 @@ fn expand_unwrapped_oneof(
                     slf = Some(<Self as #root::gin_tonic_core::OneOf>::deserialize_wire(field_number, wire_type)?);
                 }
 
-                Ok(slf.ok_or(#root::Error::InvalidOneOf)?)
+                slf.ok_or(#root::Error::InvalidOneOf)
             }
         }
 

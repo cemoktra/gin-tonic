@@ -1,6 +1,6 @@
 //! [tonic::codec::Codec] implementation for gin-tonic
 
-use bytes::{Buf, BufMut};
+use bytes::Buf;
 use std::marker::PhantomData;
 use tonic::codec::{DecodeBuf, EncodeBuf};
 
@@ -51,7 +51,7 @@ impl<T: Message + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
     type Error = tonic::Status;
 
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        item.serialize(&mut dst.writer()).map_err(map_core_err)?;
+        item.serialize(dst);
         Ok(())
     }
 }

@@ -403,6 +403,7 @@ dependencies = [
 name = "gin-tonic-core"
 version = "0.4.7"
 dependencies = [
+ "bytes",
  "integer-encoding",
  "thiserror",
  "tracing",

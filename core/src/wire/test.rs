@@ -314,9 +314,9 @@ fn wire_type_bool() {
     let wire_value = bool::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 2];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(2);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -334,9 +334,9 @@ fn wire_type_u32() {
     let wire_value = u32::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 3];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(3);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer[0..]).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -354,9 +354,9 @@ fn wire_type_i32() {
     let wire_value = i32::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 3];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(3);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -374,9 +374,9 @@ fn wire_type_u64() {
     let wire_value = u64::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 4];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(4);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -394,9 +394,9 @@ fn wire_type_i64() {
     let wire_value = i64::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 4];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(4);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -414,9 +414,9 @@ fn wire_type_f32() {
     let wire_value = f32::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 5];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(5);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -434,9 +434,9 @@ fn wire_type_f64() {
     let wire_value = f64::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 9];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(9);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -454,9 +454,9 @@ fn wire_type_string() {
     let wire_value = String::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 6];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(9);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -466,10 +466,10 @@ fn wire_type_string() {
 
 #[test]
 fn wire_type_sgroup() {
-    let mut buffer = [0u8; 1];
+    let mut buffer = bytes::BytesMut::with_capacity(1);
     let wire = WireType::SGroup;
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -481,10 +481,10 @@ fn wire_type_sgroup() {
 
 #[test]
 fn wire_type_egroup() {
-    let mut buffer = [0u8; 1];
+    let mut buffer = bytes::BytesMut::with_capacity(1);
     let wire = WireType::EGroup;
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -504,9 +504,9 @@ fn wire_type_ipv4() {
     let wire_value = std::net::Ipv4Addr::from_wire(wire.as_view()).unwrap();
     assert_eq!(value, wire_value);
 
-    let mut buffer = [0u8; 6];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, wire.size_hint(1));
+    let mut buffer = bytes::BytesMut::with_capacity(6);
+    wire.serialize(1, &mut buffer);
+    assert_eq!(buffer.len(), wire.size_hint(1));
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);
@@ -519,7 +519,6 @@ mod test_messages {
     use crate::{Error, FromWire, IntoWire};
     use integer_encoding::VarInt;
     use std::collections::HashMap;
-    use std::io::Write;
 
     #[derive(Debug, Clone, PartialEq)]
     pub(super) struct Nested {
@@ -533,9 +532,9 @@ mod test_messages {
     }
 
     impl crate::Message for Nested {
-        fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
+        fn serialize(self, writer: &mut impl bytes::BufMut) {
             let wire_type = self.whatever.into_wire();
-            Ok(wire_type.serialize(1, writer)?)
+            wire_type.serialize(1, writer);
         }
 
         fn size_hint(&self) -> usize {
@@ -562,17 +561,14 @@ mod test_messages {
     }
 
     impl crate::Message for Test {
-        fn serialize(self, writer: &mut impl Write) -> Result<usize, Error> {
-            let mut written = 0;
+        fn serialize(self, writer: &mut impl bytes::BufMut) {
             for (key, value) in self.map {
-                let wire_type = crate::wire::map::into_wire(key, value)?;
-                written += wire_type.serialize(1, writer)?;
+                let wire_type = crate::wire::map::into_wire(key, value);
+                wire_type.serialize(1, writer);
             }
 
             let wire_type = self.nested.into_wire();
-            written += wire_type.serialize(2, writer)?;
-
-            Ok(written)
+            wire_type.serialize(2, writer);
         }
 
         fn size_hint(&self) -> usize {
@@ -635,8 +631,8 @@ fn wire_type_message() {
     assert_eq!(value, wire_value);
 
     let mut buffer = [0u8; 25];
-    let written = wire.serialize(1, &mut buffer.as_mut_slice()).unwrap();
-    assert_eq!(written, 25);
+    wire.serialize(1, &mut buffer.as_mut_slice());
+    assert_eq!(buffer.len(), 25);
 
     let (tag, wire) = Tag::deserialize(&buffer).unwrap().0.into_parts();
     assert_eq!(tag, 1);

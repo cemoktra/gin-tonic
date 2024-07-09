@@ -1,6 +1,7 @@
 mod tags;
 mod wire;
 
+pub use bytes;
 pub use tags::{reader::TagReader, Tag};
 pub use wire::{
     map::{from_wire as map_from_wire, into_wire as map_into_wire},
@@ -15,7 +16,7 @@ where
     Self: Sized,
 {
     // for serialization
-    fn serialize(self, writer: &mut impl std::io::Write) -> Result<usize, Error>;
+    fn serialize(self, writer: &mut impl bytes::BufMut);
     fn size_hint(&self) -> usize;
 
     // for deserialization

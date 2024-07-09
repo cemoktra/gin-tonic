@@ -2,20 +2,20 @@ use crate::{Error, FromWire, IntoWire, TagReader, WireType, WireTypeView};
 use std::collections::HashMap;
 
 /// convert a key-value pair into a [WireType]
-pub fn into_wire<K, V>(key: K, value: V) -> Result<WireType, Error>
+pub fn into_wire<K, V>(key: K, value: V) -> WireType
 where
     K: IntoWire,
     V: IntoWire,
 {
-    let mut map_buffer = Vec::with_capacity(key.size_hint(1) + value.size_hint(2));
+    let mut map_buffer = bytes::BytesMut::with_capacity(key.size_hint(1) + value.size_hint(2));
 
     let wire_type = key.into_wire();
-    wire_type.serialize(1, &mut map_buffer)?;
+    wire_type.serialize(1, &mut map_buffer);
 
     let wire_type = value.into_wire();
-    wire_type.serialize(2, &mut map_buffer)?;
+    wire_type.serialize(2, &mut map_buffer);
 
-    Ok(WireType::LengthEncoded(map_buffer))
+    WireType::LengthEncoded(map_buffer.freeze())
 }
 
 /// read a key-value pair from a [WireTypeView]

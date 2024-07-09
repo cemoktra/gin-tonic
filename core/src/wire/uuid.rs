@@ -65,7 +65,7 @@ mod uuid_bytes {
             high.encode_var(&mut buffer[0..high_len]);
             low.encode_var(&mut buffer[high_len..]);
 
-            WireType::LengthEncoded(buffer)
+            WireType::LengthEncoded(buffer.into())
         }
 
         fn size_hint(&self, tag: u32) -> usize {

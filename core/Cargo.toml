@@ -14,6 +14,7 @@ uuid_string = ["dep:uuid"]
 uuid_bytes = ["dep:uuid"]
 
 [dependencies]
+bytes = { workspace = true }
 integer-encoding = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }

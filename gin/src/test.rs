@@ -61,9 +61,11 @@ fn pb_serde() {
     };
 
     let size_hint = gin_tonic_core::Message::size_hint(&test);
-    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-    let actual_size = test.serialize(&mut buffer).unwrap();
+    test.serialize(&mut buffer);
+
+    let actual_size = buffer.len();
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
@@ -94,10 +96,11 @@ fn pb_serde() {
         map,
     };
     let size_hint = gin_tonic_core::Message::size_hint(&test);
-    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-    let actual_size = test.serialize(&mut buffer).unwrap();
+    test.serialize(&mut buffer);
 
+    let actual_size = buffer.len();
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
@@ -151,9 +154,11 @@ fn one_of_unwrapping() {
     };
 
     let size_hint = gin_tonic_core::Message::size_hint(&test);
-    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-    let actual_size = test.serialize(&mut buffer).unwrap();
+    test.serialize(&mut buffer);
+
+    let actual_size = buffer.len();
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
@@ -167,9 +172,10 @@ fn one_of_unwrapping() {
     let test = UnwrappedResultOneOf::Success(1);
 
     let size_hint = gin_tonic_core::Message::size_hint(&test);
-    let mut buffer = Vec::<u8>::with_capacity(size_hint);
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-    let actual_size = test.serialize(&mut buffer).unwrap();
+    test.serialize(&mut buffer);
+    let actual_size = buffer.len();
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 

@@ -18,65 +18,64 @@ pub enum WireType {
     FixedI64([u8; 8]),
     SGroup,
     EGroup,
-    LengthEncoded(Vec<u8>),
+    LengthEncoded(bytes::Bytes),
     FixedI32([u8; 4]),
 }
 
 impl WireType {
     /// serialize a [WireType] to anything that implements [std::io::Write]
-    pub fn serialize(
-        &self,
-        field_number: u32,
-        writer: &mut impl std::io::Write,
-    ) -> std::io::Result<usize> {
+    #[inline(always)]
+    pub fn serialize(&self, field_number: u32, writer: &mut impl bytes::BufMut) {
+        // let x = std::time::Instant::now();
         let mut tag_varint = [0u8; 10];
         let tag = field_number << 3;
-        let mut written = 0;
 
         match self {
             WireType::VarInt(data, size) => {
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
-                written += writer.write(&data[0..*size])?;
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(&data[0..*size]);
             }
             WireType::FixedI64(data) => {
                 let tag = tag | 0b1;
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
-                written += writer.write(data)?;
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(data);
             }
             WireType::LengthEncoded(data) => {
                 let mut len_varint = [0u8; 10];
 
                 let tag = tag | 0b10;
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
+
+                writer.put_slice(&tag_varint[0..tag_size]);
 
                 let len: u32 = data.len().try_into().expect("this is good");
                 let len_size = len.encode_var(&mut len_varint);
-                written += writer.write(&len_varint[0..len_size])?;
-                written += writer.write(data)?;
+
+                writer.put_slice(&len_varint[0..len_size]);
+                writer.put_slice(data);
+
+                // );
             }
             WireType::SGroup => {
                 let tag = tag | 0b11;
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
+                writer.put_slice(&tag_varint[0..tag_size]);
             }
             WireType::EGroup => {
                 let tag = tag | 0b100;
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
+                writer.put_slice(&tag_varint[0..tag_size]);
             }
 
             WireType::FixedI32(data) => {
                 let tag = tag | 0b101;
                 let tag_size = tag.encode_var(&mut tag_varint);
-                written += writer.write(&tag_varint[0..tag_size])?;
-                written += writer.write(data)?;
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(data);
             }
         }
-
-        Ok(written)
     }
 
     pub fn size_hint(&self, tag: u32) -> usize {

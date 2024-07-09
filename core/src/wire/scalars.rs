@@ -175,7 +175,7 @@ impl FromWire for String {
 
 impl IntoWire for String {
     fn into_wire(self) -> WireType {
-        WireType::LengthEncoded(self.into_bytes())
+        WireType::LengthEncoded(self.into_bytes().into())
     }
 
     fn size_hint(&self, tag: u32) -> usize {
@@ -217,9 +217,9 @@ where
     T: Message,
 {
     fn into_wire(self) -> WireType {
-        let mut buffer = Vec::with_capacity(self.size_hint());
-        self.serialize(&mut buffer).expect("must work");
-        WireType::LengthEncoded(buffer)
+        let mut buffer = bytes::BytesMut::with_capacity(self.size_hint());
+        self.serialize(&mut buffer);
+        WireType::LengthEncoded(buffer.freeze())
     }
 
     fn size_hint(&self, tag: u32) -> usize {

@@ -26,7 +26,7 @@ mod gin_bench {
         };
 
         let size = data.size_hint();
-        let mut buffer = Vec::with_capacity(size);
+        let mut buffer = bytes::BytesMut::with_capacity(size);
         let buffer_ref = &mut buffer;
 
         bencher.bench_local(move || data.clone().serialize(buffer_ref));
@@ -42,9 +42,9 @@ mod gin_bench {
         };
 
         let size = data.size_hint();
-        let mut buffer = Vec::with_capacity(size);
+        let mut buffer = bytes::BytesMut::with_capacity(size);
         let buffer_ref = &mut buffer;
-        data.clone().serialize(buffer_ref).expect("benchmark works");
+        data.clone().serialize(buffer_ref);
 
         bencher.bench_local(move || {
             GinTonic::deserialize(&buffer).expect("benchmark works");
