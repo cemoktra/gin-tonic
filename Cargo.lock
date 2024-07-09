@@ -257,7 +257,7 @@ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
 
 [[package]]
 name = "gin-tonic"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "bytes",
  "divan",
@@ -279,7 +279,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "integer-encoding",
  "thiserror",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-derive"
-version = "0.4.4"
+version = "0.4.5"
 dependencies = [
  "darling",
  "proc-macro2",
