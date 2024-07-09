@@ -18,9 +18,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         request_id,
     });
 
-    let response = client.echo(request).await?;
-
-    println!("RESPONSE={:?}", response);
+    match client.echo(request).await {
+        Ok(response) => println!("RESPONSE={:?}", response),
+        Err(err) => println!("ERROR={:?}", err),
+    };
 
     Ok(())
 }

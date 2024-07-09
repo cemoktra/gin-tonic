@@ -419,7 +419,6 @@ fn expand_unwrapped_oneof(
         serialize_impl.extend(quote_spanned! {span=>
             #ty::#var_ident(v) => {
                 let wire_type = v.into_wire();
-                let actually_wrtten = wire_type.serialize(#tag, writer)?;
                 written += wire_type.serialize(#tag, writer)?;
             }
         });
@@ -463,14 +462,15 @@ fn expand_unwrapped_oneof(
                 }
             }
 
-            fn deserialize_tags<'a>(mut tags: impl Iterator<Item = #root::gin_tonic_core::Tag<'a>>) -> Result<Self, #root::Error> {
-                match tags.next() {
-                    Some(tag) => {
-                        let (field_number, wire_type) = tag.into_parts();
-                        Ok(<Self as #root::gin_tonic_core::OneOf>::deserialize_wire(field_number, wire_type)?)
-                    }
-                    None => Err(#root::Error::InvalidOneOf),
+            fn deserialize_tags<'a>(tags: impl Iterator<Item = #root::gin_tonic_core::Tag<'a>>) -> Result<Self, #root::Error> {
+                let mut slf = None;
+
+                for tag in tags {
+                    let (field_number, wire_type) = tag.into_parts();
+                    slf = Some(<Self as #root::gin_tonic_core::OneOf>::deserialize_wire(field_number, wire_type)?);
                 }
+
+                Ok(slf.ok_or(#root::Error::InvalidOneOf)?)
             }
         }
 

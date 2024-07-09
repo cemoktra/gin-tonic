@@ -37,13 +37,4 @@ where
     // for deserialization
     fn matches_tag(tag: u32) -> bool;
     fn deserialize_wire(tag: u32, wire_type: WireTypeView) -> Result<Self, Error>;
-    // fn deserialize_tags<'a>(mut tags: impl Iterator<Item = Tag<'a>>) -> Result<Self, Error> {
-    //     match tags.next() {
-    //         Some(tag) => {
-    //             let (field_number, wire_type) = tag.into_parts();
-    //             Ok(Self::deserialize_wire(field_number, wire_type)?)
-    //         }
-    //         None => Err(Error::InvalidOneOf),
-    //     }
-    // }
 }

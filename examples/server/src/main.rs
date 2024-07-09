@@ -13,7 +13,7 @@ impl Example for ServerImpl {
     ) -> Result<tonic::Response<EchoResponse>, tonic::Status> {
         let EchoRequest { echo, request_id } = request.into_inner();
 
-        println!("handling request id {request_id}");
+        println!("handling request id {request_id} with echo: '{echo}'");
 
         Ok(tonic::Response::new(EchoResponse::Echo(Echo {
             echo,
