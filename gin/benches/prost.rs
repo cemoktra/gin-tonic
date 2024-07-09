@@ -44,7 +44,7 @@ impl From<Prost> for Rust {
             uuid: uuid::Uuid::from_bytes(uuid_array),
             ip: value.ip.into_iter().map(Into::into).collect(),
             text: value.text,
-            nested: value.nested.unwrap().into(),
+            nested: value.nested.expect("works in bench").into(),
         }
     }
 }

@@ -3,7 +3,7 @@ use criterion::criterion_main;
 criterion_main!(crate::gin_bench::benches);
 
 #[cfg(feature = "uuid_bytes")]
-mod gin_bench {
+pub(crate) mod gin_bench {
     use std::{collections::HashMap, path::PathBuf};
 
     use criterion::{black_box, criterion_group, Criterion};
