@@ -1,13 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "gin",
-    "derive",
-    "core",
-    "examples/client",
-    "examples/server",
-    "examples/shared",
-]
+members = ["gin", "derive", "core"]
 
 [workspace.dependencies]
 bytes = "1.6.0"

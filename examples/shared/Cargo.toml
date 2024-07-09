@@ -1,12 +1,14 @@
+[workspace]
+
 [package]
 name = "shared"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gin-tonic = { workspace = true, features = ["uuid_bytes"] }
-tonic = { workspace = true, features = ["transport"] }
-uuid = { workspace = true }
+gin-tonic = { version = "0.4.7", features = ["uuid_bytes"] }
+tonic = { version = "0.11.0", features = ["transport"] }
+uuid = { version = "1.8.0" }
 
 [build-dependencies]
-gin-tonic = { workspace = true, features = ["uuid_bytes"] }
+gin-tonic = { version = "0.4.7", features = ["uuid_bytes"] }
