@@ -2,8 +2,8 @@
 
 pub mod reader;
 
+use crate::VarInt;
 use crate::WireTypeView;
-use integer_encoding::VarInt;
 
 /// representation of a deserialized [Tag]
 #[derive(Clone, Debug)]

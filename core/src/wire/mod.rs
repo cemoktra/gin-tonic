@@ -3,6 +3,7 @@ pub mod map;
 pub mod nested;
 mod scalars;
 mod std_wire_impl;
+pub mod varint;
 pub mod wire_type;
 
 #[cfg(any(feature = "uuid_string", feature = "uuid_bytes"))]

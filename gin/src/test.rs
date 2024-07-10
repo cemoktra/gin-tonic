@@ -1,5 +1,4 @@
 use gin_tonic_derive::{Enumeration, Message};
-use integer_encoding::VarInt;
 use std::collections::HashMap;
 
 #[derive(Debug, Message)]

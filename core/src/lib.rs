@@ -6,6 +6,7 @@ pub use tags::{reader::TagReader, Tag};
 pub use wire::{
     map::from_wire as map_from_wire,
     nested::size_hint as nested_size_hint,
+    varint::VarInt,
     wire_type::{WireType, WireTypeView},
     Error, FromWire, IntoWire,
 };

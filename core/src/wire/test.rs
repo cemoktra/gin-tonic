@@ -1,5 +1,4 @@
-use crate::{FromWire, IntoWire, Tag, TagReader, WireType, WireTypeView};
-use integer_encoding::VarInt;
+use crate::{FromWire, IntoWire, Tag, TagReader, VarInt, WireType, WireTypeView};
 use std::collections::HashMap;
 
 #[test]
@@ -516,8 +515,7 @@ fn wire_type_ipv4() {
 
 /// test messages with manual Message implementation which would usually be derived
 mod test_messages {
-    use crate::{Error, FromWire, IntoWire, WireTypeView};
-    use integer_encoding::VarInt;
+    use crate::{Error, FromWire, IntoWire, VarInt, WireTypeView};
     use std::collections::HashMap;
 
     #[derive(Debug, Clone, PartialEq)]

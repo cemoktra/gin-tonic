@@ -387,6 +387,7 @@ fn expand_message_message(
             #[inline(always)]
             fn serialize(self, writer: &mut impl #root::gin_tonic_core::bytes::BufMut) {
                 use #root::IntoWire;
+                use #root::export::VarInt;
 
                 #serialize_impl
             }
@@ -395,6 +396,7 @@ fn expand_message_message(
                 tags: impl Iterator<Item = #root::gin_tonic_core::Tag<'a>>,
             ) -> Result<Self, #root::Error> {
                 use #root::FromWire;
+                use #root::export::VarInt;
 
                 #deserialize_init
 
@@ -570,6 +572,8 @@ pub(crate) fn expand_enumeration(
             }
 
             fn size_hint(&self, tag: u32) -> usize {
+                use #root::export::VarInt;
+
                 tag.required_space()
                     + match self {
                         #size_hint_impl

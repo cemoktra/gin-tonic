@@ -368,7 +368,6 @@ dependencies = [
  "gin-tonic-core",
  "gin-tonic-derive",
  "heck",
- "integer-encoding",
  "proc-macro2",
  "prost",
  "protox",
@@ -387,7 +386,6 @@ name = "gin-tonic-core"
 version = "0.4.7"
 dependencies = [
  "bytes",
- "integer-encoding",
  "smallvec",
  "thiserror",
  "tracing",
@@ -481,12 +479,6 @@ dependencies = [
  "equivalent",
  "hashbrown",
 ]
-
-[[package]]
-name = "integer-encoding"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "924df4f0e24e2e7f9cdd90babb0b96f93b20f3ecfa949ea9e6613756b8c8e1bf"
 
 [[package]]
 name = "is-terminal"

@@ -11,7 +11,7 @@ pub use gin_tonic_core::{Error, FromWire, IntoWire};
 pub use gin_tonic_derive::{Enumeration, Message, OneOf};
 
 pub mod export {
-    pub use integer_encoding::VarInt;
+    pub use gin_tonic_core::VarInt;
     pub use smallvec::SmallVec;
 }
 

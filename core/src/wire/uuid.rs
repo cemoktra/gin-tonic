@@ -51,8 +51,7 @@ mod uuid_string {
 
 #[cfg(feature = "uuid_bytes")]
 mod uuid_bytes {
-    use crate::{Error, WireType, WireTypeView};
-    use integer_encoding::VarInt;
+    use crate::{Error, VarInt, WireType, WireTypeView};
     use uuid::Uuid;
 
     impl crate::IntoWire for Uuid {

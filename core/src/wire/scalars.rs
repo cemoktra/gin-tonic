@@ -1,7 +1,6 @@
 //! [FromWire] and [IntoWire] for protobuf scalars
 
-use crate::{Error, FromWire, IntoWire, Message, WireType, WireTypeView};
-use integer_encoding::VarInt;
+use crate::{Error, FromWire, IntoWire, Message, VarInt, WireType, WireTypeView};
 
 impl FromWire for f64 {
     #[inline(always)]
