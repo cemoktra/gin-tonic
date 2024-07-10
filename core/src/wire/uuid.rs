@@ -57,15 +57,15 @@ mod uuid_bytes {
 
     impl crate::IntoWire for Uuid {
         fn into_wire(self) -> WireType {
+            let mut buffer = [0u8; 20];
             let (high, low) = self.as_u64_pair();
-            let high_len = high.required_space();
-            let low_len = low.required_space();
-            let mut buffer = [0].repeat(high_len + low_len);
 
-            high.encode_var(&mut buffer[0..high_len]);
-            low.encode_var(&mut buffer[high_len..]);
+            let high_len = high.encode_var(&mut buffer[0..]);
+            let low_len = low.encode_var(&mut buffer[high_len..]);
 
-            WireType::LengthEncoded(buffer.into())
+            WireType::LengthEncoded(bytes::Bytes::copy_from_slice(
+                &buffer[0..high_len + low_len],
+            ))
         }
 
         fn size_hint(&self, tag: u32) -> usize {

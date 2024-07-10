@@ -12,6 +12,7 @@ pub use gin_tonic_derive::{Enumeration, Message, OneOf};
 
 pub mod export {
     pub use integer_encoding::VarInt;
+    pub use smallvec::SmallVec;
 }
 
 // Re-export the alloc crate for use within derived code.
