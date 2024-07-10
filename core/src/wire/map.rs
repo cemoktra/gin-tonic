@@ -1,22 +1,4 @@
-use crate::{Error, FromWire, IntoWire, TagReader, WireType, WireTypeView};
-
-/// convert a key-value pair into a [WireType]
-#[inline(always)]
-pub fn into_wire<K, V>(key: K, value: V) -> WireType
-where
-    K: IntoWire,
-    V: IntoWire,
-{
-    let mut map_buffer = bytes::BytesMut::with_capacity(key.size_hint(1) + value.size_hint(2));
-
-    let wire_type = key.into_wire();
-    wire_type.serialize(1, &mut map_buffer);
-
-    let wire_type = value.into_wire();
-    wire_type.serialize(2, &mut map_buffer);
-
-    WireType::LengthEncoded(map_buffer.freeze())
-}
+use crate::{Error, FromWire, TagReader, WireTypeView};
 
 /// read a key-value pair from a [WireTypeView]
 #[inline(always)]

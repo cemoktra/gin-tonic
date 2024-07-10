@@ -82,7 +82,7 @@ impl<'a> WireTypeView<'a> {
 /// [WireType] is used for writing messages
 #[derive(Debug, Clone, PartialEq)]
 pub enum WireType {
-    VarInt([u8; 10], usize),
+    VarInt([u8; 10], u8),
     FixedI64([u8; 8]),
     SGroup,
     EGroup,
@@ -101,7 +101,7 @@ impl WireType {
             WireType::VarInt(data, size) => {
                 let tag_size = tag.encode_var(&mut tag_varint);
                 writer.put_slice(&tag_varint[0..tag_size]);
-                writer.put_slice(&data[0..*size]);
+                writer.put_slice(&data[0..*size as usize]);
             }
             WireType::FixedI64(data) => {
                 let tag = tag | 0b1;
@@ -145,7 +145,7 @@ impl WireType {
 
     pub fn size_hint(&self, tag: u32) -> usize {
         match self {
-            WireType::VarInt(_, size) => tag.required_space() + size,
+            WireType::VarInt(_, size) => tag.required_space() + *size as usize,
             WireType::FixedI64(_) => tag.required_space() + 8,
             WireType::SGroup => tag.required_space(),
             WireType::EGroup => tag.required_space(),

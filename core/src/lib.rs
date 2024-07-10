@@ -4,7 +4,7 @@ mod wire;
 pub use bytes;
 pub use tags::{reader::TagReader, Tag};
 pub use wire::{
-    map::{from_wire as map_from_wire, into_wire as map_into_wire},
+    map::from_wire as map_from_wire,
     nested::size_hint as nested_size_hint,
     wire_type::{WireType, WireTypeView},
     Error, FromWire, IntoWire,

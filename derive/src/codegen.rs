@@ -250,8 +250,25 @@ fn expand_message_message(
                 Kind::Map => {
                     serialize_impl.extend(quote_spanned! { span=>
                         if let Some(value) = self.#field_ident {
-                            for (key, value) in value {
-                                let wire_type = #root::gin_tonic_core::map_into_wire(key, value);
+                            // prepare a decent size buffer
+                            let mut buffer = #root::export::SmallVec::<[u8;512]>::new();
+                            buffer.resize(512, 0);
+
+                            for (key, value) in self.#field_ident {
+                                let size = key.size_hint(1) + value.size_hint(2);
+                                if size > buffer.len() {
+                                    buffer.resize(size, 0);
+                                }
+
+                                let mut buffer_ref = buffer.as_mut_slice();
+
+                                let wire_type = key.into_wire();
+                                wire_type.serialize(1, &mut buffer_ref);
+
+                                let wire_type = value.into_wire();
+                                wire_type.serialize(2, &mut buffer_ref);
+
+                                let wire_type = #root::gin_tonic_core::WireTypeView::LengthEncoded(&buffer[0..size]);
                                 wire_type.serialize(#tag, writer);
                             }
                         }

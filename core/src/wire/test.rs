@@ -516,7 +516,7 @@ fn wire_type_ipv4() {
 
 /// test messages with manual Message implementation which would usually be derived
 mod test_messages {
-    use crate::{Error, FromWire, IntoWire};
+    use crate::{Error, FromWire, IntoWire, WireTypeView};
     use integer_encoding::VarInt;
     use std::collections::HashMap;
 
@@ -562,8 +562,25 @@ mod test_messages {
 
     impl crate::Message for Test {
         fn serialize(self, writer: &mut impl bytes::BufMut) {
+            // prepare a decent size buffer
+            let mut buffer = smallvec::SmallVec::<[u8; 512]>::new();
+            buffer.resize(512, 0);
+
             for (key, value) in self.map {
-                let wire_type = crate::wire::map::into_wire(key, value);
+                let size = key.size_hint(1) + value.size_hint(2);
+                if size > buffer.len() {
+                    buffer.resize(size, 0);
+                }
+
+                let mut buffer_ref = buffer.as_mut_slice();
+
+                let wire_type = key.into_wire();
+                wire_type.serialize(1, &mut buffer_ref);
+
+                let wire_type = value.into_wire();
+                wire_type.serialize(2, &mut buffer_ref);
+
+                let wire_type = WireTypeView::LengthEncoded(&buffer[0..size]);
                 wire_type.serialize(1, writer);
             }
 

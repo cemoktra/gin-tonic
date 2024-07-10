@@ -77,7 +77,7 @@ impl IntoWire for u64 {
     #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = self.encode_var(&mut data);
+        let size = self.encode_var(&mut data) as u8;
         WireType::VarInt(data, size)
     }
 
@@ -106,7 +106,7 @@ impl IntoWire for i64 {
     #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = self.encode_var(&mut data);
+        let size = self.encode_var(&mut data) as u8;
         WireType::VarInt(data, size)
     }
 
@@ -135,7 +135,7 @@ impl IntoWire for u32 {
     #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = self.encode_var(&mut data);
+        let size = self.encode_var(&mut data) as u8;
         WireType::VarInt(data, size)
     }
 
@@ -164,7 +164,7 @@ impl IntoWire for i32 {
     #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = self.encode_var(&mut data);
+        let size = self.encode_var(&mut data) as u8;
         WireType::VarInt(data, size)
     }
 
@@ -218,7 +218,7 @@ impl IntoWire for bool {
     #[inline(always)]
     fn into_wire(self) -> WireType {
         let mut data = [0u8; 10];
-        let size = if self { 1u32 } else { 0u32 }.encode_var(&mut data);
+        let size = if self { 1u32 } else { 0u32 }.encode_var(&mut data) as u8;
 
         WireType::VarInt(data, size)
     }

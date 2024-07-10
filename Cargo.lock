@@ -388,6 +388,7 @@ version = "0.4.7"
 dependencies = [
  "bytes",
  "integer-encoding",
+ "smallvec",
  "thiserror",
  "tracing",
  "uuid",
