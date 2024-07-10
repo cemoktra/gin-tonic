@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 gin-tonic = { version = "0.4.7", features = ["uuid_bytes"] }
-tonic = { version = "0.11.0", features = ["transport"] }
+tonic = { version = "0.12.0", features = ["transport"] }
 uuid = { version = "1.10.0" }
 
 [build-dependencies]
