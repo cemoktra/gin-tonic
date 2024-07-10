@@ -158,12 +158,13 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
+                        let tag_space = #tag.required_space();
                         let #field_size_ident: usize = self
                             .#field_ident
                             .iter()
                             .map(|(key, value)| {
                                 let message_size = key.size_hint(1) + value.size_hint(2);
-                                message_size + message_size.required_space() + #tag.required_space()
+                                message_size + message_size.required_space() + tag_space
                             })
                             .sum();
                     });
@@ -300,11 +301,12 @@ fn expand_message_message(
 
                     size_hint_impl.extend(quote_spanned! { span=>
                         let #field_size_ident = if let Some(map) = self.#field_ident.as_ref() {
+                            let tag_space = #tag.required_space();
                             map
                                 .iter()
                                 .map(|(key, value)| {
                                     let message_size = key.size_hint(1) + value.size_hint(2);
-                                    message_size + message_size.required_space() + #tag.required_space()
+                                    message_size + message_size.required_space() + tag_space
                                 })
                                 .sum()
                         } else {
