@@ -25,7 +25,7 @@ impl IntoWire for f64 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        8 + tag.required_space()
+        8 + tag.required_space() as usize
     }
 }
 
@@ -52,7 +52,7 @@ impl IntoWire for f32 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        4 + tag.required_space()
+        4 + tag.required_space() as usize
     }
 }
 
@@ -81,7 +81,7 @@ impl IntoWire for u64 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        self.required_space() + tag.required_space()
+        self.required_space() as usize + tag.required_space() as usize
     }
 }
 
@@ -110,7 +110,7 @@ impl IntoWire for i64 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        self.required_space() + tag.required_space()
+        self.required_space() as usize + tag.required_space() as usize
     }
 }
 
@@ -139,7 +139,7 @@ impl IntoWire for u32 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        self.required_space() + tag.required_space()
+        self.required_space() as usize + tag.required_space() as usize
     }
 }
 
@@ -168,7 +168,7 @@ impl IntoWire for i32 {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        self.required_space() + tag.required_space()
+        self.required_space() as usize + tag.required_space() as usize
     }
 }
 
@@ -193,7 +193,7 @@ impl IntoWire for String {
 
     fn size_hint(&self, tag: u32) -> usize {
         let len = self.len();
-        len.required_space() + tag.required_space() + len
+        len.required_space() as usize + tag.required_space() as usize + len
     }
 }
 
@@ -223,7 +223,7 @@ impl IntoWire for bool {
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        if *self { 1u32 } else { 0u32 }.required_space() + tag.required_space()
+        if *self { 1u32 } else { 0u32 }.required_space() as usize + tag.required_space() as usize
     }
 }
 
@@ -232,13 +232,18 @@ where
     T: Message,
 {
     fn into_wire(self) -> WireType {
-        let mut buffer = bytes::BytesMut::with_capacity(self.size_hint());
-        self.serialize(&mut buffer);
-        WireType::LengthEncoded(buffer.freeze())
+        let size = self.size_hint();
+        let mut buffer = smallvec::SmallVec::<[u8; 1024]>::new();
+        buffer.resize(size, 0);
+        let mut buffer_ref = buffer.as_mut_slice();
+        self.serialize(&mut buffer_ref);
+        let written = size - buffer_ref.len();
+        WireType::LengthEncoded(bytes::Bytes::copy_from_slice(&buffer[0..written]))
     }
 
     fn size_hint(&self, tag: u32) -> usize {
-        tag.required_space() + self.size_hint()
+        // println!("size hint {} + {}", tag.required_space(), self.size_hint());
+        tag.required_space() as usize + self.size_hint()
     }
 }
 

@@ -62,21 +62,21 @@ impl<'a> WireTypeView<'a> {
 
     pub fn size_hint(&self, tag: u32) -> usize {
         match self {
-            WireTypeView::VarInt(data) => tag.required_space() + data.len(),
-            WireTypeView::FixedI64(_) => tag.required_space() + 8,
-            WireTypeView::SGroup => tag.required_space(),
-            WireTypeView::EGroup => tag.required_space(),
+            WireTypeView::VarInt(data) => tag.required_space() as usize + data.len(),
+            WireTypeView::FixedI64(_) => tag.required_space() as usize + 8,
+            WireTypeView::SGroup => tag.required_space() as usize,
+            WireTypeView::EGroup => tag.required_space() as usize,
             WireTypeView::LengthEncoded(data) => {
                 let data_len = data.len();
-                tag.required_space() + data_len.required_space() + data_len
+                tag.required_space() as usize + data_len.required_space() as usize + data_len
             }
-            WireTypeView::FixedI32(_) => tag.required_space() + 4,
+            WireTypeView::FixedI32(_) => tag.required_space() as usize + 4,
         }
     }
 }
 
 /// [WireType] is used for writing messages
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum WireType {
     VarInt([u8; 10], u8),
     FixedI64([u8; 8]),
@@ -137,15 +137,15 @@ impl WireType {
 
     pub fn size_hint(&self, tag: u32) -> usize {
         match self {
-            WireType::VarInt(_, size) => tag.required_space() + *size as usize,
-            WireType::FixedI64(_) => tag.required_space() + 8,
-            WireType::SGroup => tag.required_space(),
-            WireType::EGroup => tag.required_space(),
+            WireType::VarInt(_, size) => tag.required_space() as usize + *size as usize,
+            WireType::FixedI64(_) => tag.required_space() as usize + 8,
+            WireType::SGroup => tag.required_space() as usize,
+            WireType::EGroup => tag.required_space() as usize,
             WireType::LengthEncoded(data) => {
                 let data_len = data.len();
-                tag.required_space() + data_len.required_space() + data_len
+                tag.required_space() as usize + data_len.required_space() as usize + data_len
             }
-            WireType::FixedI32(_) => tag.required_space() + 4,
+            WireType::FixedI32(_) => tag.required_space() as usize + 4,
         }
     }
 

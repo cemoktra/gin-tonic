@@ -69,8 +69,8 @@ mod uuid_bytes {
 
         fn size_hint(&self, tag: u32) -> usize {
             let (high, low) = self.as_u64_pair();
-            let data_len = high.required_space() + low.required_space();
-            tag.required_space() + data_len.required_space() + data_len
+            let data_len = high.required_space() as usize + low.required_space() as usize;
+            tag.required_space() as usize + data_len.required_space() as usize + data_len
         }
     }
 

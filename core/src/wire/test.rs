@@ -587,16 +587,18 @@ mod test_messages {
         }
 
         fn size_hint(&self) -> usize {
+            let tag_size = 1.required_space() as usize;
             let map_size: usize = self
                 .map
                 .iter()
                 .map(|(key, value)| {
                     let message_size = key.size_hint(1) + value.size_hint(2);
-                    message_size + message_size.required_space() + 1.required_space()
+                    message_size + message_size.required_space() as usize + tag_size
                 })
-                .sum();
+                .sum::<usize>()
+                + tag_size;
 
-            let nested_size = crate::wire::nested::size_hint(2, &self.nested);
+            let nested_size = 2.required_space() as usize + IntoWire::size_hint(&self.nested, 2); // crate::wire::nested::size_hint(2, &self.nested);
 
             map_size + nested_size
         }

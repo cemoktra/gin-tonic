@@ -91,7 +91,7 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let #field_size_ident = #tag.required_space() + #root::IntoWire::size_hint(&self.#field_ident, #tag);
+                        let #field_size_ident = #tag.required_space() as usize + #root::IntoWire::size_hint(&self.#field_ident, #tag);
                     });
                 }
                 Kind::OneOf => {
@@ -158,13 +158,13 @@ fn expand_message_message(
                     });
 
                     size_hint_impl.extend(quote_spanned! { span=>
-                        let tag_space = #tag.required_space();
+                        let tag_space = #tag.required_space() as usize;
                         let #field_size_ident: usize = self
                             .#field_ident
                             .iter()
                             .map(|(key, value)| {
                                 let message_size = key.size_hint(1) + value.size_hint(2);
-                                message_size + message_size.required_space() + tag_space
+                                message_size + message_size.required_space() as usize + tag_space
                             })
                             .sum();
                     });
@@ -301,12 +301,12 @@ fn expand_message_message(
 
                     size_hint_impl.extend(quote_spanned! { span=>
                         let #field_size_ident = if let Some(map) = self.#field_ident.as_ref() {
-                            let tag_space = #tag.required_space();
+                            let tag_space = #tag.required_space() as usize;
                             map
                                 .iter()
                                 .map(|(key, value)| {
                                     let message_size = key.size_hint(1) + value.size_hint(2);
-                                    message_size + message_size.required_space() + tag_space
+                                    message_size + message_size.required_space() as usize + tag_space
                                 })
                                 .sum()
                         } else {
@@ -554,7 +554,7 @@ pub(crate) fn expand_enumeration(
         size_hint_impl.extend(quote_spanned! {span=>
             #ty::#var_ident => {
                 let tag: u32 = #tag;
-                tag.required_space()
+                tag.required_space() as usize
             }
         });
 
@@ -576,7 +576,7 @@ pub(crate) fn expand_enumeration(
             fn size_hint(&self, tag: u32) -> usize {
                 use #root::export::VarInt;
 
-                tag.required_space()
+                tag.required_space() as usize
                     + match self {
                         #size_hint_impl
                     }

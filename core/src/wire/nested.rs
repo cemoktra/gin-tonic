@@ -7,5 +7,5 @@ where
     T: IntoWire,
 {
     let size = message.size_hint(tag);
-    tag.required_space() + size.required_space() + size
+    tag.required_space() as usize + size.required_space() as usize + size
 }
