@@ -20,13 +20,13 @@ impl<'a> WireTypeView<'a> {
 
         match self {
             WireTypeView::VarInt(data) => {
-                let tag_size = tag.encode_var(&mut buffer);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
                 writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(data);
             }
             WireTypeView::FixedI64(data) => {
                 let tag = tag | 0b1;
-                let tag_size = tag.encode_var(&mut buffer);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
                 writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(data);
             }
@@ -34,26 +34,26 @@ impl<'a> WireTypeView<'a> {
                 let tag = tag | 0b10;
                 let len: u32 = data.len().try_into().expect("this is good");
 
-                let tag_size = tag.encode_var(&mut buffer);
-                let len_size = len.encode_var(&mut buffer[tag_size..]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                let len_size = len.encode_var(&mut buffer[tag_size..]) as usize;
 
                 writer.put_slice(&buffer[0..tag_size + len_size]);
                 writer.put_slice(data);
             }
             WireTypeView::SGroup => {
                 let tag = tag | 0b11;
-                let tag_size = tag.encode_var(&mut buffer);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
                 writer.put_slice(&buffer[0..tag_size]);
             }
             WireTypeView::EGroup => {
                 let tag = tag | 0b100;
-                let tag_size = tag.encode_var(&mut buffer);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
                 writer.put_slice(&buffer[0..tag_size]);
             }
 
             WireTypeView::FixedI32(data) => {
                 let tag = tag | 0b101;
-                let tag_size = tag.encode_var(&mut buffer);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
                 writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(data);
             }
@@ -90,50 +90,46 @@ impl WireType {
     /// serialize a [WireType] to anything that implements [bytes::BufMut]
     #[inline(always)]
     pub fn serialize(&self, field_number: u32, writer: &mut impl bytes::BufMut) {
-        let mut tag_varint = [0u8; 10];
+        let mut buffer = [0u8; 20];
         let tag = field_number << 3;
 
         match self {
             WireType::VarInt(data, size) => {
-                let tag_size = tag.encode_var(&mut tag_varint);
-                writer.put_slice(&tag_varint[0..tag_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(&data[0..*size as usize]);
             }
             WireType::FixedI64(data) => {
                 let tag = tag | 0b1;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                writer.put_slice(&tag_varint[0..tag_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(data);
             }
             WireType::LengthEncoded(data) => {
-                let mut len_varint = [0u8; 10];
-
                 let tag = tag | 0b10;
-                let tag_size = tag.encode_var(&mut tag_varint);
-
-                writer.put_slice(&tag_varint[0..tag_size]);
-
                 let len: u32 = data.len().try_into().expect("this is good");
-                let len_size = len.encode_var(&mut len_varint);
 
-                writer.put_slice(&len_varint[0..len_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                let len_size = len.encode_var(&mut buffer[tag_size..]) as usize;
+
+                writer.put_slice(&buffer[0..tag_size + len_size]);
                 writer.put_slice(data);
             }
             WireType::SGroup => {
                 let tag = tag | 0b11;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                writer.put_slice(&tag_varint[0..tag_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                writer.put_slice(&buffer[0..tag_size]);
             }
             WireType::EGroup => {
                 let tag = tag | 0b100;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                writer.put_slice(&tag_varint[0..tag_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                writer.put_slice(&buffer[0..tag_size]);
             }
 
             WireType::FixedI32(data) => {
                 let tag = tag | 0b101;
-                let tag_size = tag.encode_var(&mut tag_varint);
-                writer.put_slice(&tag_varint[0..tag_size]);
+                let tag_size = tag.encode_var(&mut buffer) as usize;
+                writer.put_slice(&buffer[0..tag_size]);
                 writer.put_slice(data);
             }
         }

@@ -59,8 +59,8 @@ mod uuid_bytes {
             let mut buffer = [0u8; 20];
             let (high, low) = self.as_u64_pair();
 
-            let high_len = high.encode_var(&mut buffer[0..]);
-            let low_len = low.encode_var(&mut buffer[high_len..]);
+            let high_len = high.encode_var(&mut buffer[0..]) as usize;
+            let low_len = low.encode_var(&mut buffer[high_len..]) as usize;
 
             WireType::LengthEncoded(bytes::Bytes::copy_from_slice(
                 &buffer[0..high_len + low_len],

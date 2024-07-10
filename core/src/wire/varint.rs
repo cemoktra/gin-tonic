@@ -44,13 +44,12 @@ pub trait VarInt: Sized + Copy {
     fn decode_var(src: &[u8]) -> Option<(Self, usize)>;
     /// Encode a value into the slice. The slice must be at least `required_space()` bytes long.
     /// The number of bytes taken by the encoded integer is returned.
-    fn encode_var(self, src: &mut [u8]) -> usize;
+    fn encode_var(self, src: &mut [u8]) -> u8;
 
     /// Helper: Encode a value and return the encoded form as Vec. The Vec must be at least
     /// `required_space()` bytes long.
     fn encode_var_vec(self) -> Vec<u8> {
-        let mut v = Vec::new();
-        v.resize(self.required_space(), 0);
+        let mut v = vec![0; self.required_space()];
         self.encode_var(&mut v);
         v
     }
@@ -81,7 +80,7 @@ macro_rules! impl_varint {
                 Some((n as Self, s))
             }
 
-            fn encode_var(self, dst: &mut [u8]) -> usize {
+            fn encode_var(self, dst: &mut [u8]) -> u8 {
                 (self as u64).encode_var(dst)
             }
         }
@@ -97,7 +96,7 @@ macro_rules! impl_varint {
                 Some((n as Self, s))
             }
 
-            fn encode_var(self, dst: &mut [u8]) -> usize {
+            fn encode_var(self, dst: &mut [u8]) -> u8 {
                 (self as i64).encode_var(dst)
             }
         }
@@ -147,17 +146,17 @@ impl VarInt for u64 {
     }
 
     #[inline]
-    fn encode_var(self, dst: &mut [u8]) -> usize {
+    fn encode_var(self, dst: &mut [u8]) -> u8 {
         let mut n = self;
-        let mut i = 0;
+        let mut i = 0u8;
 
         while n >= 0x80 {
-            dst[i] = MSB | (n as u8);
+            dst[i as usize] = MSB | (n as u8);
             i += 1;
             n >>= 7;
         }
 
-        dst[i] = n as u8;
+        dst[i as usize] = n as u8;
         i + 1
     }
 }
@@ -177,18 +176,18 @@ impl VarInt for i64 {
     }
 
     #[inline]
-    fn encode_var(self, dst: &mut [u8]) -> usize {
+    fn encode_var(self, dst: &mut [u8]) -> u8 {
         assert!(dst.len() >= self.required_space());
         let mut n: u64 = zigzag_encode(self);
-        let mut i = 0;
+        let mut i = 0u8;
 
         while n >= 0x80 {
-            dst[i] = MSB | (n as u8);
+            dst[i as usize] = MSB | (n as u8);
             i += 1;
             n >>= 7;
         }
 
-        dst[i] = n as u8;
+        dst[i as usize] = n as u8;
         i + 1
     }
 }

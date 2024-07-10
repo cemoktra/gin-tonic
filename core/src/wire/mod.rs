@@ -3,6 +3,7 @@ pub mod map;
 pub mod nested;
 mod scalars;
 mod std_wire_impl;
+#[allow(clippy::cast_possible_truncation)]
 pub mod varint;
 pub mod wire_type;
 
