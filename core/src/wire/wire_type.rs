@@ -55,8 +55,6 @@ impl WireType {
 
                 writer.put_slice(&len_varint[0..len_size]);
                 writer.put_slice(data);
-
-                // );
             }
             WireType::SGroup => {
                 let tag = tag | 0b11;
@@ -100,6 +98,75 @@ impl WireType {
             WireType::EGroup => WireTypeView::EGroup,
             WireType::LengthEncoded(data) => WireTypeView::LengthEncoded(data),
             WireType::FixedI32(data) => WireTypeView::FixedI32(data),
+        }
+    }
+}
+
+impl<'a> WireTypeView<'a> {
+    /// serialize a [WireType] to anything that implements [std::io::Write]
+    #[inline(always)]
+    pub fn serialize(&self, field_number: u32, writer: &mut impl bytes::BufMut) {
+        // let x = std::time::Instant::now();
+        let mut tag_varint = [0u8; 10];
+        let tag = field_number << 3;
+
+        match self {
+            WireTypeView::VarInt(data) => {
+                let tag_size = tag.encode_var(&mut tag_varint);
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(data);
+            }
+            WireTypeView::FixedI64(data) => {
+                let tag = tag | 0b1;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(data);
+            }
+            WireTypeView::LengthEncoded(data) => {
+                let mut len_varint = [0u8; 10];
+
+                let tag = tag | 0b10;
+                let tag_size = tag.encode_var(&mut tag_varint);
+
+                writer.put_slice(&tag_varint[0..tag_size]);
+
+                let len: u32 = data.len().try_into().expect("this is good");
+                let len_size = len.encode_var(&mut len_varint);
+
+                writer.put_slice(&len_varint[0..len_size]);
+                writer.put_slice(data);
+            }
+            WireTypeView::SGroup => {
+                let tag = tag | 0b11;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                writer.put_slice(&tag_varint[0..tag_size]);
+            }
+            WireTypeView::EGroup => {
+                let tag = tag | 0b100;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                writer.put_slice(&tag_varint[0..tag_size]);
+            }
+
+            WireTypeView::FixedI32(data) => {
+                let tag = tag | 0b101;
+                let tag_size = tag.encode_var(&mut tag_varint);
+                writer.put_slice(&tag_varint[0..tag_size]);
+                writer.put_slice(data);
+            }
+        }
+    }
+
+    pub fn size_hint(&self, tag: u32) -> usize {
+        match self {
+            WireTypeView::VarInt(data) => tag.required_space() + data.len(),
+            WireTypeView::FixedI64(_) => tag.required_space() + 8,
+            WireTypeView::SGroup => tag.required_space(),
+            WireTypeView::EGroup => tag.required_space(),
+            WireTypeView::LengthEncoded(data) => {
+                let data_len = data.len();
+                tag.required_space() + data_len.required_space() + data_len
+            }
+            WireTypeView::FixedI32(_) => tag.required_space() + 4,
         }
     }
 }

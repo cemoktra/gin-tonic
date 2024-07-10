@@ -18,6 +18,21 @@ where
     WireType::LengthEncoded(map_buffer.freeze())
 }
 
+// #[inline(always)]
+// pub fn into_wire_pre_alloc<K, V>(key: K, value: V, buffer: &mut bytes::BytesMut) -> WireType
+// where
+//     K: IntoWire,
+//     V: IntoWire,
+// {
+//     let wire_type = key.into_wire();
+//     wire_type.serialize(1, buffer);
+
+//     let wire_type = value.into_wire();
+//     wire_type.serialize(2, buffer);
+
+//     WireType::LengthEncoded(buffer.clone().freeze())
+// }
+
 /// read a key-value pair from a [WireTypeView]
 #[inline(always)]
 pub fn from_wire<K, V>(wire_type: WireTypeView) -> Result<(K, V), Error>
