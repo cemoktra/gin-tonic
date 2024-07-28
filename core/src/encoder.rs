@@ -114,9 +114,6 @@ where
         self.put_i32_le(n);
     }
 
-    //162 => 81
-    //174 => 87
-
     fn encode_sfixed64(&mut self, n: i64) {
         self.put_i64_le(n);
     }

@@ -2,6 +2,7 @@ use base64::prelude::*;
 use bytes::{Bytes, BytesMut};
 
 use crate::{
+    decoder::DecodeError,
     message::{DecodeMessage, EncodeMessage},
     tag::Tag,
     types::{
@@ -146,6 +147,7 @@ impl EncodeMessage for Test {
     }
 }
 
+// manual reference implementation
 impl DecodeMessage for Test {
     fn decode(
         decoder: &mut impl crate::decoder::Decode,
@@ -180,95 +182,156 @@ impl DecodeMessage for Test {
             let field_number = tag.field_number();
             let wire_type = tag.wire_type();
 
-            println!("tag = {tag}, field_number = {field_number}, wire_type = {wire_type}",);
-
             match field_number {
                 1 => {
-                    assert_eq!(5, wire_type);
-                    float = Some(decoder.decode_float()?);
+                    if f32::WIRE_TYPE == wire_type {
+                        float = Some(decoder.decode_float()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 2 => {
-                    assert_eq!(1, wire_type);
-                    double = Some(decoder.decode_double()?);
+                    if f64::WIRE_TYPE == wire_type {
+                        double = Some(decoder.decode_double()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 3 => {
-                    assert_eq!(0, wire_type);
-                    pos_i32 = Some(decoder.decode_int32()?);
+                    if Int32::WIRE_TYPE == wire_type {
+                        pos_i32 = Some(decoder.decode_int32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 4 => {
-                    assert_eq!(0, wire_type);
-                    neg_i32 = Some(decoder.decode_int32()?);
+                    if Int32::WIRE_TYPE == wire_type {
+                        neg_i32 = Some(decoder.decode_int32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 5 => {
-                    assert_eq!(0, wire_type);
-                    pos_i64 = Some(decoder.decode_int64()?);
+                    if Int64::WIRE_TYPE == wire_type {
+                        pos_i64 = Some(decoder.decode_int64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 6 => {
-                    assert_eq!(0, wire_type);
-                    neg_i64 = Some(decoder.decode_int64()?);
+                    if Int64::WIRE_TYPE == wire_type {
+                        neg_i64 = Some(decoder.decode_int64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 7 => {
-                    assert_eq!(0, wire_type);
-                    uint32 = Some(decoder.decode_uint32()?);
+                    if UInt32::WIRE_TYPE == wire_type {
+                        uint32 = Some(decoder.decode_uint32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 8 => {
-                    assert_eq!(0, wire_type);
-                    uint64 = Some(decoder.decode_uint64()?);
+                    if UInt64::WIRE_TYPE == wire_type {
+                        uint64 = Some(decoder.decode_uint64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 9 => {
-                    assert_eq!(0, wire_type);
-                    pos_sint32 = Some(decoder.decode_sint32()?);
+                    if SInt32::WIRE_TYPE == wire_type {
+                        pos_sint32 = Some(decoder.decode_sint32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 10 => {
-                    assert_eq!(0, wire_type);
-                    neg_sint32 = Some(decoder.decode_sint32()?);
+                    if SInt32::WIRE_TYPE == wire_type {
+                        neg_sint32 = Some(decoder.decode_sint32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 11 => {
-                    assert_eq!(0, wire_type);
-                    pos_sint64 = Some(decoder.decode_sint64()?);
+                    if SInt64::WIRE_TYPE == wire_type {
+                        pos_sint64 = Some(decoder.decode_sint64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 12 => {
-                    assert_eq!(0, wire_type);
-                    neg_sint64 = Some(decoder.decode_sint64()?);
+                    if SInt64::WIRE_TYPE == wire_type {
+                        neg_sint64 = Some(decoder.decode_sint64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 13 => {
-                    assert_eq!(5, wire_type);
-                    fixed_u32 = Some(decoder.decode_fixed32()?);
+                    if Fixed32::WIRE_TYPE == wire_type {
+                        fixed_u32 = Some(decoder.decode_fixed32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 14 => {
-                    assert_eq!(1, wire_type);
-                    fixed_u64 = Some(decoder.decode_fixed64()?);
+                    if Fixed64::WIRE_TYPE == wire_type {
+                        fixed_u64 = Some(decoder.decode_fixed64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 15 => {
-                    assert_eq!(5, wire_type);
-                    pos_sfixed32 = Some(decoder.decode_sfixed32()?);
+                    if SFixed32::WIRE_TYPE == wire_type {
+                        pos_sfixed32 = Some(decoder.decode_sfixed32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 16 => {
-                    assert_eq!(5, wire_type);
-                    neg_sfixed32 = Some(decoder.decode_sfixed32()?);
+                    if SFixed32::WIRE_TYPE == wire_type {
+                        neg_sfixed32 = Some(decoder.decode_sfixed32()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 17 => {
-                    assert_eq!(1, wire_type);
-                    pos_sfixed64 = Some(decoder.decode_sfixed64()?);
+                    if SFixed64::WIRE_TYPE == wire_type {
+                        pos_sfixed64 = Some(decoder.decode_sfixed64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 18 => {
-                    assert_eq!(1, wire_type);
-                    neg_sfixed64 = Some(decoder.decode_sfixed64()?);
+                    if SFixed64::WIRE_TYPE == wire_type {
+                        neg_sfixed64 = Some(decoder.decode_sfixed64()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 19 => {
-                    assert_eq!(0, wire_type);
-                    b = Some(decoder.decode_bool()?);
+                    if bool::WIRE_TYPE == wire_type {
+                        b = Some(decoder.decode_bool()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 20 => {
-                    assert_eq!(2, wire_type);
-                    empty = Some(decoder.decode_string()?);
+                    if String::WIRE_TYPE == wire_type {
+                        empty = Some(decoder.decode_string()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
                 21 => {
-                    assert_eq!(2, wire_type);
-                    hello = Some(decoder.decode_string()?);
+                    if String::WIRE_TYPE == wire_type {
+                        hello = Some(decoder.decode_string()?);
+                    } else {
+                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
+                    }
                 }
 
-                _ => panic!("unexpect field number: {field_number}"),
+                n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
 

@@ -4,6 +4,10 @@ use std::string::FromUtf8Error;
 pub enum DecodeError {
     #[error("VarInt limitof 10 bytes reached")]
     VarIntLimit,
+    #[error("Unexpected wire type: expected {0}, actual {1}")]
+    UnexpectedWireType(u8, u8),
+    #[error("Unexpected field number {0}")]
+    UnexpectedFieldNumber(u32),
     #[error(transparent)]
     Utf8(#[from] FromUtf8Error),
 }
