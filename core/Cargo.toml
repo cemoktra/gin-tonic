@@ -22,6 +22,7 @@ uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
 smallvec = { workspace = true }
+base64 = "0.22.1"
 
 [lints]
 workspace = true
