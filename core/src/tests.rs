@@ -9,10 +9,46 @@ use crate::{
     size_hint, size_hint_wrapped,
     tag::Tag,
     types::{
-        Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
+        sizeof_varint64, Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32,
+        SInt64, UInt32, UInt64,
     },
-    WIRE_TYPE_LENGTH_ENCODED,
+    WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
+
+#[derive(Debug, PartialEq)]
+enum TestEnum {
+    A,
+    B,
+}
+
+impl PbType for TestEnum {
+    const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
+
+    fn size_hint(&self) -> usize {
+        match self {
+            TestEnum::A => sizeof_varint64(1),
+            TestEnum::B => sizeof_varint64(2),
+        }
+    }
+
+    fn encode(self, encoder: &mut impl Encode) {
+        match self {
+            TestEnum::A => encoder.encode_uint64(1),
+            TestEnum::B => encoder.encode_uint64(2),
+        }
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        match decoder.decode_uint64()? {
+            1 => Ok(Self::A),
+            2 => Ok(Self::B),
+            _ => todo!("enum variant error"),
+        }
+    }
+}
 
 #[derive(Debug)]
 struct Test {
@@ -37,6 +73,7 @@ struct Test {
     b: bool,
     empty: String,
     hello: String,
+    e: TestEnum,
 }
 
 impl PbType for Test {
@@ -62,6 +99,7 @@ impl PbType for Test {
             + size_hint!(19, bool, self.b)
             + size_hint!(20, String, self.empty)
             + size_hint!(21, String, self.hello)
+            + size_hint!(22, TestEnum, self.e)
     }
 
     fn encode(self, encoder: &mut impl crate::encoder::Encode) {
@@ -110,6 +148,7 @@ impl PbType for Test {
         encode_field!(19, bool, self.b, encoder, Encode::encode_bool);
         encode_field!(20, String, &self.empty, encoder, Encode::encode_string);
         encode_field!(21, String, &self.hello, encoder, Encode::encode_string);
+        encode_field!(22, TestEnum, self.e, encoder, Encode::encode_type);
     }
 
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
@@ -139,6 +178,7 @@ impl PbType for Test {
         let mut b = None;
         let mut empty = None;
         let mut hello = None;
+        let mut e = None;
 
         while !decoder.eof() {
             let tag = decoder.decode_uint32()?;
@@ -227,6 +267,7 @@ impl PbType for Test {
                 19 => decode_field!(bool, b, wire_type, decoder, Decode::decode_bool),
                 20 => decode_field!(String, empty, wire_type, decoder, Decode::decode_string),
                 21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
+                22 => decode_field!(TestEnum, e, wire_type, decoder, TestEnum::decode),
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
@@ -253,6 +294,7 @@ impl PbType for Test {
             b: b.unwrap(),
             empty: empty.unwrap(),
             hello: hello.unwrap(),
+            e: e.unwrap(),
         })
     }
 }
@@ -281,16 +323,17 @@ fn encode() {
         b: false,
         empty: String::new(),
         hello: String::from("world"),
+        e: TestEnum::A,
     };
 
     let size = test.size_hint();
-    assert_eq!(121, size);
+    assert_eq!(124, size);
 
-    let mut buffer = BytesMut::with_capacity(121);
+    let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
 
     assert_eq!(
-        "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZA==",
+        "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAQ==",
         BASE64_STANDARD.encode(&buffer)
     );
 }
@@ -299,7 +342,7 @@ fn encode() {
 fn decode() {
     let data = BASE64_STANDARD
         .decode(
-            "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZA==",
+            "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAQ==",
         )
         .unwrap();
     let mut bytes = bytes::Bytes::from(data);
@@ -327,4 +370,5 @@ fn decode() {
     assert!(!test.b);
     assert!(test.empty.is_empty());
     assert_eq!(test.hello, "world");
+    assert_eq!(test.e, TestEnum::A);
 }

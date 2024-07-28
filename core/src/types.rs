@@ -1,10 +1,10 @@
 use crate::{
     decoder::{Decode, DecodeError},
-    encoder::{zigzag_encode, Encode},
+    encoder::{self, zigzag_encode, Encode},
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
 
-const fn sizeof_varint32(v: u32) -> usize {
+pub const fn sizeof_varint32(v: u32) -> usize {
     match v {
         0x0..=0x7F => 1,
         0x80..=0x3FFF => 2,
@@ -14,7 +14,7 @@ const fn sizeof_varint32(v: u32) -> usize {
     }
 }
 
-const fn sizeof_varint64(v: u64) -> usize {
+pub const fn sizeof_varint64(v: u64) -> usize {
     const U32_MAX: u64 = u32::MAX as u64;
     const U32_OVER_MAX: u64 = U32_MAX + 1;
     match v {
@@ -305,7 +305,8 @@ impl PbType for String {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn size_hint(&self) -> usize {
-        sizeof_varint32(self.len() as u32) + self.as_bytes().len()
+        let l = self.len();
+        sizeof_varint32(l as u32) + l
     }
 
     fn encode(self, encoder: &mut impl Encode) {
@@ -317,5 +318,99 @@ impl PbType for String {
         Self: Sized,
     {
         decoder.decode_string()
+    }
+}
+
+impl PbType for std::net::Ipv4Addr {
+    const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
+
+    fn size_hint(&self) -> usize {
+        sizeof_varint32(self.clone().to_bits())
+    }
+
+    fn encode(self, encoder: &mut impl Encode) {
+        encoder.encode_uint32(self.to_bits())
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        decoder.decode_uint32().map(std::net::Ipv4Addr::from_bits)
+    }
+}
+
+impl PbType for std::path::PathBuf {
+    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
+
+    fn size_hint(&self) -> usize {
+        let l = self.display().to_string().len();
+        sizeof_varint32(l as u32) + l
+    }
+
+    fn encode(self, encoder: &mut impl Encode) {
+        encoder.encode_string(self.display().to_string().as_ref())
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        decoder.decode_string().map(Into::into)
+    }
+}
+
+#[cfg(feature = "uuid_string")]
+impl PbType for uuid::Uuid {
+    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
+
+    fn size_hint(&self) -> usize {
+        let l = self.as_simple().to_string().len();
+        sizeof_varint32(l as u32) + l
+    }
+
+    fn encode(self, encoder: &mut impl Encode) {
+        encoder.encode_string(self.as_simple().to_string().as_ref())
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        decoder
+            .decode_string()?
+            .parse()
+            .map_err(|err| DecodeError::Conversion(Box::new(err)))
+    }
+}
+
+#[cfg(feature = "uuid_bytes")]
+impl PbType for uuid::Uuid {
+    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
+
+    fn size_hint(&self) -> usize {
+        let (high, low) = self.as_u64_pair();
+        let size = sizeof_varint64(high) + sizeof_varint64(low);
+        sizeof_varint32(size as _) + size
+    }
+
+    fn encode(self, encoder: &mut impl Encode) {
+        let (high, low) = self.as_u64_pair();
+        encoder.encode_uint32(2);
+        encoder.encode_uint64(high);
+        encoder.encode_uint64(low);
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        let len = decoder.decode_uint32()?;
+        if len != 2 {
+            todo!("error for unvalid length")
+        }
+        let high = decoder.decode_uint64()?;
+        let low = decoder.decode_uint64()?;
+        Ok(Self::from_u64_pair(high, low))
     }
 }

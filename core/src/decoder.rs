@@ -1,5 +1,7 @@
 use std::string::FromUtf8Error;
 
+use crate::types::PbType;
+
 #[derive(Debug, thiserror::Error)]
 pub enum DecodeError {
     #[error("VarInt limitof 10 bytes reached")]
@@ -10,6 +12,8 @@ pub enum DecodeError {
     UnexpectedFieldNumber(u32),
     #[error(transparent)]
     Utf8(#[from] FromUtf8Error),
+    #[error(transparent)]
+    Conversion(Box<dyn std::error::Error>),
 }
 
 pub trait Decode {
@@ -38,6 +42,10 @@ pub trait Decode {
     fn decode_bool(&mut self) -> Result<bool, DecodeError>;
     fn decode_bytes(&mut self) -> Result<bytes::Bytes, DecodeError>;
     fn decode_string(&mut self) -> Result<String, DecodeError>;
+
+    fn encode_type<T>(&mut self) -> Result<T, DecodeError>
+    where
+        T: PbType;
 }
 
 #[inline]
@@ -135,6 +143,13 @@ where
     fn decode_string(&mut self) -> Result<String, DecodeError> {
         let bytes = self.decode_bytes()?;
         Ok(String::from_utf8(bytes.to_vec())?)
+    }
+
+    fn encode_type<M>(&mut self) -> Result<M, DecodeError>
+    where
+        M: PbType,
+    {
+        M::decode(self)
     }
 }
 
