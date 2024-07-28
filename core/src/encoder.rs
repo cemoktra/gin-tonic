@@ -1,4 +1,4 @@
-use crate::message::EncodeMessage;
+use crate::types::PbType;
 
 pub trait Encode {
     fn encode_float(&mut self, n: f32);
@@ -25,7 +25,7 @@ pub trait Encode {
     fn encode_bytes(&mut self, b: &[u8]);
     fn encode_string(&mut self, s: &str);
 
-    fn encode_message(&mut self, msg: impl EncodeMessage);
+    fn encode_type(&mut self, msg: impl PbType);
 }
 
 #[inline]
@@ -131,8 +131,8 @@ where
         self.encode_bytes(s.as_bytes());
     }
 
-    fn encode_message(&mut self, msg: impl EncodeMessage) {
-        msg.encode(self)
+    fn encode_type(&mut self, ty: impl PbType) {
+        ty.encode(self)
     }
 }
 

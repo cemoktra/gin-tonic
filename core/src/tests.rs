@@ -4,11 +4,11 @@ use bytes::{Bytes, BytesMut};
 use crate::{
     decode_field,
     decoder::{Decode, DecodeError},
-    message::{DecodeMessage, EncodeMessage},
     tag::Tag,
     types::{
         Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
     },
+    WIRE_TYPE_LENGTH_ENCODED,
 };
 
 #[derive(Debug)]
@@ -36,7 +36,7 @@ struct Test {
     hello: String,
 }
 
-impl EncodeMessage for Test {
+impl PbType for Test {
     fn size_hint(&self) -> usize {
         UInt32(u32::from_parts(1, f32::WIRE_TYPE)).size_hint()
             + self.float.size_hint()
@@ -82,7 +82,7 @@ impl EncodeMessage for Test {
             + self.hello.size_hint()
     }
 
-    fn encode(&self, encoder: &mut impl crate::encoder::Encode) {
+    fn encode(self, encoder: &mut impl crate::encoder::Encode) {
         encoder.encode_uint32(u32::from_parts(1, f32::WIRE_TYPE));
         encoder.encode_float(self.float);
 
@@ -146,13 +146,10 @@ impl EncodeMessage for Test {
         encoder.encode_uint32(u32::from_parts(21, String::WIRE_TYPE));
         encoder.encode_string(&self.hello);
     }
-}
 
-// manual reference implementation
-impl DecodeMessage for Test {
-    fn decode(
-        decoder: &mut impl crate::decoder::Decode,
-    ) -> Result<Self, crate::decoder::DecodeError>
+    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
     where
         Self: Sized,
     {

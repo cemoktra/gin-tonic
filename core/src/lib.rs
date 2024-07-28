@@ -1,7 +1,6 @@
 mod decoder;
 mod encoder;
 mod macros;
-mod message;
 mod tag;
 #[cfg(test)]
 mod tests;
