@@ -4,6 +4,9 @@ use bytes::{Bytes, BytesMut};
 use crate::{
     decode_field,
     decoder::{Decode, DecodeError},
+    encode_field,
+    encoder::Encode,
+    size_hint, size_hint_wrapped,
     tag::Tag,
     types::{
         Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
@@ -38,113 +41,75 @@ struct Test {
 
 impl PbType for Test {
     fn size_hint(&self) -> usize {
-        UInt32(u32::from_parts(1, f32::WIRE_TYPE)).size_hint()
-            + self.float.size_hint()
-            + UInt32(u32::from_parts(2, f64::WIRE_TYPE)).size_hint()
-            + self.double.size_hint()
-            + UInt32(u32::from_parts(3, Int32::WIRE_TYPE)).size_hint()
-            + Int32(self.pos_i32).size_hint()
-            + UInt32(u32::from_parts(4, Int32::WIRE_TYPE)).size_hint()
-            + Int32(self.neg_i32).size_hint()
-            + UInt32(u32::from_parts(5, Int64::WIRE_TYPE)).size_hint()
-            + Int64(self.pos_i64).size_hint()
-            + UInt32(u32::from_parts(6, Int64::WIRE_TYPE)).size_hint()
-            + Int64(self.neg_i64).size_hint()
-            + UInt32(u32::from_parts(7, UInt32::WIRE_TYPE)).size_hint()
-            + UInt32(self.uint32).size_hint()
-            + UInt32(u32::from_parts(8, UInt64::WIRE_TYPE)).size_hint()
-            + UInt64(self.uint64).size_hint()
-            + UInt32(u32::from_parts(9, SInt32::WIRE_TYPE)).size_hint()
-            + SInt32(self.pos_sint32).size_hint()
-            + UInt32(u32::from_parts(10, SInt32::WIRE_TYPE)).size_hint()
-            + SInt32(self.neg_sint32).size_hint()
-            + UInt32(u32::from_parts(11, SInt64::WIRE_TYPE)).size_hint()
-            + SInt64(self.pos_sint64).size_hint()
-            + UInt32(u32::from_parts(12, SInt64::WIRE_TYPE)).size_hint()
-            + SInt64(self.neg_sint64).size_hint()
-            + UInt32(u32::from_parts(13, Fixed32::WIRE_TYPE)).size_hint()
-            + Fixed32(self.fixed_u32).size_hint()
-            + UInt32(u32::from_parts(14, Fixed64::WIRE_TYPE)).size_hint()
-            + Fixed64(self.fixed_u64).size_hint()
-            + UInt32(u32::from_parts(15, SFixed32::WIRE_TYPE)).size_hint()
-            + SFixed32(self.pos_sfixed32).size_hint()
-            + UInt32(u32::from_parts(16, SFixed32::WIRE_TYPE)).size_hint()
-            + SFixed32(self.neg_sfixed32).size_hint()
-            + UInt32(u32::from_parts(17, SFixed64::WIRE_TYPE)).size_hint()
-            + SFixed64(self.pos_sfixed64).size_hint()
-            + UInt32(u32::from_parts(18, SFixed64::WIRE_TYPE)).size_hint()
-            + SFixed64(self.neg_sfixed64).size_hint()
-            + UInt32(u32::from_parts(19, bool::WIRE_TYPE)).size_hint()
-            + self.b.size_hint()
-            + UInt32(u32::from_parts(20, String::WIRE_TYPE)).size_hint()
-            + self.empty.size_hint()
-            + UInt32(u32::from_parts(21, String::WIRE_TYPE)).size_hint()
-            + self.hello.size_hint()
+        size_hint!(1, f32, self.float)
+            + size_hint!(2, f64, self.double)
+            + size_hint_wrapped!(3, Int32, Int32, self.pos_i32)
+            + size_hint_wrapped!(4, Int32, Int32, self.neg_i32)
+            + size_hint_wrapped!(5, Int64, Int64, self.pos_i64)
+            + size_hint_wrapped!(6, Int64, Int64, self.neg_i64)
+            + size_hint_wrapped!(7, UInt32, UInt32, self.uint32)
+            + size_hint_wrapped!(8, UInt64, UInt64, self.uint64)
+            + size_hint_wrapped!(9, SInt32, SInt32, self.pos_sint32)
+            + size_hint_wrapped!(10, SInt32, SInt32, self.neg_sint32)
+            + size_hint_wrapped!(11, SInt64, SInt64, self.pos_sint64)
+            + size_hint_wrapped!(12, SInt64, SInt64, self.neg_sint64)
+            + size_hint_wrapped!(13, Fixed32, Fixed32, self.fixed_u32)
+            + size_hint_wrapped!(14, Fixed64, Fixed64, self.fixed_u64)
+            + size_hint_wrapped!(15, SFixed32, SFixed32, self.pos_sfixed32)
+            + size_hint_wrapped!(16, SFixed32, SFixed32, self.neg_sfixed32)
+            + size_hint_wrapped!(17, SFixed64, SFixed64, self.pos_sfixed64)
+            + size_hint_wrapped!(18, SFixed64, SFixed64, self.neg_sfixed64)
+            + size_hint!(19, bool, self.b)
+            + size_hint!(20, String, self.empty)
+            + size_hint!(21, String, self.hello)
     }
 
     fn encode(self, encoder: &mut impl crate::encoder::Encode) {
-        encoder.encode_uint32(u32::from_parts(1, f32::WIRE_TYPE));
-        encoder.encode_float(self.float);
-
-        encoder.encode_uint32(u32::from_parts(2, f64::WIRE_TYPE));
-        encoder.encode_double(self.double);
-
-        encoder.encode_uint32(u32::from_parts(3, Int32::WIRE_TYPE));
-        encoder.encode_int32(self.pos_i32);
-
-        encoder.encode_uint32(u32::from_parts(4, Int32::WIRE_TYPE));
-        encoder.encode_int32(self.neg_i32);
-
-        encoder.encode_uint32(u32::from_parts(5, Int64::WIRE_TYPE));
-        encoder.encode_int64(self.pos_i64);
-
-        encoder.encode_uint32(u32::from_parts(6, Int64::WIRE_TYPE));
-        encoder.encode_int64(self.neg_i64);
-
-        encoder.encode_uint32(u32::from_parts(7, UInt32::WIRE_TYPE));
-        encoder.encode_uint32(self.uint32);
-
-        encoder.encode_uint32(u32::from_parts(8, UInt64::WIRE_TYPE));
-        encoder.encode_uint64(self.uint64);
-
-        encoder.encode_uint32(u32::from_parts(9, SInt32::WIRE_TYPE));
-        encoder.encode_sint32(self.pos_sint32);
-
-        encoder.encode_uint32(u32::from_parts(10, SInt32::WIRE_TYPE));
-        encoder.encode_sint32(self.neg_sint32);
-
-        encoder.encode_uint32(u32::from_parts(11, SInt64::WIRE_TYPE));
-        encoder.encode_sint64(self.pos_sint64);
-
-        encoder.encode_uint32(u32::from_parts(12, SInt64::WIRE_TYPE));
-        encoder.encode_sint64(self.neg_sint64);
-
-        encoder.encode_uint32(u32::from_parts(13, Fixed32::WIRE_TYPE));
-        encoder.encode_fixed32(self.fixed_u32);
-
-        encoder.encode_uint32(u32::from_parts(14, Fixed64::WIRE_TYPE));
-        encoder.encode_fixed64(self.fixed_u64);
-
-        encoder.encode_uint32(u32::from_parts(15, SFixed32::WIRE_TYPE));
-        encoder.encode_sfixed32(self.pos_sfixed32);
-
-        encoder.encode_uint32(u32::from_parts(16, SFixed32::WIRE_TYPE));
-        encoder.encode_sfixed32(self.neg_sfixed32);
-
-        encoder.encode_uint32(u32::from_parts(17, SFixed64::WIRE_TYPE));
-        encoder.encode_sfixed64(self.pos_sfixed64);
-
-        encoder.encode_uint32(u32::from_parts(18, SFixed64::WIRE_TYPE));
-        encoder.encode_sfixed64(self.neg_sfixed64);
-
-        encoder.encode_uint32(u32::from_parts(19, bool::WIRE_TYPE));
-        encoder.encode_bool(self.b);
-
-        encoder.encode_uint32(u32::from_parts(20, String::WIRE_TYPE));
-        encoder.encode_string(&self.empty);
-
-        encoder.encode_uint32(u32::from_parts(21, String::WIRE_TYPE));
-        encoder.encode_string(&self.hello);
+        encode_field!(1, f32, self.float, encoder, Encode::encode_float);
+        encode_field!(2, f64, self.double, encoder, Encode::encode_double);
+        encode_field!(3, Int32, self.pos_i32, encoder, Encode::encode_int32);
+        encode_field!(4, Int32, self.neg_i32, encoder, Encode::encode_int32);
+        encode_field!(5, Int64, self.pos_i64, encoder, Encode::encode_int64);
+        encode_field!(6, Int64, self.neg_i64, encoder, Encode::encode_int64);
+        encode_field!(7, UInt32, self.uint32, encoder, Encode::encode_uint32);
+        encode_field!(8, UInt64, self.uint64, encoder, Encode::encode_uint64);
+        encode_field!(9, SInt32, self.pos_sint32, encoder, Encode::encode_sint32);
+        encode_field!(10, SInt32, self.neg_sint32, encoder, Encode::encode_sint32);
+        encode_field!(11, SInt64, self.pos_sint64, encoder, Encode::encode_sint64);
+        encode_field!(12, SInt64, self.neg_sint64, encoder, Encode::encode_sint64);
+        encode_field!(13, Fixed32, self.fixed_u32, encoder, Encode::encode_fixed32);
+        encode_field!(14, Fixed64, self.fixed_u64, encoder, Encode::encode_fixed64);
+        encode_field!(
+            15,
+            SFixed32,
+            self.pos_sfixed32,
+            encoder,
+            Encode::encode_sfixed32
+        );
+        encode_field!(
+            16,
+            SFixed32,
+            self.neg_sfixed32,
+            encoder,
+            Encode::encode_sfixed32
+        );
+        encode_field!(
+            17,
+            SFixed64,
+            self.pos_sfixed64,
+            encoder,
+            Encode::encode_sfixed64
+        );
+        encode_field!(
+            18,
+            SFixed64,
+            self.neg_sfixed64,
+            encoder,
+            Encode::encode_sfixed64
+        );
+        encode_field!(19, bool, self.b, encoder, Encode::encode_bool);
+        encode_field!(20, String, &self.empty, encoder, Encode::encode_string);
+        encode_field!(21, String, &self.hello, encoder, Encode::encode_string);
     }
 
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
