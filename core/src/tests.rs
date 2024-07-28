@@ -2,7 +2,8 @@ use base64::prelude::*;
 use bytes::{Bytes, BytesMut};
 
 use crate::{
-    decoder::DecodeError,
+    decode_field,
+    decoder::{Decode, DecodeError},
     message::{DecodeMessage, EncodeMessage},
     tag::Tag,
     types::{
@@ -183,154 +184,87 @@ impl DecodeMessage for Test {
             let wire_type = tag.wire_type();
 
             match field_number {
-                1 => {
-                    if f32::WIRE_TYPE == wire_type {
-                        float = Some(decoder.decode_float()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                2 => {
-                    if f64::WIRE_TYPE == wire_type {
-                        double = Some(decoder.decode_double()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                3 => {
-                    if Int32::WIRE_TYPE == wire_type {
-                        pos_i32 = Some(decoder.decode_int32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                4 => {
-                    if Int32::WIRE_TYPE == wire_type {
-                        neg_i32 = Some(decoder.decode_int32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                5 => {
-                    if Int64::WIRE_TYPE == wire_type {
-                        pos_i64 = Some(decoder.decode_int64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                6 => {
-                    if Int64::WIRE_TYPE == wire_type {
-                        neg_i64 = Some(decoder.decode_int64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                7 => {
-                    if UInt32::WIRE_TYPE == wire_type {
-                        uint32 = Some(decoder.decode_uint32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                8 => {
-                    if UInt64::WIRE_TYPE == wire_type {
-                        uint64 = Some(decoder.decode_uint64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                9 => {
-                    if SInt32::WIRE_TYPE == wire_type {
-                        pos_sint32 = Some(decoder.decode_sint32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                10 => {
-                    if SInt32::WIRE_TYPE == wire_type {
-                        neg_sint32 = Some(decoder.decode_sint32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                11 => {
-                    if SInt64::WIRE_TYPE == wire_type {
-                        pos_sint64 = Some(decoder.decode_sint64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                12 => {
-                    if SInt64::WIRE_TYPE == wire_type {
-                        neg_sint64 = Some(decoder.decode_sint64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                13 => {
-                    if Fixed32::WIRE_TYPE == wire_type {
-                        fixed_u32 = Some(decoder.decode_fixed32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                14 => {
-                    if Fixed64::WIRE_TYPE == wire_type {
-                        fixed_u64 = Some(decoder.decode_fixed64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                15 => {
-                    if SFixed32::WIRE_TYPE == wire_type {
-                        pos_sfixed32 = Some(decoder.decode_sfixed32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                16 => {
-                    if SFixed32::WIRE_TYPE == wire_type {
-                        neg_sfixed32 = Some(decoder.decode_sfixed32()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                17 => {
-                    if SFixed64::WIRE_TYPE == wire_type {
-                        pos_sfixed64 = Some(decoder.decode_sfixed64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                18 => {
-                    if SFixed64::WIRE_TYPE == wire_type {
-                        neg_sfixed64 = Some(decoder.decode_sfixed64()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                19 => {
-                    if bool::WIRE_TYPE == wire_type {
-                        b = Some(decoder.decode_bool()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                20 => {
-                    if String::WIRE_TYPE == wire_type {
-                        empty = Some(decoder.decode_string()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-                21 => {
-                    if String::WIRE_TYPE == wire_type {
-                        hello = Some(decoder.decode_string()?);
-                    } else {
-                        return Err(DecodeError::UnexpectedWireType(f32::WIRE_TYPE, wire_type));
-                    }
-                }
-
+                1 => decode_field!(f32, float, wire_type, decoder, Decode::decode_float),
+                2 => decode_field!(f64, double, wire_type, decoder, Decode::decode_double),
+                3 => decode_field!(Int32, pos_i32, wire_type, decoder, Decode::decode_int32),
+                4 => decode_field!(Int32, neg_i32, wire_type, decoder, Decode::decode_int32),
+                5 => decode_field!(Int64, pos_i64, wire_type, decoder, Decode::decode_int64),
+                6 => decode_field!(Int64, neg_i64, wire_type, decoder, Decode::decode_int64),
+                7 => decode_field!(UInt32, uint32, wire_type, decoder, Decode::decode_uint32),
+                8 => decode_field!(UInt64, uint64, wire_type, decoder, Decode::decode_uint64),
+                9 => decode_field!(
+                    SInt32,
+                    pos_sint32,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sint32
+                ),
+                10 => decode_field!(
+                    SInt32,
+                    neg_sint32,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sint32
+                ),
+                11 => decode_field!(
+                    SInt64,
+                    pos_sint64,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sint64
+                ),
+                12 => decode_field!(
+                    SInt64,
+                    neg_sint64,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sint64
+                ),
+                13 => decode_field!(
+                    Fixed32,
+                    fixed_u32,
+                    wire_type,
+                    decoder,
+                    Decode::decode_fixed32
+                ),
+                14 => decode_field!(
+                    Fixed64,
+                    fixed_u64,
+                    wire_type,
+                    decoder,
+                    Decode::decode_fixed64
+                ),
+                15 => decode_field!(
+                    SFixed32,
+                    pos_sfixed32,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sfixed32
+                ),
+                16 => decode_field!(
+                    SFixed32,
+                    neg_sfixed32,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sfixed32
+                ),
+                17 => decode_field!(
+                    SFixed64,
+                    pos_sfixed64,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sfixed64
+                ),
+                18 => decode_field!(
+                    SFixed64,
+                    neg_sfixed64,
+                    wire_type,
+                    decoder,
+                    Decode::decode_sfixed64
+                ),
+                19 => decode_field!(bool, b, wire_type, decoder, Decode::decode_bool),
+                20 => decode_field!(String, empty, wire_type, decoder, Decode::decode_string),
+                21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
