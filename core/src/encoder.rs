@@ -1,4 +1,7 @@
-use crate::types::PbType;
+use crate::{
+    tag::Tag,
+    types::{sizeof_varint64, PbType},
+};
 
 pub trait Encode {
     fn encode_float(&mut self, n: f32);
@@ -25,12 +28,56 @@ pub trait Encode {
     fn encode_bytes(&mut self, b: &[u8]);
     fn encode_string(&mut self, s: &str);
 
-    fn encode_type(&mut self, msg: impl PbType);
+    fn encode_type(&mut self, msg: &impl PbType);
 
-    fn encode_packed<M, F>(&mut self, items: &[M], encode_fn: F)
+    // TODO: encode_fn and size_fn are actually the same, but generics need to be adjusted
+    fn encode_packed<M, F, FS>(&mut self, items: &[M], mut encode_fn: F, mut size_fn: FS)
     where
         M: Copy,
-        F: FnMut(&mut Self, M);
+        F: FnMut(&mut Self, M),
+        FS: FnMut(&mut SizeHint, M),
+    {
+        let mut hint = SizeHint::default();
+        for item in items {
+            size_fn(&mut hint, *item)
+        }
+        self.encode_uint32(hint.size() as _);
+        for item in items {
+            encode_fn(self, *item);
+        }
+    }
+
+    fn encode_map_element<K, V, FK, FV, FSK, FSV>(
+        &mut self,
+        key: K,
+        value: V,
+        key_wire_type: u8,
+        value_wire_type: u8,
+        mut key_encode_fn: FK,
+        mut value_encode_fn: FV,
+        mut key_size_fn: FSK,
+        mut value_size_fn: FSV,
+    ) where
+        K: Clone,
+        FK: FnMut(&mut Self, K),
+        FSK: FnMut(&mut SizeHint, K),
+        V: Clone,
+        FV: FnMut(&mut Self, V),
+        FSV: FnMut(&mut SizeHint, V),
+    {
+        let mut hint = SizeHint::default();
+
+        hint.encode_uint32(u32::from_parts(1, key_wire_type));
+        key_size_fn(&mut hint, key.clone());
+        hint.encode_uint32(u32::from_parts(2, value_wire_type));
+        value_size_fn(&mut hint, value.clone());
+
+        self.encode_uint32(hint.size() as _);
+        self.encode_uint32(u32::from_parts(1, key_wire_type));
+        key_encode_fn(self, key.clone());
+        self.encode_uint32(u32::from_parts(2, value_wire_type));
+        value_encode_fn(self, value.clone());
+    }
 }
 
 #[inline]
@@ -59,7 +106,7 @@ where
         self.put_u8(n as u8);
     }
 
-    fn encode_int32(&mut self, mut n: i32) {
+    fn encode_int32(&mut self, n: i32) {
         let negative = n < 0;
         let mut n = n as u32;
 
@@ -136,26 +183,111 @@ where
         self.encode_bytes(s.as_bytes());
     }
 
-    fn encode_type(&mut self, ty: impl PbType) {
+    fn encode_type(&mut self, ty: &impl PbType) {
         ty.encode(self)
     }
+}
 
-    fn encode_packed<M, F>(&mut self, items: &[M], mut encode_fn: F)
-    where
-        M: Copy,
-        F: FnMut(&mut Self, M),
-    {
-        self.encode_uint32(items.len() as _);
-        for item in items {
-            encode_fn(self, *item);
+#[derive(Debug, Default)]
+pub struct SizeHint {
+    size: usize,
+}
+
+impl SizeHint {
+    pub fn clear(&mut self) {
+        self.size = 0;
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
+    }
+}
+
+impl Encode for SizeHint {
+    fn encode_float(&mut self, _n: f32) {
+        self.size += std::mem::size_of::<f32>();
+    }
+
+    fn encode_double(&mut self, _n: f64) {
+        self.size += std::mem::size_of::<f64>();
+    }
+
+    fn encode_varint(&mut self, n: u64) {
+        self.size += sizeof_varint64(n);
+    }
+
+    fn encode_int32(&mut self, n: i32) {
+        if n < 0 {
+            self.size += 10;
+        } else {
+            self.encode_varint(n as _);
         }
+    }
+
+    fn encode_int64(&mut self, n: i64) {
+        self.encode_varint(n as _);
+    }
+
+    fn encode_uint32(&mut self, n: u32) {
+        self.encode_varint(n as _);
+    }
+
+    fn encode_uint64(&mut self, n: u64) {
+        self.encode_varint(n as _);
+    }
+
+    fn encode_sint32(&mut self, n: i32) {
+        self.encode_varint(zigzag_encode(n as i64));
+    }
+
+    fn encode_sint64(&mut self, n: i64) {
+        self.encode_varint(zigzag_encode(n));
+    }
+
+    fn encode_fixed32(&mut self, _n: u32) {
+        self.size += std::mem::size_of::<u32>();
+    }
+
+    fn encode_fixed64(&mut self, _n: u64) {
+        self.size += std::mem::size_of::<u64>();
+    }
+
+    fn encode_sfixed32(&mut self, _n: i32) {
+        self.size += std::mem::size_of::<i32>();
+    }
+
+    fn encode_sfixed64(&mut self, _n: i64) {
+        self.size += std::mem::size_of::<i64>();
+    }
+
+    fn encode_bool(&mut self, _b: bool) {
+        self.size += 1;
+    }
+
+    fn encode_bytes(&mut self, b: &[u8]) {
+        self.encode_uint32(b.len() as u32);
+        self.size += b.len();
+    }
+
+    fn encode_string(&mut self, s: &str) {
+        self.encode_bytes(s.as_bytes());
+    }
+
+    fn encode_type(&mut self, msg: &impl PbType) {
+        msg.encode(self)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::types::{
-        Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
+    use crate::{
+        encoder::SizeHint,
+        tag::Tag,
+        types::{
+            Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32,
+            UInt64,
+        },
+        WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
     };
 
     use super::Encode;
@@ -368,5 +500,59 @@ mod tests {
         buffer.encode_string(&data);
         assert_eq!(PbType::size_hint(&data), 6);
         assert_eq!(*buffer, [0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
+    }
+
+    #[test]
+    fn encode_packed() {
+        let mut buffer = bytes::BytesMut::with_capacity(8);
+        let mut hint = SizeHint::default();
+
+        let data = vec![1, 2, 3];
+        buffer.encode_packed(&data, Encode::encode_uint32, Encode::encode_uint32);
+        hint.encode_packed(&data, Encode::encode_uint32, Encode::encode_uint32);
+
+        assert_eq!(hint.size(), 4);
+        assert_eq!(*buffer, [0x03, 0x01, 0x02, 0x03]);
+
+        buffer.clear();
+        hint.clear();
+        let data = vec![1234, 2345, 3456];
+        buffer.encode_packed(&data, Encode::encode_uint32, Encode::encode_uint32);
+        hint.encode_packed(&data, Encode::encode_uint32, Encode::encode_uint32);
+
+        assert_eq!(hint.size(), 7);
+        assert_eq!(*buffer, [0x06, 0xd2, 0x09, 0xa9, 0x12, 0x80, 0x1b]);
+    }
+
+    #[test]
+    fn encode_map_element() {
+        let mut buffer = bytes::BytesMut::with_capacity(8);
+        let mut hint = SizeHint::default();
+
+        let (key, value) = ("one", 1u32);
+
+        hint.encode_map_element(
+            key,
+            value,
+            WIRE_TYPE_LENGTH_ENCODED,
+            WIRE_TYPE_VARINT,
+            Encode::encode_string,
+            Encode::encode_uint32,
+            Encode::encode_string,
+            Encode::encode_uint32,
+        );
+        buffer.encode_map_element(
+            key,
+            value,
+            WIRE_TYPE_LENGTH_ENCODED,
+            WIRE_TYPE_VARINT,
+            Encode::encode_string,
+            Encode::encode_uint32,
+            Encode::encode_string,
+            Encode::encode_uint32,
+        );
+
+        assert_eq!(hint.size(), 8);
+        assert_eq!(*buffer, [0x07, 0x0a, 0x03, 0x6f, 0x6e, 0x65, 0x10, 0x01]);
     }
 }

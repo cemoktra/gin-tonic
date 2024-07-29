@@ -1,6 +1,6 @@
 use crate::{
     decoder::{Decode, DecodeError},
-    encoder::{self, zigzag_encode, Encode},
+    encoder::{zigzag_encode, Encode},
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
 
@@ -33,7 +33,7 @@ pub trait PbType<T = ()> {
 
     fn size_hint(&self) -> usize;
 
-    fn encode(self, encoder: &mut impl Encode);
+    fn encode(&self, encoder: &mut impl Encode);
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
     where
         Self: Sized;
@@ -61,7 +61,7 @@ impl PbType for Int32 {
         }
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_int32(self.0)
     }
 
@@ -80,7 +80,7 @@ impl PbType for Int64 {
         sizeof_varint64(self.0 as _)
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_int64(self.0)
     }
 
@@ -99,7 +99,7 @@ impl PbType for UInt32 {
         sizeof_varint32(self.0 as _)
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint32(self.0)
     }
 
@@ -118,7 +118,7 @@ impl PbType for UInt64 {
         sizeof_varint64(self.0 as _)
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint64(self.0)
     }
 
@@ -137,7 +137,7 @@ impl PbType for SInt32 {
         sizeof_varint32(zigzag_encode(self.0 as _) as _)
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sint32(self.0)
     }
 
@@ -156,7 +156,7 @@ impl PbType for SInt64 {
         sizeof_varint64(zigzag_encode(self.0) as _)
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sint64(self.0)
     }
 
@@ -175,7 +175,7 @@ impl PbType for Fixed32 {
         std::mem::size_of::<i32>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_fixed32(self.0)
     }
 
@@ -194,7 +194,7 @@ impl PbType for Fixed64 {
         std::mem::size_of::<u64>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_fixed64(self.0)
     }
 
@@ -213,7 +213,7 @@ impl PbType for SFixed32 {
         std::mem::size_of::<i32>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sfixed32(self.0)
     }
 
@@ -232,7 +232,7 @@ impl PbType for SFixed64 {
         std::mem::size_of::<i64>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sfixed64(self.0)
     }
 
@@ -251,8 +251,8 @@ impl PbType for f32 {
         std::mem::size_of::<f32>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
-        encoder.encode_float(self)
+    fn encode(&self, encoder: &mut impl Encode) {
+        encoder.encode_float(*self)
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -270,8 +270,8 @@ impl PbType for f64 {
         std::mem::size_of::<f64>()
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
-        encoder.encode_double(self)
+    fn encode(&self, encoder: &mut impl Encode) {
+        encoder.encode_double(*self)
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -289,8 +289,8 @@ impl PbType for bool {
         1
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
-        encoder.encode_bool(self)
+    fn encode(&self, encoder: &mut impl Encode) {
+        encoder.encode_bool(*self)
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -309,7 +309,7 @@ impl PbType for String {
         sizeof_varint32(l as u32) + l
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(&self)
     }
 
@@ -328,7 +328,7 @@ impl PbType for std::net::Ipv4Addr {
         sizeof_varint32(self.clone().to_bits())
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint32(self.to_bits())
     }
 
@@ -348,7 +348,7 @@ impl PbType for std::path::PathBuf {
         sizeof_varint32(l as u32) + l
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(self.display().to_string().as_ref())
     }
 
@@ -369,7 +369,7 @@ impl PbType for uuid::Uuid {
         sizeof_varint32(l as u32) + l
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(self.as_simple().to_string().as_ref())
     }
 
@@ -394,7 +394,7 @@ impl PbType for uuid::Uuid {
         sizeof_varint32(size as _) + size
     }
 
-    fn encode(self, encoder: &mut impl Encode) {
+    fn encode(&self, encoder: &mut impl Encode) {
         let (high, low) = self.as_u64_pair();
         encoder.encode_uint32(2);
         encoder.encode_uint64(high);

@@ -1,8 +1,9 @@
 use std::string::FromUtf8Error;
 
-use crate::types::PbType;
+use crate::{tag::Tag, types::PbType};
 
 #[derive(Debug, thiserror::Error)]
+#[allow(dead_code)]
 pub enum DecodeError {
     #[error("VarInt limitof 10 bytes reached")]
     VarIntLimit,
@@ -55,6 +56,15 @@ pub trait Decode {
     where
         M: Copy,
         F: Fn(&mut Self) -> Result<M, DecodeError>;
+
+    fn decode_map_element<K, V, KF, VF>(
+        &mut self,
+        decode_key_fn: KF,
+        decode_key_fn: VF,
+    ) -> Result<Option<(K, V)>, DecodeError>
+    where
+        KF: Fn(&mut Self) -> Result<K, DecodeError>,
+        VF: Fn(&mut Self) -> Result<V, DecodeError>;
 }
 
 #[inline]
@@ -166,12 +176,58 @@ where
         M: Copy,
         F: Fn(&mut Self) -> Result<M, DecodeError>,
     {
-        let len = self.decode_uint32()?;
-        for _ in 0..len {
+        let len = self.decode_uint32()? as usize;
+        let remaining_before = self.remaining();
+
+        loop {
             buffer.push(decode_fn(self)?);
+            if remaining_before - self.remaining() == len {
+                break;
+            }
         }
 
         Ok(())
+    }
+
+    fn decode_map_element<K, V, KF, VF>(
+        &mut self,
+        decode_key_fn: KF,
+        decode_value_fn: VF,
+    ) -> Result<Option<(K, V)>, DecodeError>
+    where
+        KF: Fn(&mut Self) -> Result<K, DecodeError>,
+        VF: Fn(&mut Self) -> Result<V, DecodeError>,
+    {
+        let mut key = None;
+        let mut value = None;
+
+        let len = self.decode_uint32()? as usize;
+        let remaining_before = self.remaining();
+
+        loop {
+            let tag = self.decode_uint32()?;
+            let field_number = tag.field_number();
+
+            match field_number {
+                1 => {
+                    key = Some(decode_key_fn(self)?);
+                }
+                2 => {
+                    value = Some(decode_value_fn(self)?);
+                }
+                _ => {}
+            }
+
+            if remaining_before - self.remaining() == len {
+                break;
+            }
+        }
+
+        if let (Some(key), Some(value)) = (key, value) {
+            Ok(Some((key, value)))
+        } else {
+            Ok(None)
+        }
     }
 }
 
