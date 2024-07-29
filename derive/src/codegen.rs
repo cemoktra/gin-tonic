@@ -4,6 +4,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, quote_spanned};
 use syn::Ident;
 
+mod map;
 mod messages;
 mod primitives;
 
@@ -92,46 +93,19 @@ fn expand_message_message(
                     });
                 }
                 Kind::Map => {
-                    serialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // // prepare a decent size buffer
-                        // let mut buffer = #root::export::SmallVec::<[u8;512]>::new();
-                        // buffer.resize(512, 0);
-
-                        // for (key, value) in self.#field_ident {
-                        //     let size = key.size_hint(1) + value.size_hint(2);
-                        //     if size > buffer.len() {
-                        //         buffer.resize(size, 0);
-                        //     }
-
-                        //     let mut buffer_ref = buffer.as_mut_slice();
-
-                        //     let wire_type = key.into_wire();
-                        //     wire_type.serialize(1, &mut buffer_ref);
-
-                        //     let wire_type = value.into_wire();
-                        //     wire_type.serialize(2, &mut buffer_ref);
-
-                        //     let wire_type = #root::gin_tonic_core::WireTypeView::LengthEncoded(&buffer[0..size]);
-                        //     wire_type.serialize(#tag, writer);
-                        // }
-                    });
-
-                    deserialize_init.extend(quote_spanned! { span=>
-                        let mut #field_ident = HashMap::new();
-                    });
-
-                    deserialize_impl.extend(quote_spanned! { span=>
-                        #tag => {
-                            todo!()
-                            // let (key, value) = #root::gin_tonic_core::map_from_wire(wire_type)?;
-                            // #field_ident.insert(key, value);
-                        }
-                    });
-
-                    deserialize_set.extend(quote_spanned! { span=>
-                        #field_ident,
-                    });
+                    map::required(
+                        &root,
+                        &tag,
+                        &field_ident,
+                        field.proto_key,
+                        field.proto_value,
+                        &ty,
+                        span.clone(),
+                        &mut serialize_impl,
+                        &mut deserialize_init,
+                        &mut deserialize_impl,
+                        &mut deserialize_set,
+                    );
                 }
             },
             Cardinality::Optional => match field.kind.unwrap_or_default() {
@@ -255,28 +229,17 @@ fn expand_message_message(
                     );
                 }
                 Kind::Message => {
-                    serialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // for item in self.#field_ident {
-                        //     let wire_type = item.into_wire();
-                        //     wire_type.serialize(#tag, writer);
-                        // }
-                    });
-
-                    deserialize_init.extend(quote_spanned! { span=>
-                        let mut #field_ident = Vec::new();
-                    });
-
-                    deserialize_impl.extend(quote_spanned! { span=>
-                        #tag => {
-                            todo!()
-                            // #field_ident.push(#root::FromWire::from_wire(wire_type)?);
-                        }
-                    });
-
-                    deserialize_set.extend(quote_spanned! { span=>
-                        #field_ident,
-                    });
+                    messages::repeated(
+                        &root,
+                        &tag,
+                        &field_ident,
+                        &ty,
+                        span.clone(),
+                        &mut serialize_impl,
+                        &mut deserialize_init,
+                        &mut deserialize_impl,
+                        &mut deserialize_set,
+                    );
                 }
                 Kind::OneOf => {
                     return quote! {
@@ -300,7 +263,7 @@ fn expand_message_message(
 
             fn encode(&self, encoder: &mut impl #root::Encode) {
                 use #root::{Encode, Tag};
-                use #root::gin_tonic_core::WIRE_TYPE_LENGTH_ENCODED;
+                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
 
                 #serialize_impl
             }
@@ -310,7 +273,7 @@ fn expand_message_message(
                 Self: Sized
             {
                 use #root::{Decode, DecodeError, Tag};
-                use #root::gin_tonic_core::WIRE_TYPE_LENGTH_ENCODED;
+                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
 
                 #deserialize_init
 
@@ -319,12 +282,9 @@ fn expand_message_message(
                     let field_number = tag.field_number();
                     let wire_type = tag.wire_type();
 
-                    println!("{field_number}:{wire_type}");
-
                     match field_number {
                         #deserialize_impl
                         n => {
-                            println!("{n} was not matched");
                             return Err(#root::DecodeError::UnexpectedFieldNumber(n))
                         }
                     }

@@ -243,7 +243,11 @@ where
         let len = self.decode_uint32()? as usize;
         let remaining_before = self.remaining();
 
-        let result = N::decode(self)?;
+        let result = {
+            let mut nested_buf = &self.chunk()[0..len];
+            N::decode(&mut nested_buf)
+        }?;
+        self.advance(len);
         if remaining_before - self.remaining() != len {
             // TODO: error?
             panic!(

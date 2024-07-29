@@ -260,7 +260,7 @@ impl PbType for Test {
                 19 => decode_field!(bool, b, wire_type, decoder, Decode::decode_bool),
                 20 => decode_field!(String, empty, wire_type, decoder, Decode::decode_string),
                 21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
-                22 => decode_field!(TestEnum, e, wire_type, decoder, TestEnum::decode),
+                22 => decode_field!(TestEnum, e, wire_type, decoder, Decode::decode_type),
                 23 => {
                     #[allow(unused_assignments)]
                     let mut one_of_inner = None;

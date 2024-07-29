@@ -23,6 +23,8 @@ pub(crate) struct MessageField {
     pub(crate) cardinality: Option<Cardinality>,
     pub(crate) kind: Option<Kind>,
     pub(crate) proto: Option<Primitive>,
+    pub(crate) proto_key: Option<Primitive>,
+    pub(crate) proto_value: Option<Primitive>,
 }
 
 #[derive(Clone, Copy, Debug, FromMeta)]
@@ -35,8 +37,8 @@ pub(crate) enum Primitive {
     Sint64,
     Fixed32,
     Fixed64,
-    SFixed32,
-    SFixed64,
+    Sfixed32,
+    Sfixed64,
     String,
 }
 

@@ -112,7 +112,7 @@ pub fn required(
                 },
             });
         }
-        Some(Primitive::SFixed32) => {
+        Some(Primitive::Sfixed32) => {
             encode_impl.extend(quote_spanned! { span=>
                 #root::gin_tonic_core::encode_field!(#tag, #root::types::SFixed32, self.#field_ident, encoder, Encode::encode_sfixed32);
             });
@@ -123,7 +123,7 @@ pub fn required(
                 },
             });
         }
-        Some(Primitive::SFixed64) => {
+        Some(Primitive::Sfixed64) => {
             encode_impl.extend(quote_spanned! { span=>
                 #root::gin_tonic_core::encode_field!(#tag, #root::types::SFixed64, self.#field_ident, encoder, Encode::encode_sfixed64);
             });
@@ -136,7 +136,7 @@ pub fn required(
         }
         Some(Primitive::String) => {
             encode_impl.extend(quote_spanned! { span=>
-                #root::gin_tonic_core::encode_field!(#tag, String, &self.#field_ident, encoder, Encode::encode_string);
+                #root::gin_tonic_core::encode_field!(#tag, String, &self.#field_ident, encoder, Encode::encode_str);
             });
 
             decode_impl.extend(quote_spanned! { span=>
@@ -152,7 +152,6 @@ pub fn required(
             });
             decode_impl.extend(quote_spanned! { span=>
                 #tag => {
-                    println!("decoding tag {}", #tag);
                     #root::gin_tonic_core::decode_field!(#ty, #field_ident, wire_type, decoder, Decode::decode_type);
                 },
             });
@@ -222,39 +221,39 @@ pub fn optional(
         Some(Primitive::Uint64) => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
-                    #root::gin_tonic_core::encode_field!(#tag, #root::types::Uint64, value, encoder, Encode::encode_uint64);
+                    #root::gin_tonic_core::encode_field!(#tag, #root::types::UInt64, value, encoder, Encode::encode_uint64);
                 }
             });
 
             decode_impl.extend(quote_spanned! { span=>
                 #tag => {
-                    #root::gin_tonic_core::decode_field!(#root::types::Uint64, #field_ident, wire_type, decoder, Decode::decode_uint64)
+                    #root::gin_tonic_core::decode_field!(#root::types::UInt64, #field_ident, wire_type, decoder, Decode::decode_uint64)
                 },
             });
         }
         Some(Primitive::Sint32) => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
-                    #root::gin_tonic_core::encode_field!(#tag, #root::types::Sint32, value, encoder, Encode::encode_sint32);
+                    #root::gin_tonic_core::encode_field!(#tag, #root::types::SInt32, value, encoder, Encode::encode_sint32);
                 }
             });
 
             decode_impl.extend(quote_spanned! { span=>
                 #tag => {
-                    #root::gin_tonic_core::decode_field!(#root::types::Sint32, #field_ident, wire_type, decoder, Decode::decode_sint32)
+                    #root::gin_tonic_core::decode_field!(#root::types::SInt32, #field_ident, wire_type, decoder, Decode::decode_sint32)
                 },
             });
         }
         Some(Primitive::Sint64) => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
-                    #root::gin_tonic_core::encode_field!(#tag, #root::types::Sint64, value, encoder, Encode::encode_sint64);
+                    #root::gin_tonic_core::encode_field!(#tag, #root::types::SInt64, value, encoder, Encode::encode_sint64);
                 }
             });
 
             decode_impl.extend(quote_spanned! { span=>
                 #tag => {
-                    #root::gin_tonic_core::decode_field!(#root::types::Sint64, #field_ident, wire_type, decoder, Decode::decode_sint64)
+                    #root::gin_tonic_core::decode_field!(#root::types::SInt64, #field_ident, wire_type, decoder, Decode::decode_sint64)
                 },
             });
         }
@@ -284,7 +283,7 @@ pub fn optional(
                 },
             });
         }
-        Some(Primitive::SFixed32) => {
+        Some(Primitive::Sfixed32) => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
                     #root::gin_tonic_core::encode_field!(#tag, #root::types::SFixed32, value, encoder, Encode::encode_sfixed32);
@@ -297,7 +296,7 @@ pub fn optional(
                 },
             });
         }
-        Some(Primitive::SFixed64) => {
+        Some(Primitive::Sfixed64) => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
                     #root::gin_tonic_core::encode_field!(#tag, #root::types::SFixed64, value, encoder, Encode::encode_sfixed64);
@@ -312,8 +311,8 @@ pub fn optional(
         }
         Some(Primitive::String) => {
             encode_impl.extend(quote_spanned! { span=>
-                if let Some(value) = self.#field_ident {
-                    #root::gin_tonic_core::encode_field!(#tag, String, &value, encoder, Encode::encode_string);
+                if let Some(value) = &self.#field_ident {
+                    #root::gin_tonic_core::encode_field!(#tag, String, value, encoder, Encode::encode_str);
                 }
             });
 
@@ -446,7 +445,7 @@ pub fn repeated(
                 }
             });
         }
-        Some(Primitive::SFixed32) => {
+        Some(Primitive::Sfixed32) => {
             encode_impl.extend(quote_spanned! { span=>
                 #root::gin_tonic_core::encode_vector_packed!(#tag, &self.#field_ident, encoder, Encode::encode_sfixed32);
             });
@@ -457,7 +456,7 @@ pub fn repeated(
                 }
             });
         }
-        Some(Primitive::SFixed64) => {
+        Some(Primitive::Sfixed64) => {
             encode_impl.extend(quote_spanned! { span=>
                 #root::gin_tonic_core::encode_vector_packed!(#tag, &self.#field_ident, encoder, Encode::encode_sfixed64);
             });
