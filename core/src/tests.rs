@@ -50,6 +50,12 @@ impl PbType for TestEnum {
     }
 }
 
+#[derive(Debug, PartialEq)]
+enum TestOneOf {
+    Int(i32),
+    Str(String),
+}
+
 #[derive(Debug)]
 struct Test {
     float: f32,
@@ -74,6 +80,7 @@ struct Test {
     empty: String,
     hello: String,
     e: TestEnum,
+    o: TestOneOf,
 }
 
 impl PbType for Test {
@@ -100,6 +107,14 @@ impl PbType for Test {
             + size_hint!(20, String, self.empty)
             + size_hint!(21, String, self.hello)
             + size_hint!(22, TestEnum, self.e)
+            + match &self.o {
+                TestOneOf::Int(i) => {
+                    size_hint_wrapped!(23, Int32, Int32, *i)
+                }
+                TestOneOf::Str(s) => {
+                    size_hint!(24, String, s)
+                }
+            }
     }
 
     fn encode(self, encoder: &mut impl crate::encoder::Encode) {
@@ -149,6 +164,14 @@ impl PbType for Test {
         encode_field!(20, String, &self.empty, encoder, Encode::encode_string);
         encode_field!(21, String, &self.hello, encoder, Encode::encode_string);
         encode_field!(22, TestEnum, self.e, encoder, Encode::encode_type);
+        match self.o {
+            TestOneOf::Int(i) => {
+                encode_field!(23, Int32, i, encoder, Encode::encode_int32);
+            }
+            TestOneOf::Str(s) => {
+                encode_field!(24, String, &s, encoder, Encode::encode_string);
+            }
+        };
     }
 
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
@@ -179,6 +202,7 @@ impl PbType for Test {
         let mut empty = None;
         let mut hello = None;
         let mut e = None;
+        let mut o = None;
 
         while !decoder.eof() {
             let tag = decoder.decode_uint32()?;
@@ -268,6 +292,16 @@ impl PbType for Test {
                 20 => decode_field!(String, empty, wire_type, decoder, Decode::decode_string),
                 21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
                 22 => decode_field!(TestEnum, e, wire_type, decoder, TestEnum::decode),
+                23 => {
+                    let mut i = None;
+                    decode_field!(Int32, i, wire_type, decoder, Decode::decode_int32);
+                    o = Some(TestOneOf::Int(i.unwrap()))
+                }
+                24 => {
+                    let mut s = None;
+                    decode_field!(String, s, wire_type, decoder, Decode::decode_string);
+                    o = Some(TestOneOf::Str(s.unwrap()))
+                }
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
@@ -295,6 +329,7 @@ impl PbType for Test {
             empty: empty.unwrap(),
             hello: hello.unwrap(),
             e: e.unwrap(),
+            o: o.unwrap(),
         })
     }
 }
@@ -324,16 +359,17 @@ fn encode() {
         empty: String::new(),
         hello: String::from("world"),
         e: TestEnum::A,
+        o: TestOneOf::Str(String::from("oneof")),
     };
 
     let size = test.size_hint();
-    assert_eq!(124, size);
+    assert_eq!(132, size);
 
     let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
 
     assert_eq!(
-        "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAQ==",
+        "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9m",
         BASE64_STANDARD.encode(&buffer)
     );
 }
@@ -342,7 +378,7 @@ fn encode() {
 fn decode() {
     let data = BASE64_STANDARD
         .decode(
-            "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAQ==",
+            "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9m",
         )
         .unwrap();
     let mut bytes = bytes::Bytes::from(data);
