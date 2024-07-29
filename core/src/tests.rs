@@ -7,11 +7,10 @@ use crate::{
     decode_field, decode_map, decode_nested, decode_vector,
     decoder::{Decode, DecodeError},
     encode_field, encode_map, encode_nested, encode_vector_packed, encode_vector_unpacked,
-    encoder::{Encode, SizeHint},
+    encoder::Encode,
     tag::Tag,
     types::{
-        sizeof_varint64, Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32,
-        SInt64, UInt32, UInt64,
+        Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
     },
     WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
@@ -24,13 +23,6 @@ enum TestEnum {
 
 impl PbType for TestEnum {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
-
-    fn size_hint(&self) -> usize {
-        match self {
-            TestEnum::A => sizeof_varint64(1),
-            TestEnum::B => sizeof_varint64(2),
-        }
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         match self {
@@ -88,12 +80,6 @@ struct Test {
 }
 
 impl PbType for Test {
-    fn size_hint(&self) -> usize {
-        let mut hint = SizeHint::default();
-        self.encode(&mut hint);
-        hint.size()
-    }
-
     fn encode(&self, encoder: &mut impl crate::encoder::Encode) {
         encode_field!(1, f32, self.float, encoder, Encode::encode_float);
         encode_field!(2, f64, self.double, encoder, Encode::encode_double);
@@ -367,12 +353,6 @@ struct MapTest {
 impl PbType for MapTest {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
-    fn size_hint(&self) -> usize {
-        let mut hint = SizeHint::default();
-        self.encode(&mut hint);
-        hint.size()
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encode_map!(
             1,
@@ -421,12 +401,6 @@ struct Nested {
 
 impl PbType for Nested {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn size_hint(&self) -> usize {
-        let mut hint = SizeHint::default();
-        self.encode(&mut hint);
-        hint.size()
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encode_field!(1, SInt32, self.number, encoder, Encode::encode_sint32);

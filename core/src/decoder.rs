@@ -72,7 +72,7 @@ pub trait Decode {
 }
 
 #[inline]
-pub fn zigzag_decode(from: u64) -> i64 {
+fn zigzag_decode(from: u64) -> i64 {
     ((from >> 1) ^ (-((from & 1) as i64)) as u64) as i64
 }
 

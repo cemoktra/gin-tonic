@@ -1,6 +1,6 @@
 use crate::{
     decoder::{Decode, DecodeError},
-    encoder::{zigzag_encode, Encode},
+    encoder::{Encode, SizeHint},
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
 
@@ -31,7 +31,11 @@ pub const fn sizeof_varint64(v: u64) -> usize {
 pub trait PbType<T = ()> {
     const WIRE_TYPE: u8;
 
-    fn size_hint(&self) -> usize;
+    fn size_hint(&self) -> usize {
+        let mut hint = SizeHint::default();
+        self.encode(&mut hint);
+        hint.size()
+    }
 
     fn encode(&self, encoder: &mut impl Encode);
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -53,14 +57,6 @@ pub struct SFixed64(pub i64);
 impl PbType for Int32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 
-    fn size_hint(&self) -> usize {
-        if self.0 >= 0 {
-            sizeof_varint32(self.0 as _)
-        } else {
-            10
-        }
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_int32(self.0)
     }
@@ -75,10 +71,6 @@ impl PbType for Int32 {
 
 impl PbType for Int64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
-
-    fn size_hint(&self) -> usize {
-        sizeof_varint64(self.0 as _)
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_int64(self.0)
@@ -95,10 +87,6 @@ impl PbType for Int64 {
 impl PbType for UInt32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 
-    fn size_hint(&self) -> usize {
-        sizeof_varint32(self.0 as _)
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint32(self.0)
     }
@@ -113,10 +101,6 @@ impl PbType for UInt32 {
 
 impl PbType for UInt64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
-
-    fn size_hint(&self) -> usize {
-        sizeof_varint64(self.0 as _)
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint64(self.0)
@@ -133,10 +117,6 @@ impl PbType for UInt64 {
 impl PbType for SInt32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 
-    fn size_hint(&self) -> usize {
-        sizeof_varint32(zigzag_encode(self.0 as _) as _)
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sint32(self.0)
     }
@@ -151,10 +131,6 @@ impl PbType for SInt32 {
 
 impl PbType for SInt64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
-
-    fn size_hint(&self) -> usize {
-        sizeof_varint64(zigzag_encode(self.0) as _)
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sint64(self.0)
@@ -171,10 +147,6 @@ impl PbType for SInt64 {
 impl PbType for Fixed32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I32;
 
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<i32>()
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_fixed32(self.0)
     }
@@ -189,10 +161,6 @@ impl PbType for Fixed32 {
 
 impl PbType for Fixed64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I64;
-
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<u64>()
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_fixed64(self.0)
@@ -209,10 +177,6 @@ impl PbType for Fixed64 {
 impl PbType for SFixed32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I32;
 
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<i32>()
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sfixed32(self.0)
     }
@@ -227,10 +191,6 @@ impl PbType for SFixed32 {
 
 impl PbType for SFixed64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I64;
-
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<i64>()
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_sfixed64(self.0)
@@ -247,10 +207,6 @@ impl PbType for SFixed64 {
 impl PbType for f32 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I32;
 
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<f32>()
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_float(*self)
     }
@@ -265,10 +221,6 @@ impl PbType for f32 {
 
 impl PbType for f64 {
     const WIRE_TYPE: u8 = WIRE_TYPE_I64;
-
-    fn size_hint(&self) -> usize {
-        std::mem::size_of::<f64>()
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_double(*self)
@@ -285,10 +237,6 @@ impl PbType for f64 {
 impl PbType for bool {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 
-    fn size_hint(&self) -> usize {
-        1
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_bool(*self)
     }
@@ -303,11 +251,6 @@ impl PbType for bool {
 
 impl PbType for String {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn size_hint(&self) -> usize {
-        let l = self.len();
-        sizeof_varint32(l as u32) + l
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(&self)
@@ -324,10 +267,6 @@ impl PbType for String {
 impl PbType for std::net::Ipv4Addr {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 
-    fn size_hint(&self) -> usize {
-        sizeof_varint32(self.clone().to_bits())
-    }
-
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_uint32(self.to_bits())
     }
@@ -342,11 +281,6 @@ impl PbType for std::net::Ipv4Addr {
 
 impl PbType for std::path::PathBuf {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn size_hint(&self) -> usize {
-        let l = self.display().to_string().len();
-        sizeof_varint32(l as u32) + l
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(self.display().to_string().as_ref())
@@ -363,11 +297,6 @@ impl PbType for std::path::PathBuf {
 #[cfg(feature = "uuid_string")]
 impl PbType for uuid::Uuid {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn size_hint(&self) -> usize {
-        let l = self.as_simple().to_string().len();
-        sizeof_varint32(l as u32) + l
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         encoder.encode_string(self.as_simple().to_string().as_ref())
@@ -387,12 +316,6 @@ impl PbType for uuid::Uuid {
 #[cfg(feature = "uuid_bytes")]
 impl PbType for uuid::Uuid {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn size_hint(&self) -> usize {
-        let (high, low) = self.as_u64_pair();
-        let size = sizeof_varint64(high) + sizeof_varint64(low);
-        sizeof_varint32(size as _) + size
-    }
 
     fn encode(&self, encoder: &mut impl Encode) {
         let (high, low) = self.as_u64_pair();

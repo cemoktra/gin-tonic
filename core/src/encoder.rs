@@ -92,7 +92,7 @@ pub trait Encode {
 }
 
 #[inline]
-pub fn zigzag_encode(from: i64) -> u64 {
+fn zigzag_encode(from: i64) -> u64 {
     ((from << 1) ^ (from >> 63)) as u64
 }
 
