@@ -61,5 +61,6 @@ pub fn one_of_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
             ::gin_tonic
         });
 
-    codegen::one_of_enumeration(&root, input).into()
+    panic!("todo")
+    // codegen::one_of_enumeration(&root, input).into()
 }

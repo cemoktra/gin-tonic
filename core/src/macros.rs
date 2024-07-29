@@ -81,7 +81,7 @@ macro_rules! encode_vector_unpacked {
     ($field_number:expr, $prototy:ty, $var:expr, $encoder:expr, $encode_fn:path) => {
         for item in $var {
             $encoder.encode_uint32(u32::from_parts($field_number, <$prototy>::WIRE_TYPE));
-            $encode_fn($encoder, *item);
+            $encode_fn($encoder, item.clone());
         }
     };
 }

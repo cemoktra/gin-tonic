@@ -26,7 +26,10 @@ pub trait Encode {
 
     fn encode_bool(&mut self, b: bool);
     fn encode_bytes(&mut self, b: &[u8]);
-    fn encode_string(&mut self, s: &str);
+    fn encode_str(&mut self, s: &str);
+    fn encode_string(&mut self, s: String) {
+        self.encode_str(&s)
+    }
 
     fn encode_nested(&mut self, msg: &impl PbType)
     where
@@ -44,17 +47,17 @@ pub trait Encode {
     // TODO: encode_fn and size_fn are actually the same, but generics need to be adjusted
     fn encode_packed<M, F, FS>(&mut self, items: &[M], mut encode_fn: F, mut size_fn: FS)
     where
-        M: Copy,
+        M: Clone,
         F: FnMut(&mut Self, M),
         FS: FnMut(&mut SizeHint, M),
     {
         let mut hint = SizeHint::default();
         for item in items {
-            size_fn(&mut hint, *item)
+            size_fn(&mut hint, item.clone())
         }
         self.encode_uint32(hint.size() as _);
         for item in items {
-            encode_fn(self, *item);
+            encode_fn(self, item.clone());
         }
     }
 
@@ -190,7 +193,7 @@ where
         self.put_slice(b);
     }
 
-    fn encode_string(&mut self, s: &str) {
+    fn encode_str(&mut self, s: &str) {
         self.encode_bytes(s.as_bytes());
     }
 
@@ -280,7 +283,7 @@ impl Encode for SizeHint {
         self.size += b.len();
     }
 
-    fn encode_string(&mut self, s: &str) {
+    fn encode_str(&mut self, s: &str) {
         self.encode_bytes(s.as_bytes());
     }
 
@@ -501,13 +504,13 @@ mod tests {
     fn encode_string() {
         let mut buffer = bytes::BytesMut::with_capacity(8);
         let data = String::new();
-        buffer.encode_string(&data);
+        buffer.encode_str(&data);
         assert_eq!(PbType::size_hint(&data), 1);
         assert_eq!(*buffer, [0x00]);
 
         buffer.clear();
         let data = String::from("hello");
-        buffer.encode_string(&data);
+        buffer.encode_str(&data);
         assert_eq!(PbType::size_hint(&data), 6);
         assert_eq!(*buffer, [0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
     }
@@ -546,9 +549,9 @@ mod tests {
             value,
             WIRE_TYPE_LENGTH_ENCODED,
             WIRE_TYPE_VARINT,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_uint32,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_uint32,
         );
         buffer.encode_map_element(
@@ -556,9 +559,9 @@ mod tests {
             value,
             WIRE_TYPE_LENGTH_ENCODED,
             WIRE_TYPE_VARINT,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_uint32,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_uint32,
         );
 

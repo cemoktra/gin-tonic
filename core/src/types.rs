@@ -253,7 +253,7 @@ impl PbType for String {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn encode(&self, encoder: &mut impl Encode) {
-        encoder.encode_string(&self)
+        encoder.encode_str(&self)
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -283,7 +283,7 @@ impl PbType for std::path::PathBuf {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn encode(&self, encoder: &mut impl Encode) {
-        encoder.encode_string(self.display().to_string().as_ref())
+        encoder.encode_str(self.display().to_string().as_ref())
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>

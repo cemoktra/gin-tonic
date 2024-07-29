@@ -11,6 +11,8 @@ pub enum DecodeError {
     UnexpectedWireType(u8, u8),
     #[error("Unexpected field number {0}")]
     UnexpectedFieldNumber(u32),
+    #[error("Unexpected enum variant {0}")]
+    UnexpectedEnumVariant(u64),
     #[error("Field number {0} is missing")]
     MissingField(u32),
     #[error("OneOf of field numbers {0:?} is missing")]
@@ -58,7 +60,7 @@ pub trait Decode {
 
     fn decode_packed<M, F>(&mut self, buffer: &mut Vec<M>, decode_fn: F) -> Result<(), DecodeError>
     where
-        M: Copy,
+        M: Clone,
         F: Fn(&mut Self) -> Result<M, DecodeError>;
 
     fn decode_map_element<K, V, KF, VF>(
@@ -177,7 +179,7 @@ where
 
     fn decode_packed<M, F>(&mut self, buffer: &mut Vec<M>, decode_fn: F) -> Result<(), DecodeError>
     where
-        M: Copy,
+        M: Clone,
         F: Fn(&mut Self) -> Result<M, DecodeError>,
     {
         let len = self.decode_uint32()? as usize;

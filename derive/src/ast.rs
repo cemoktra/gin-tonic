@@ -22,6 +22,22 @@ pub(crate) struct MessageField {
     pub(crate) tag: LitInt,
     pub(crate) cardinality: Option<Cardinality>,
     pub(crate) kind: Option<Kind>,
+    pub(crate) proto: Option<Primitive>,
+}
+
+#[derive(Clone, Copy, Debug, FromMeta)]
+pub(crate) enum Primitive {
+    Int32,
+    Int64,
+    Uint32,
+    Uint64,
+    Sint32,
+    Sint64,
+    Fixed32,
+    Fixed64,
+    SFixed32,
+    SFixed64,
+    String,
 }
 
 #[derive(Clone, Copy, Default, Debug, FromMeta)]

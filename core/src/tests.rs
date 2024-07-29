@@ -124,15 +124,15 @@ impl PbType for Test {
             Encode::encode_sfixed64
         );
         encode_field!(19, bool, self.b, encoder, Encode::encode_bool);
-        encode_field!(20, String, &self.empty, encoder, Encode::encode_string);
-        encode_field!(21, String, &self.hello, encoder, Encode::encode_string);
+        encode_field!(20, String, &self.empty, encoder, Encode::encode_str);
+        encode_field!(21, String, &self.hello, encoder, Encode::encode_str);
         encode_field!(22, TestEnum, &self.e, encoder, Encode::encode_type);
         match &self.o {
             TestOneOf::Int(i) => {
                 encode_field!(23, Int32, *i, encoder, Encode::encode_int32);
             }
             TestOneOf::Str(s) => {
-                encode_field!(24, String, s, encoder, Encode::encode_string);
+                encode_field!(24, String, s, encoder, Encode::encode_str);
             }
         };
         encode_vector_packed!(25, &self.packed, encoder, Encode::encode_uint32);
@@ -360,7 +360,7 @@ impl PbType for MapTest {
             WIRE_TYPE_LENGTH_ENCODED,
             WIRE_TYPE_VARINT,
             encoder,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_bool,
         )
     }
