@@ -48,6 +48,10 @@ pub trait Decode {
     fn decode_bytes(&mut self) -> Result<bytes::Bytes, DecodeError>;
     fn decode_string(&mut self) -> Result<String, DecodeError>;
 
+    fn decode_nested<N>(&mut self) -> Result<N, DecodeError>
+    where
+        N: PbType;
+
     fn decode_type<T>(&mut self) -> Result<T, DecodeError>
     where
         T: PbType;
@@ -228,6 +232,25 @@ where
         } else {
             Ok(None)
         }
+    }
+
+    fn decode_nested<N>(&mut self) -> Result<N, DecodeError>
+    where
+        N: PbType,
+    {
+        let len = self.decode_uint32()? as usize;
+        let remaining_before = self.remaining();
+
+        let result = N::decode(self)?;
+        if remaining_before - self.remaining() != len {
+            // TODO: error?
+            panic!(
+                "read different amount of bytes: len = {len}, read = {}",
+                remaining_before - self.remaining()
+            );
+        }
+
+        Ok(result)
     }
 }
 

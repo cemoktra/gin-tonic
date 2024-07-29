@@ -47,6 +47,20 @@ macro_rules! decode_map {
 }
 
 #[macro_export]
+macro_rules! decode_nested {
+    ($var:expr, $wire_type:expr, $decoder:expr, $decode_fn:path) => {
+        if WIRE_TYPE_LENGTH_ENCODED == $wire_type {
+            $var = Some($decode_fn($decoder)?);
+        } else {
+            return Err(DecodeError::UnexpectedWireType(
+                WIRE_TYPE_LENGTH_ENCODED,
+                $wire_type,
+            ));
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! encode_field {
     ($field_number:expr, $prototy:ty, $var:expr, $encoder:expr, $encode_fn:path) => {
         $encoder.encode_uint32(u32::from_parts($field_number, <$prototy>::WIRE_TYPE));
@@ -72,14 +86,37 @@ macro_rules! encode_vector_unpacked {
     };
 }
 
-// #[macro_export]
-// macro_rules! encode_map {
-//     ($field_number:expr, $prototy:ty, $var:expr, $encoder:expr, $encode_fn:path) => {
-//         for (key, value) in $var {
-//             $encoder.encode_uint32(u32::from_parts($field_number, WIRE_TYPE_LENGTH_ENCODED));
-//             $encoder.encode_map_element(
+#[macro_export]
+macro_rules! encode_map {
+    (
+        $field_number:expr,
+        $var:expr,
+        $key_wire_type:expr,
+        $value_wire_type:expr,
+        $encoder:expr,
+        $key_encode_fn:path,
+        $value_encode_fn:path,
+    ) => {
+        for (key, value) in $var {
+            $encoder.encode_uint32(u32::from_parts($field_number, WIRE_TYPE_LENGTH_ENCODED));
+            $encoder.encode_map_element(
+                key.as_str(),
+                *value,
+                $key_wire_type,
+                $value_wire_type,
+                $key_encode_fn,
+                $value_encode_fn,
+                $key_encode_fn,
+                $value_encode_fn,
+            )
+        }
+    };
+}
 
-//             )?
-//         }
-//     };
-// }
+#[macro_export]
+macro_rules! encode_nested {
+    ($field_number:expr, $var:expr, $encoder:expr, $encode_fn:path) => {
+        $encoder.encode_uint32(u32::from_parts($field_number, WIRE_TYPE_LENGTH_ENCODED));
+        $encode_fn($encoder, $var);
+    };
+}

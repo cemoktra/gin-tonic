@@ -28,6 +28,17 @@ pub trait Encode {
     fn encode_bytes(&mut self, b: &[u8]);
     fn encode_string(&mut self, s: &str);
 
+    fn encode_nested(&mut self, msg: &impl PbType)
+    where
+        Self: Sized,
+    {
+        let mut hint = SizeHint::default();
+        msg.encode(&mut hint);
+
+        self.encode_uint32(hint.size() as _);
+        msg.encode(self);
+    }
+
     fn encode_type(&mut self, msg: &impl PbType);
 
     // TODO: encode_fn and size_fn are actually the same, but generics need to be adjusted
@@ -282,7 +293,6 @@ impl Encode for SizeHint {
 mod tests {
     use crate::{
         encoder::SizeHint,
-        tag::Tag,
         types::{
             Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32,
             UInt64,

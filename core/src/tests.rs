@@ -4,9 +4,9 @@ use base64::prelude::*;
 use bytes::BytesMut;
 
 use crate::{
-    decode_field, decode_map, decode_vector,
+    decode_field, decode_map, decode_nested, decode_vector,
     decoder::{Decode, DecodeError},
-    encode_field, encode_vector_packed, encode_vector_unpacked,
+    encode_field, encode_map, encode_nested, encode_vector_packed, encode_vector_unpacked,
     encoder::{Encode, SizeHint},
     tag::Tag,
     types::{
@@ -84,6 +84,7 @@ struct Test {
     o: TestOneOf,
     packed: Vec<u32>,
     unpacked: Vec<u32>,
+    nested: Nested,
 }
 
 impl PbType for Test {
@@ -150,6 +151,7 @@ impl PbType for Test {
         };
         encode_vector_packed!(25, &self.packed, encoder, Encode::encode_uint32);
         encode_vector_unpacked!(26, UInt32, &self.unpacked, encoder, Encode::encode_uint32);
+        encode_nested!(27, &self.nested, encoder, Encode::encode_nested);
     }
 
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
@@ -183,6 +185,7 @@ impl PbType for Test {
         let mut o = None;
         let mut packed = vec![];
         let mut unpacked = vec![];
+        let mut nested = None;
 
         while !decoder.eof() {
             let tag = decoder.decode_uint32()?;
@@ -273,14 +276,32 @@ impl PbType for Test {
                 21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
                 22 => decode_field!(TestEnum, e, wire_type, decoder, TestEnum::decode),
                 23 => {
-                    let mut i = None;
-                    decode_field!(Int32, i, wire_type, decoder, Decode::decode_int32);
-                    o = Some(TestOneOf::Int(i.ok_or(DecodeError::MissingField(23))?))
+                    #[allow(unused_assignments)]
+                    let mut one_of_inner = None;
+                    decode_field!(
+                        Int32,
+                        one_of_inner,
+                        wire_type,
+                        decoder,
+                        Decode::decode_int32
+                    );
+                    o = Some(TestOneOf::Int(
+                        one_of_inner.ok_or(DecodeError::MissingField(23))?,
+                    ))
                 }
                 24 => {
-                    let mut s = None;
-                    decode_field!(String, s, wire_type, decoder, Decode::decode_string);
-                    o = Some(TestOneOf::Str(s.ok_or(DecodeError::MissingField(24))?))
+                    #[allow(unused_assignments)]
+                    let mut one_of_inner = None;
+                    decode_field!(
+                        String,
+                        one_of_inner,
+                        wire_type,
+                        decoder,
+                        Decode::decode_string
+                    );
+                    o = Some(TestOneOf::Str(
+                        one_of_inner.ok_or(DecodeError::MissingField(24))?,
+                    ))
                 }
                 25 => {
                     decode_vector!(
@@ -299,6 +320,9 @@ impl PbType for Test {
                         decoder,
                         Decode::decode_uint32
                     );
+                }
+                27 => {
+                    decode_nested!(nested, wire_type, decoder, Decode::decode_nested);
                 }
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
@@ -330,6 +354,7 @@ impl PbType for Test {
             o: o.ok_or(DecodeError::MissingOneOf(vec![23, 24]))?,
             packed,
             unpacked,
+            nested: nested.ok_or(DecodeError::MissingField(27))?,
         })
     }
 }
@@ -349,22 +374,15 @@ impl PbType for MapTest {
     }
 
     fn encode(&self, encoder: &mut impl Encode) {
-        //encode_field!(1, f32, self.float, encoder, Encode::encode_float);
-        for (key, value) in &self.map {
-            encoder.encode_uint32(u32::from_parts(1, WIRE_TYPE_LENGTH_ENCODED));
-            encoder.encode_map_element(
-                key.as_str(),
-                *value,
-                WIRE_TYPE_LENGTH_ENCODED,
-                WIRE_TYPE_VARINT,
-                Encode::encode_string,
-                Encode::encode_bool,
-                Encode::encode_string,
-                Encode::encode_bool,
-            )
-        }
-
-        //encode_map!(1,)
+        encode_map!(
+            1,
+            &self.map,
+            WIRE_TYPE_LENGTH_ENCODED,
+            WIRE_TYPE_VARINT,
+            encoder,
+            Encode::encode_string,
+            Encode::encode_bool,
+        )
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
@@ -396,7 +414,129 @@ impl PbType for MapTest {
     }
 }
 
-const PROTOBUF_PAL: &str = "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9mygEDAQID0AEB0AEC0AED";
+#[derive(Debug)]
+struct Nested {
+    number: i32,
+}
+
+impl PbType for Nested {
+    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
+
+    fn size_hint(&self) -> usize {
+        let mut hint = SizeHint::default();
+        self.encode(&mut hint);
+        hint.size()
+    }
+
+    fn encode(&self, encoder: &mut impl Encode) {
+        encode_field!(1, SInt32, self.number, encoder, Encode::encode_sint32);
+    }
+
+    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        let mut number = None;
+
+        while !decoder.eof() {
+            let tag = decoder.decode_uint32()?;
+            let field_number = tag.field_number();
+            let wire_type = tag.wire_type();
+
+            println!("[CHILD] {field_number}:{wire_type}");
+
+            match field_number {
+                1 => decode_field!(SInt32, number, wire_type, decoder, Decode::decode_sint32),
+                n => return Err(DecodeError::UnexpectedFieldNumber(n)),
+            }
+        }
+
+        println!("number = {number:?}");
+
+        Ok(Self {
+            number: number.ok_or(DecodeError::MissingField(1))?,
+        })
+    }
+}
+
+// Test Message at https://www.protobufpal.com:
+//
+// syntax = "proto3";
+// enum Enum {
+//   ENUM_UNSPECIFIED = 0;
+//   ENUM_A = 1;
+//   ENUM_B = 2;
+// }
+// message Test {
+//   float f32 = 1;
+//   double f64 = 2;
+//   int32 pos_i32 = 3;
+//   int32 neg_i32 = 4;
+//   int64 pos_i64 = 5;
+//   int64 neg_i64 = 6;
+//   uint32 u32 = 7;
+//   uint64 u64 = 8;
+//   sint32 pos_si32 = 9;
+//   sint32 neg_si32 = 10;
+//   sint64 pos_si64 = 11;
+//   sint64 neg_si64 = 12;
+//   fixed32 fixed_u32 = 13;
+//   fixed64 fixed_u64 = 14;
+//   sfixed32 pos_sfixed32 = 15;
+//   sfixed32 neg_sfixed32 = 16;
+//   sfixed64 pos_sfixed64 = 17;
+//   sfixed64 neg_sfixed64 = 18;
+//   bool b = 19;
+//   string empty = 20;
+//   string hello = 21;
+//   Enum e = 22;
+//   oneof o {
+//     int32 i = 23;
+//     string str = 24;
+//   }
+//   repeated uint32 packed = 25;
+//   repeated uint32 unpacked = 26 [packed = false];
+//   Nested nested = 27;
+// }
+// message Nested {
+//   sint32 number = 1;
+// }
+
+// Test data at https://www.protobufpal.com:
+// {
+//   "f32": 3.14,
+//   "f64": 3.14,
+//   "pos_i32": 12345,
+//   "neg_i32": -12345,
+//   "pos_i64": 12345,
+//   "neg_i64": -12345,
+//   "u32": 1,
+//   "u64": 1,
+//   "pos_si32": 12345,
+//   "neg_si32": -12345,
+//   "pos_si64": 12345,
+//   "neg_si64": -12345,
+//   "fixed_u32": 123,
+//   "fixed_u64": 123,
+//   "pos_sfixed32": 12345,
+//   "neg_sfixed32": -12345,
+//   "pos_sfixed64": 12345,
+//   "neg_sfixed64": -12345,
+//   "b": false,
+//   "empty": "",
+//   "hello": "world",
+//   "e": "A",
+//   "o": {
+//     "str": "oneof"
+//   },
+//   "packed": [1,2,3],
+//   "unpacked": [1,2,3],
+//   "nested": {
+//     "number": 12345
+//   }
+// }
+
+const PROTOBUF_PAL: &str = "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9mygEDAQID0AEB0AEC0AED2gEECPLAAQ==";
 
 #[test]
 fn encode() {
@@ -426,11 +566,12 @@ fn encode() {
         o: TestOneOf::Str(String::from("oneof")),
         packed: vec![1, 2, 3],
         unpacked: vec![1, 2, 3],
+        nested: Nested { number: 12345 },
     };
 
     let size = test.size_hint();
     // ensure it has same size as protobuf pal
-    assert_eq!(168, size);
+    assert_eq!(308 / 2, size);
 
     let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
@@ -474,8 +615,10 @@ fn decode() {
     assert!(test.empty.is_empty());
     assert_eq!(test.hello, "world");
     assert_eq!(test.e, TestEnum::A);
+    assert_eq!(test.o, TestOneOf::Str("oneof".into()));
     assert_eq!(test.packed, vec![1, 2, 3]);
     assert_eq!(test.unpacked, vec![1, 2, 3]);
+    assert_eq!(test.nested.number, 12345);
 }
 
 #[test]
@@ -504,7 +647,7 @@ fn map_encode_decode() {
         .unwrap();
     let mut bytes = bytes::Bytes::from(data);
 
-    let test = MapTest::decode(&mut bytes).unwrap();
+    let read = MapTest::decode(&mut bytes).unwrap();
     assert!(read.map.get("true").unwrap());
     assert!(!read.map.get("false").unwrap());
 }
