@@ -12,6 +12,8 @@ pub enum DecodeError {
     UnexpectedFieldNumber(u32),
     #[error("Field number {0} is missing")]
     MissingField(u32),
+    #[error("OneOf of field numbers {0:?} is missing")]
+    MissingOneOf(Vec<u32>),
     #[error(transparent)]
     Utf8(#[from] FromUtf8Error),
     #[error(transparent)]
@@ -45,9 +47,14 @@ pub trait Decode {
     fn decode_bytes(&mut self) -> Result<bytes::Bytes, DecodeError>;
     fn decode_string(&mut self) -> Result<String, DecodeError>;
 
-    fn encode_type<T>(&mut self) -> Result<T, DecodeError>
+    fn decode_type<T>(&mut self) -> Result<T, DecodeError>
     where
         T: PbType;
+
+    fn decode_packed<M, F>(&mut self, buffer: &mut Vec<M>, decode_fn: F) -> Result<(), DecodeError>
+    where
+        M: Copy,
+        F: Fn(&mut Self) -> Result<M, DecodeError>;
 }
 
 #[inline]
@@ -147,11 +154,24 @@ where
         Ok(String::from_utf8(bytes.to_vec())?)
     }
 
-    fn encode_type<M>(&mut self) -> Result<M, DecodeError>
+    fn decode_type<M>(&mut self) -> Result<M, DecodeError>
     where
         M: PbType,
     {
         M::decode(self)
+    }
+
+    fn decode_packed<M, F>(&mut self, buffer: &mut Vec<M>, decode_fn: F) -> Result<(), DecodeError>
+    where
+        M: Copy,
+        F: Fn(&mut Self) -> Result<M, DecodeError>,
+    {
+        let len = self.decode_uint32()?;
+        for _ in 0..len {
+            buffer.push(decode_fn(self)?);
+        }
+
+        Ok(())
     }
 }
 

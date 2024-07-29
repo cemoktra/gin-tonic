@@ -26,6 +26,11 @@ pub trait Encode {
     fn encode_string(&mut self, s: &str);
 
     fn encode_type(&mut self, msg: impl PbType);
+
+    fn encode_packed<M, F>(&mut self, items: &[M], encode_fn: F)
+    where
+        M: Copy,
+        F: FnMut(&mut Self, M);
 }
 
 #[inline]
@@ -133,6 +138,17 @@ where
 
     fn encode_type(&mut self, ty: impl PbType) {
         ty.encode(self)
+    }
+
+    fn encode_packed<M, F>(&mut self, items: &[M], mut encode_fn: F)
+    where
+        M: Copy,
+        F: FnMut(&mut Self, M),
+    {
+        self.encode_uint32(items.len() as _);
+        for item in items {
+            encode_fn(self, *item);
+        }
     }
 }
 

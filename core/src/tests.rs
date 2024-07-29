@@ -2,11 +2,12 @@ use base64::prelude::*;
 use bytes::{Bytes, BytesMut};
 
 use crate::{
-    decode_field,
+    decode_field, decode_vector,
     decoder::{Decode, DecodeError},
-    encode_field,
+    encode_field, encode_vector_packed, encode_vector_unpacked,
     encoder::Encode,
-    size_hint, size_hint_wrapped,
+    size_hint, size_hint_repeated, size_hint_repeated_packed, size_hint_repeated_packed_wrapped,
+    size_hint_wrapped,
     tag::Tag,
     types::{
         sizeof_varint64, Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32,
@@ -81,6 +82,8 @@ struct Test {
     hello: String,
     e: TestEnum,
     o: TestOneOf,
+    packed: Vec<u32>,
+    unpacked: Vec<u32>,
 }
 
 impl PbType for Test {
@@ -115,6 +118,8 @@ impl PbType for Test {
                     size_hint!(24, String, s)
                 }
             }
+            + size_hint_repeated_packed_wrapped!(25, UInt32, self.packed)
+            + size_hint_repeated!(26, UInt32, UInt32, self.packed)
     }
 
     fn encode(self, encoder: &mut impl crate::encoder::Encode) {
@@ -172,6 +177,8 @@ impl PbType for Test {
                 encode_field!(24, String, &s, encoder, Encode::encode_string);
             }
         };
+        encode_vector_packed!(25, &self.packed, encoder, Encode::encode_uint32);
+        encode_vector_unpacked!(26, UInt32, &self.unpacked, encoder, Encode::encode_uint32);
     }
 
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
@@ -203,6 +210,8 @@ impl PbType for Test {
         let mut hello = None;
         let mut e = None;
         let mut o = None;
+        let mut packed = vec![];
+        let mut unpacked = vec![];
 
         while !decoder.eof() {
             let tag = decoder.decode_uint32()?;
@@ -302,6 +311,24 @@ impl PbType for Test {
                     decode_field!(String, s, wire_type, decoder, Decode::decode_string);
                     o = Some(TestOneOf::Str(s.ok_or(DecodeError::MissingField(24))?))
                 }
+                25 => {
+                    decode_vector!(
+                        UInt32,
+                        &mut packed,
+                        wire_type,
+                        decoder,
+                        Decode::decode_uint32
+                    );
+                }
+                26 => {
+                    decode_vector!(
+                        UInt32,
+                        &mut unpacked,
+                        wire_type,
+                        decoder,
+                        Decode::decode_uint32
+                    );
+                }
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
@@ -329,10 +356,14 @@ impl PbType for Test {
             empty: empty.ok_or(DecodeError::MissingField(20))?,
             hello: hello.ok_or(DecodeError::MissingField(21))?,
             e: e.ok_or(DecodeError::MissingField(22))?,
-            o: o.ok_or(DecodeError::MissingField(23))?,
+            o: o.ok_or(DecodeError::MissingOneOf(vec![23, 24]))?,
+            packed,
+            unpacked,
         })
     }
 }
+
+const PROTOBUF_PAL: &str = "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9mygEDAQID0AEB0AEC0AED";
 
 #[test]
 fn encode() {
@@ -360,27 +391,22 @@ fn encode() {
         hello: String::from("world"),
         e: TestEnum::A,
         o: TestOneOf::Str(String::from("oneof")),
+        packed: vec![1, 2, 3],
+        unpacked: vec![1, 2, 3],
     };
 
     let size = test.size_hint();
-    assert_eq!(132, size);
+    assert_eq!(147, size);
 
     let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
 
-    assert_eq!(
-        "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9m",
-        BASE64_STANDARD.encode(&buffer)
-    );
+    assert_eq!(PROTOBUF_PAL, BASE64_STANDARD.encode(&buffer));
 }
 
 #[test]
 fn decode() {
-    let data = BASE64_STANDARD
-        .decode(
-            "DcP1SEARH4XrUbgeCUAYuWAgx5//////////ASi5YDDHn/////////8BOAFAAUjywAFQ8cABWPLAAWDxwAFtewAAAHF7AAAAAAAAAH05MAAAhQHHz///iQE5MAAAAAAAAJEBx8////////+YAQCiAQCqAQV3b3JsZLABAcIBBW9uZW9m",
-        )
-        .unwrap();
+    let data = BASE64_STANDARD.decode(PROTOBUF_PAL).unwrap();
     let mut bytes = bytes::Bytes::from(data);
 
     let test = Test::decode(&mut bytes).unwrap();
@@ -407,4 +433,5 @@ fn decode() {
     assert!(test.empty.is_empty());
     assert_eq!(test.hello, "world");
     assert_eq!(test.e, TestEnum::A);
+    assert_eq!(test.packed, vec![1, 2, 3]);
 }
