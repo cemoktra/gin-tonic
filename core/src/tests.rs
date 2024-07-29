@@ -429,6 +429,7 @@ fn encode() {
     };
 
     let size = test.size_hint();
+    // ensure it has same size as protobuf pal
     assert_eq!(168, size);
 
     let mut buffer = BytesMut::with_capacity(size);
@@ -439,11 +440,13 @@ fn encode() {
     }
     println!();
 
+    // ensure it is identical to protobuf pal
     assert_eq!(PROTOBUF_PAL, BASE64_STANDARD.encode(&buffer));
 }
 
 #[test]
 fn decode() {
+    // ensure we can read protobuf pal
     let data = BASE64_STANDARD.decode(PROTOBUF_PAL).unwrap();
     let mut bytes = bytes::Bytes::from(data);
 
@@ -484,15 +487,18 @@ fn map_encode_decode() {
     let test = MapTest { map };
 
     let size = test.size_hint();
+    // ensure it has same size as protobuf pal
     assert_eq!(21, size);
 
     let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
 
+    // re-read self encoded
     let read = MapTest::decode(&mut buffer).unwrap();
     assert!(read.map.get("true").unwrap());
     assert!(!read.map.get("false").unwrap());
 
+    // read self protobuf pal, we cannot compare the base64 data here as it seems the sequence is different
     let data = BASE64_STANDARD
         .decode("CggKBHRydWUQAQoJCgVmYWxzZRAA")
         .unwrap();
