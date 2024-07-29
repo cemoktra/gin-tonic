@@ -295,41 +295,41 @@ impl PbType for Test {
                 23 => {
                     let mut i = None;
                     decode_field!(Int32, i, wire_type, decoder, Decode::decode_int32);
-                    o = Some(TestOneOf::Int(i.unwrap()))
+                    o = Some(TestOneOf::Int(i.ok_or(DecodeError::MissingField(23))?))
                 }
                 24 => {
                     let mut s = None;
                     decode_field!(String, s, wire_type, decoder, Decode::decode_string);
-                    o = Some(TestOneOf::Str(s.unwrap()))
+                    o = Some(TestOneOf::Str(s.ok_or(DecodeError::MissingField(24))?))
                 }
                 n => return Err(DecodeError::UnexpectedFieldNumber(n)),
             }
         }
 
         Ok(Self {
-            float: float.unwrap(),
-            double: double.unwrap(),
-            pos_i32: pos_i32.unwrap(),
-            neg_i32: neg_i32.unwrap(),
-            pos_i64: pos_i64.unwrap(),
-            neg_i64: neg_i64.unwrap(),
-            uint32: uint32.unwrap(),
-            uint64: uint64.unwrap(),
-            pos_sint32: pos_sint32.unwrap(),
-            neg_sint32: neg_sint32.unwrap(),
-            pos_sint64: pos_sint64.unwrap(),
-            neg_sint64: neg_sint64.unwrap(),
-            fixed_u32: fixed_u32.unwrap(),
-            fixed_u64: fixed_u64.unwrap(),
-            pos_sfixed32: pos_sfixed32.unwrap(),
-            neg_sfixed32: neg_sfixed32.unwrap(),
-            pos_sfixed64: pos_sfixed64.unwrap(),
-            neg_sfixed64: neg_sfixed64.unwrap(),
-            b: b.unwrap(),
-            empty: empty.unwrap(),
-            hello: hello.unwrap(),
-            e: e.unwrap(),
-            o: o.unwrap(),
+            float: float.ok_or(DecodeError::MissingField(1))?,
+            double: double.ok_or(DecodeError::MissingField(2))?,
+            pos_i32: pos_i32.ok_or(DecodeError::MissingField(3))?,
+            neg_i32: neg_i32.ok_or(DecodeError::MissingField(4))?,
+            pos_i64: pos_i64.ok_or(DecodeError::MissingField(5))?,
+            neg_i64: neg_i64.ok_or(DecodeError::MissingField(6))?,
+            uint32: uint32.ok_or(DecodeError::MissingField(7))?,
+            uint64: uint64.ok_or(DecodeError::MissingField(8))?,
+            pos_sint32: pos_sint32.ok_or(DecodeError::MissingField(9))?,
+            neg_sint32: neg_sint32.ok_or(DecodeError::MissingField(10))?,
+            pos_sint64: pos_sint64.ok_or(DecodeError::MissingField(11))?,
+            neg_sint64: neg_sint64.ok_or(DecodeError::MissingField(12))?,
+            fixed_u32: fixed_u32.ok_or(DecodeError::MissingField(13))?,
+            fixed_u64: fixed_u64.ok_or(DecodeError::MissingField(14))?,
+            pos_sfixed32: pos_sfixed32.ok_or(DecodeError::MissingField(15))?,
+            neg_sfixed32: neg_sfixed32.ok_or(DecodeError::MissingField(16))?,
+            pos_sfixed64: pos_sfixed64.ok_or(DecodeError::MissingField(17))?,
+            neg_sfixed64: neg_sfixed64.ok_or(DecodeError::MissingField(18))?,
+            b: b.ok_or(DecodeError::MissingField(19))?,
+            empty: empty.ok_or(DecodeError::MissingField(20))?,
+            hello: hello.ok_or(DecodeError::MissingField(21))?,
+            e: e.ok_or(DecodeError::MissingField(22))?,
+            o: o.ok_or(DecodeError::MissingField(23))?,
         })
     }
 }

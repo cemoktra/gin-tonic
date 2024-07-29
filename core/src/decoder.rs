@@ -10,6 +10,8 @@ pub enum DecodeError {
     UnexpectedWireType(u8, u8),
     #[error("Unexpected field number {0}")]
     UnexpectedFieldNumber(u32),
+    #[error("Field number {0} is missing")]
+    MissingField(u32),
     #[error(transparent)]
     Utf8(#[from] FromUtf8Error),
     #[error(transparent)]
