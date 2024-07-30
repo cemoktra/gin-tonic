@@ -1,3 +1,5 @@
+// not using the constants as testing against protobuf pal would get difficult then
+#![allow(clippy::approx_constant)]
 use gin_tonic_derive::{Enumeration, Message, OneOf};
 use std::collections::HashMap;
 

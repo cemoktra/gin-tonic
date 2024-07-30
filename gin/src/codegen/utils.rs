@@ -184,7 +184,7 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
     }
 
     let options = field.options();
-    if let Some(Value::String(rust_type)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {
+    if let Some(Value::String(_)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {
         return quote::quote!();
     }
 
@@ -210,7 +210,6 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
             quote! {}
         }
     } else {
-        let options = field.options();
         let resolved = resolve(field);
 
         if let Some(resolved) = resolved {

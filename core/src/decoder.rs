@@ -267,6 +267,9 @@ where
 
 #[cfg(test)]
 mod tests {
+    // not using the constants as testing against protobuf pal would get difficult then
+    #![allow(clippy::approx_constant)]
+
     use super::Decode;
 
     #[test]
