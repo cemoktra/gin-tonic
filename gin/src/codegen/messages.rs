@@ -108,9 +108,10 @@ pub(crate) fn generate(
 
         let field_name = quote::format_ident!("{}", field.name());
         let field_type = utils::field_type(ctx, qualified_name, &field);
+        let proto_attributes = utils::proto_attribute(&field);
 
         body.extend(quote::quote! {
-            #[gin(tag = #tag #cardinality #kind)]
+            #[gin(tag = #tag #cardinality #kind #proto_attributes)]
             pub #field_name: #field_type,
         });
     }

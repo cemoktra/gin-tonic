@@ -40,6 +40,7 @@ pub(crate) fn generate(
         let variant_name = quote::format_ident!("{}", variant_name);
 
         let variant_type = utils::field_type(ctx, qualified_name, &variant);
+        let proto_attributes = utils::proto_attribute(&variant);
 
         if utils::is_unit_type(&variant_type) {
             body.extend(quote::quote! {
@@ -47,7 +48,7 @@ pub(crate) fn generate(
             });
         } else {
             body.extend(quote::quote! {
-                #[gin(tag = #tag)]
+                #[gin(tag = #tag #proto_attributes)]
                 #variant_name(#variant_type),
             });
         };
@@ -88,15 +89,16 @@ pub(crate) fn generate_unwrapped(
         let variant_name = quote::format_ident!("{}", variant_name);
 
         let variant_type = utils::field_type(ctx, qualified_name, &variant);
+        let proto_attributes = utils::proto_attribute(&variant);
 
         if utils::is_unit_type(&variant_type) {
             body.extend(quote::quote! {
-                #[gin(tag = #tag)]
+                #[gin(tag = #tag #proto_attributes)]
                 #variant_name,
             });
         } else {
             body.extend(quote::quote! {
-                #[gin(tag = #tag)]
+                #[gin(tag = #tag #proto_attributes)]
                 #variant_name(#variant_type),
             });
         }

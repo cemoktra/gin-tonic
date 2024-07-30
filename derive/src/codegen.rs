@@ -282,7 +282,7 @@ fn expand_unwrapped_oneof(
 
         decode_impl.extend(quote_spanned! { span=>
             #tag => {
-                let mut inner;
+                let inner;
                 #root::gin_tonic_core::decode_field!(#pb_type, inner, wire_type, decoder, #decode_fn);
                 Ok(#ty::#var_ident(inner.ok_or(#root::DecodeError::MissingField(#tag))?))
             },

@@ -80,12 +80,12 @@ impl PbOneOf for TestOneOf {
     {
         match field_number {
             23 => {
-                let mut inner;
+                let inner;
                 decode_field!(Int32, inner, wire_type, decoder, Decode::decode_int32);
                 Ok(TestOneOf::Int(inner.ok_or(DecodeError::MissingField(23))?))
             }
             24 => {
-                let mut inner;
+                let inner;
                 decode_field!(String, inner, wire_type, decoder, Decode::decode_string);
                 Ok(TestOneOf::Str(inner.ok_or(DecodeError::MissingField(24))?))
             }

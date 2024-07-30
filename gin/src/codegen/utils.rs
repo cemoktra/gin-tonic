@@ -4,6 +4,7 @@ use proc_macro2::{Delimiter, TokenStream};
 use protox::prost_reflect::{
     Cardinality, DescriptorPool, DynamicMessage, FieldDescriptor, Kind, Value,
 };
+use quote::quote;
 
 use crate::codegen::{case, Context};
 
@@ -156,6 +157,67 @@ fn relative_path(origin_type: &str, qualified_name: &str) -> TokenStream {
 
     quote::quote! {
         #(#segments::)*#ty
+    }
+}
+
+pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
+    fn resolve(field: &FieldDescriptor) -> Option<TokenStream> {
+        match field.kind() {
+            Kind::Double => Some(quote! { "double" }),
+            Kind::Float => Some(quote! { "float" }),
+            Kind::Int32 => Some(quote! { "int32" }),
+            Kind::Int64 => Some(quote! { "int64" }),
+            Kind::Uint32 => Some(quote! { "uint32" }),
+            Kind::Uint64 => Some(quote! { "uint64" }),
+            Kind::Sint32 => Some(quote! { "sint32" }),
+            Kind::Sint64 => Some(quote! { "sint64" }),
+            Kind::Fixed32 => Some(quote! { "fixed32" }),
+            Kind::Fixed64 => Some(quote! { "fixed64" }),
+            Kind::Sfixed32 => Some(quote! { "sfixed32" }),
+            Kind::Sfixed64 => Some(quote! { "sfixed64" }),
+            Kind::Bool => Some(quote! { "bool" }),
+            Kind::String => Some(quote! { "string" }),
+            Kind::Bytes => None,
+            Kind::Message(_) => None,
+            Kind::Enum(_) => None,
+        }
+    }
+
+    let options = field.options();
+    if let Some(Value::String(rust_type)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {
+        return quote::quote!();
+    }
+
+    if let Kind::Message(ty) = field.kind() {
+        let cardinality = field.cardinality();
+        if cardinality == Cardinality::Repeated && ty.is_map_entry() {
+            let key_resolved = resolve(&ty.map_entry_key_field());
+            let value_resolved = resolve(&ty.map_entry_value_field());
+
+            match (key_resolved, value_resolved) {
+                (Some(key), Some(value)) => quote! {
+                    , proto_key = #key, proto_value = #value
+                },
+                (Some(key), None) => quote! {
+                    , proto_key = #key
+                },
+                (None, Some(value)) => quote! {
+                    , proto_value = #value
+                },
+                (None, None) => quote! {},
+            }
+        } else {
+            quote! {}
+        }
+    } else {
+        let options = field.options();
+        let resolved = resolve(field);
+
+        if let Some(resolved) = resolved {
+            quote! { ,proto = #resolved }
+        } else {
+            quote! {}
+        }
     }
 }
 
