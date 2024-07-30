@@ -657,6 +657,65 @@ mod one_of {
     }
 }
 
+mod non_primitve {
+    use gin_tonic_derive::Message;
+
+    #[derive(Debug, Message, PartialEq)]
+    #[gin(root = "crate")]
+    struct Test {
+        #[gin(tag = 1)]
+        required_ip: std::net::Ipv4Addr,
+        #[gin(tag = 2, cardinality = "optional")]
+        optional_ip: Option<std::net::Ipv4Addr>,
+        #[gin(tag = 3, cardinality = "repeated")]
+        repeated_ip: Vec<std::net::Ipv4Addr>,
+    }
+
+    #[test]
+    fn encode_decode_some() {
+        use gin_tonic_core::types::PbType;
+
+        let test = Test {
+            required_ip: std::net::Ipv4Addr::LOCALHOST,
+            optional_ip: Some(std::net::Ipv4Addr::LOCALHOST),
+            repeated_ip: vec![std::net::Ipv4Addr::LOCALHOST, std::net::Ipv4Addr::LOCALHOST],
+        };
+        let size_hint = test.size_hint();
+        let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+        test.encode(&mut buffer);
+
+        let actual_size = buffer.len();
+        assert!(actual_size > 0);
+        assert_eq!(actual_size, size_hint);
+
+        let read = Test::decode(&mut buffer).unwrap();
+
+        assert_eq!(test, read)
+    }
+
+    #[test]
+    fn encode_decode_none() {
+        use gin_tonic_core::types::PbType;
+
+        let test = Test {
+            required_ip: std::net::Ipv4Addr::LOCALHOST,
+            optional_ip: None,
+            repeated_ip: vec![],
+        };
+        let size_hint = test.size_hint();
+        let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+        test.encode(&mut buffer);
+
+        let actual_size = buffer.len();
+        assert!(actual_size > 0);
+        assert_eq!(actual_size, size_hint);
+
+        let read = Test::decode(&mut buffer).unwrap();
+
+        assert_eq!(test, read)
+    }
+}
+
 #[derive(Debug, Message)]
 #[gin(root = "crate")]
 struct Test {

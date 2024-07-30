@@ -9,7 +9,7 @@ criterion_main!(crate::gin_bench::benches);
 
 #[cfg(feature = "uuid_bytes")]
 pub(crate) mod gin_bench {
-    use std::{collections::HashMap, path::PathBuf};
+    use std::collections::HashMap;
 
     use criterion::{black_box, criterion_group, Criterion};
     use gin_tonic::Message;
@@ -23,7 +23,7 @@ pub(crate) mod gin_bench {
         pub uuid: uuid::Uuid,
         #[gin(tag = 2u32, cardinality = "repeated")]
         pub ip: Vec<std::net::Ipv4Addr>,
-        #[gin(tag = 3u32)]
+        #[gin(tag = 3u32, proto = "string")]
         pub text: String,
         #[gin(tag = 4u32, kind = "message")]
         pub nested: GinTonicNested,
@@ -31,12 +31,12 @@ pub(crate) mod gin_bench {
 
     #[derive(Clone, Debug, Message)]
     pub struct GinTonicNested {
-        #[gin(tag = 1u32, kind = "map")]
-        pub counts: HashMap<PathBuf, u64>,
+        #[gin(tag = 1u32, kind = "map", proto_key = "string", proto_value = "uint64")]
+        pub counts: HashMap<String, u64>,
     }
 
     fn ser(c: &mut Criterion) {
-        use gin_tonic::gin_tonic_core::Message;
+        use gin_tonic::gin_tonic_core::types::PbType;
 
         let mut counts = HashMap::new();
         counts.insert("a".into(), 1);
@@ -65,16 +65,16 @@ pub(crate) mod gin_bench {
 
         let size = data.size_hint();
         let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
-        let buffer_ref = black_box(&mut buffer);
 
         c.bench_function("gin_ser", |b| {
             let data = data.clone();
-            b.iter(|| data.clone().serialize(buffer_ref))
+            buffer.clear();
+            b.iter(|| data.clone().encode(&mut buffer))
         });
     }
 
     fn de(c: &mut Criterion) {
-        use gin_tonic::gin_tonic_core::Message;
+        use gin_tonic::gin_tonic_core::types::PbType;
 
         let mut counts = HashMap::new();
         counts.insert("a".into(), 1);
@@ -103,11 +103,10 @@ pub(crate) mod gin_bench {
 
         let size = data.size_hint();
         let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
-        let buffer_ref = black_box(&mut buffer);
-        data.clone().serialize(buffer_ref);
+        data.clone().encode(&mut buffer);
 
         c.bench_function("gin_de", |b| {
-            b.iter(|| GinTonic::deserialize(&buffer).expect("benchmark works"));
+            b.iter(|| GinTonic::decode(&mut buffer).expect("benchmark works"));
         });
     }
 }

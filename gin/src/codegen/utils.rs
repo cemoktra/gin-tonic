@@ -191,8 +191,24 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
     if let Kind::Message(ty) = field.kind() {
         let cardinality = field.cardinality();
         if cardinality == Cardinality::Repeated && ty.is_map_entry() {
-            let key_resolved = resolve(&ty.map_entry_key_field());
-            let value_resolved = resolve(&ty.map_entry_value_field());
+            let key_field = ty.map_entry_key_field();
+            let value_field = ty.map_entry_value_field();
+
+            let key_resolved = if let Some(Value::String(_)) =
+                ext_ref(key_field.parent_pool(), RUST_TYPE, &options)
+            {
+                None
+            } else {
+                resolve(&key_field)
+            };
+
+            let value_resolved = if let Some(Value::String(_)) =
+                ext_ref(value_field.parent_pool(), RUST_TYPE, &options)
+            {
+                None
+            } else {
+                resolve(&value_field)
+            };
 
             match (key_resolved, value_resolved) {
                 (Some(key), Some(value)) => quote! {

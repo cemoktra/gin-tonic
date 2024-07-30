@@ -300,21 +300,6 @@ impl PbType for std::net::Ipv4Addr {
     }
 }
 
-impl PbType for std::path::PathBuf {
-    const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
-
-    fn encode(&self, encoder: &mut impl Encode) {
-        encoder.encode_str(self.display().to_string().as_ref())
-    }
-
-    fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
-    where
-        Self: Sized,
-    {
-        decoder.decode_string().map(Into::into)
-    }
-}
-
 #[cfg(feature = "uuid_string")]
 impl PbType for uuid::Uuid {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
