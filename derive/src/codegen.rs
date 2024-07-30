@@ -207,6 +207,7 @@ fn expand_message_message(
             fn encode(&self, encoder: &mut impl #root::Encode) {
                 use #root::{Encode, Tag};
                 use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
+                use #root::gin_tonic_core::types::{PbOneOf, PbType};
 
                 #serialize_impl
             }
@@ -215,8 +216,9 @@ fn expand_message_message(
             where
                 Self: Sized
             {
-                use #root::{Decode, DecodeError, Tag, PbOneOf};
+                use #root::{Decode, DecodeError, Tag};
                 use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
+                use #root::gin_tonic_core::types::{PbOneOf, PbType};
 
                 #deserialize_init
 
@@ -298,10 +300,14 @@ fn expand_unwrapped_oneof(
         #[automatically_derived]
         impl #root::PbOneOf for #ty {
             fn matches(field_number: u32) -> bool {
-                [#tags].contains(&tag)
+                [#tags].contains(&field_number)
             }
 
             fn encode(&self, encoder: &mut impl #root::Encode) {
+                use #root::{Encode, Tag};
+                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
+                use #root::gin_tonic_core::types::{PbOneOf, PbType};
+
                 match self {
                     #serialize_impl
                 };
@@ -315,6 +321,10 @@ fn expand_unwrapped_oneof(
             where
                 Self: Sized,
             {
+                use #root::{Decode, DecodeError, Tag};
+                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
+                use #root::gin_tonic_core::types::{PbOneOf, PbType};
+
                 match field_number {
                     #deserialize_impl
                     n => Err(#root::DecodeError::UnexpectedOneOfVariant(n)),

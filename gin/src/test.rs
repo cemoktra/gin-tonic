@@ -194,9 +194,9 @@ mod primitives {
             #[gin(tag = 12, cardinality = "repeated", proto = "bool")]
             boolean: Vec<bool>,
             #[gin(tag = 13, cardinality = "repeated", proto = "float")]
-            float: Option<f32>,
+            float: Vec<f32>,
             #[gin(tag = 14, cardinality = "repeated", proto = "double")]
-            double: Option<f64>,
+            double: Vec<f64>,
         }
 
         #[test]
@@ -550,6 +550,7 @@ mod one_of {
     use gin_tonic_derive::OneOf;
 
     #[derive(Debug, PartialEq, OneOf)]
+    #[gin(root = "crate")]
     enum Choice {
         #[gin(tag = 1, proto = "float")]
         Float(f32),
@@ -558,6 +559,7 @@ mod one_of {
     }
 
     #[derive(Debug, PartialEq, OneOf)]
+    #[gin(root = "crate")]
     enum Outcome {
         #[gin(tag = 3, proto = "string")]
         Success(String),
@@ -568,7 +570,7 @@ mod one_of {
     mod required {
         use gin_tonic_derive::Message;
 
-        #[derive(Debug, Message, PartialEq, Default)]
+        #[derive(Debug, Message, PartialEq)]
         #[gin(root = "crate")]
         struct Test {
             #[gin(tag = 0, kind = "one_of")]
