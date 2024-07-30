@@ -15,13 +15,11 @@ uuid_bytes = ["dep:uuid"]
 
 [dependencies]
 bytes = { workspace = true }
-smallvec = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true, optional = true }
 
 [dev-dependencies]
-smallvec = { workspace = true }
 base64 = "0.22.1"
 
 [lints]

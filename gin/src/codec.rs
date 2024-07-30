@@ -1,10 +1,9 @@
 //! [tonic::codec::Codec] implementation for gin-tonic
 
-use bytes::Buf;
 use std::marker::PhantomData;
 use tonic::codec::{DecodeBuf, EncodeBuf};
 
-use gin_tonic_core::PbType;
+use gin_tonic_core::types::PbType;
 
 #[derive(Debug, Clone)]
 pub struct GinCodec<T, U> {
@@ -29,8 +28,8 @@ pub struct GinDecoder<U> {
 
 impl<T, U> tonic::codec::Codec for GinCodec<T, U>
 where
-    T: Message + Send + 'static + std::fmt::Debug,
-    U: Message + Send + 'static + std::fmt::Debug,
+    T: PbType + Send + 'static + std::fmt::Debug,
+    U: PbType + Send + 'static + std::fmt::Debug,
 {
     type Encode = T;
     type Decode = U;
@@ -46,26 +45,23 @@ where
     }
 }
 
-impl<T: Message + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
+impl<T: PbType + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
     type Item = T;
     type Error = tonic::Status;
 
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        todo!()
-        // item.serialize(dst);
-        // Ok(())
+        item.encode(dst);
+        Ok(())
     }
 }
 
-impl<U: Message + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
+impl<U: PbType + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
     type Item = U;
     type Error = tonic::Status;
 
     fn decode(&mut self, src: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        todo!()
-        // let (decoded, read) = Self::Item::deserialize(src.chunk()).map_err(map_core_err)?;
-        // src.advance(read);
-        // Ok(Some(decoded))
+        let decoded = Self::Item::decode(src).map_err(map_core_err)?;
+        Ok(Some(decoded))
     }
 }
 

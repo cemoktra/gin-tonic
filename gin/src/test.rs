@@ -701,7 +701,7 @@ enum OneOf {
 
 #[test]
 fn pb_serde() {
-    use gin_tonic_core::types::{PbOneOf, PbType};
+    use gin_tonic_core::types::PbType;
 
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
@@ -787,7 +787,7 @@ enum ResultOneOf {
 }
 
 // this is on protobuf layer identical to ResultMessage and ResultOneOn but simplify the Rust layer
-#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::Message)]
 #[gin(root = "crate")]
 enum UnwrappedResultOneOf {
     #[gin(tag = 1, proto = "int32")]
@@ -814,7 +814,7 @@ fn one_of_unwrapping() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::decode_standalone(&mut buffer).unwrap();
+    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
     let wrapped = ResultMessage::decode(&mut buffer).unwrap();
@@ -831,7 +831,7 @@ fn one_of_unwrapping() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::decode_standalone(&mut buffer).unwrap();
+    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
     let wrapped = ResultMessage::decode(&mut buffer).unwrap();

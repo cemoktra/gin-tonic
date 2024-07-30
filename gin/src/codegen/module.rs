@@ -169,15 +169,6 @@ fn write(tokens: TokenStream, out: impl AsRef<Path>) -> Result<(), CompilerError
 
     let content = format!("{}", tokens);
 
-    #[cfg(feature = "pretty")]
-    fn format(content: String) -> Result<String, CompilerError> {
-        let file = syn::parse_file(&content).context("Unable to parse tokens")?;
-
-        let formatted = prettyplease::unparse(&file);
-
-        Ok(formatted)
-    }
-    #[cfg(not(feature = "pretty"))]
     fn format(content: String) -> Result<String, CompilerError> {
         Ok(content)
     }

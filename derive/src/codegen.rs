@@ -246,6 +246,159 @@ fn expand_unwrapped_oneof(
 ) -> TokenStream {
     let span = ty.span();
 
+    let mut encode_impl = TokenStream::new();
+    let mut decode_impl = TokenStream::new();
+    let mut tags = TokenStream::new();
+
+    for variant in variants.into_iter() {
+        let Some(field_ty) = variant.fields.fields.first() else {
+            panic!("OneOfs must contain fields for now");
+        };
+        let var_ident = variant.ident;
+        let span = var_ident.span();
+        let tag = variant.tag;
+        let protobuf_type = variant.proto;
+
+        let (pb_type, encode_fn, decode_fn, as_ref) =
+            primitives::primitive_types(root, span, field_ty, protobuf_type, false);
+
+        tags.extend(quote_spanned! {span=>
+            #tag,
+        });
+
+        if as_ref {
+            encode_impl.extend(quote_spanned! {span=>
+                #ty::#var_ident(v) => {
+                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, v, encoder, #encode_fn);
+                },
+            });
+        } else {
+            encode_impl.extend(quote_spanned! {span=>
+                #ty::#var_ident(v) => {
+                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, *v, encoder, #encode_fn);
+                }
+            });
+        }
+
+        decode_impl.extend(quote_spanned! { span=>
+            #tag => {
+                let mut inner;
+                #root::gin_tonic_core::decode_field!(#pb_type, inner, wire_type, decoder, #decode_fn);
+                Ok(#ty::#var_ident(inner.ok_or(#root::DecodeError::MissingField(#tag))?))
+            },
+        });
+    }
+
+    quote_spanned! {span=>
+        #[automatically_derived]
+        #[allow(unused_imports)]
+        impl #root::PbType for #ty {
+            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_LENGTH_ENCODED;
+
+            fn encode(&self, encoder: &mut impl #root::Encode) {
+                use #root::{Encode, Tag};
+
+                match self {
+                    #encode_impl
+                }
+            }
+
+            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
+            where
+                Self: Sized
+            {
+                use #root::{Decode, DecodeError, Tag};
+                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
+                use #root::gin_tonic_core::types::{PbOneOf, PbType};
+
+                let tag = decoder.decode_uint32()?;
+                let field_number = tag.field_number();
+                let wire_type = tag.wire_type();
+
+                match field_number {
+                    #decode_impl
+                    n => {
+                        return Err(#root::DecodeError::UnexpectedFieldNumber(n))
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub(crate) fn expand_enumeration(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::EnumerationInput,
+) -> TokenStream {
+    let ty = input.ident;
+    let span = ty.span();
+
+    let variants = input
+        .data
+        .take_enum()
+        .expect("Enumeration derive only works on unit enumerations");
+
+    let mut encode_impl = TokenStream::new();
+    let mut decode_impl = TokenStream::new();
+
+    for variant in variants {
+        let var_ident = variant.ident;
+        let span = var_ident.span();
+        let tag = variant.tag;
+
+        encode_impl.extend(quote_spanned! {span=>
+            #ty::#var_ident => {
+                encoder.encode_uint64(#tag);
+            },
+        });
+
+        decode_impl.extend(quote_spanned! {span=>
+            #tag => Ok(Self::#var_ident),
+        });
+    }
+
+    quote_spanned! {span=>
+        #[automatically_derived]
+        #[allow(unused_imports)]
+        impl #root::PbType for #ty {
+            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_VARINT;
+
+            fn encode(&self, encoder: &mut impl #root::Encode) {
+                use #root::{Encode, Tag};
+
+                match self {
+                    #encode_impl
+                }
+            }
+
+            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
+            where
+                Self: Sized
+            {
+                use #root::{Decode, DecodeError, Tag};
+
+                match decoder.decode_uint64()? {
+                    #decode_impl
+                    n => Err(#root::DecodeError::UnexpectedEnumVariant(n)),
+                }
+            }
+        }
+    }
+}
+
+pub(crate) fn one_of_enumeration(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::OneOfInput,
+) -> TokenStream {
+    let ty = input.ident;
+
+    let variants = input
+        .data
+        .take_enum()
+        .expect("OneOF derive only works on newtype enums");
+
+    let span = ty.span();
+
     let mut serialize_impl = TokenStream::new();
     let mut deserialize_impl = TokenStream::new();
     let mut tags = TokenStream::new();
@@ -326,78 +479,4 @@ fn expand_unwrapped_oneof(
             }
         }
     }
-}
-
-pub(crate) fn expand_enumeration(
-    root: &proc_macro2::TokenStream,
-    input: crate::ast::EnumerationInput,
-) -> TokenStream {
-    let ty = input.ident;
-    let span = ty.span();
-
-    let variants = input
-        .data
-        .take_enum()
-        .expect("Enumeration derive only works on unit enumerations");
-
-    let mut encode_impl = TokenStream::new();
-    let mut decode_impl = TokenStream::new();
-
-    for variant in variants {
-        let var_ident = variant.ident;
-        let span = var_ident.span();
-        let tag = variant.tag;
-
-        encode_impl.extend(quote_spanned! {span=>
-            #ty::#var_ident => {
-                encoder.encode_uint64(#tag);
-            },
-        });
-
-        decode_impl.extend(quote_spanned! {span=>
-            #tag => Ok(Self::#var_ident),
-        });
-    }
-
-    quote_spanned! {span=>
-        #[automatically_derived]
-        #[allow(unused_imports)]
-        impl #root::PbType for #ty {
-            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_VARINT;
-
-            fn encode(&self, encoder: &mut impl #root::Encode) {
-                use #root::{Encode, Tag};
-
-                match self {
-                    #encode_impl
-                }
-            }
-
-            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
-            where
-                Self: Sized
-            {
-                use #root::{Decode, DecodeError, Tag};
-
-                match decoder.decode_uint64()? {
-                    #decode_impl
-                    n => Err(#root::DecodeError::UnexpectedEnumVariant(n)),
-                }
-            }
-        }
-    }
-}
-
-pub(crate) fn one_of_enumeration(
-    root: &proc_macro2::TokenStream,
-    input: crate::ast::OneOfInput,
-) -> TokenStream {
-    let ty = input.ident;
-
-    let variants = input
-        .data
-        .take_enum()
-        .expect("OneOF derive only works on newtype enums");
-
-    expand_unwrapped_oneof(root, ty, variants)
 }
