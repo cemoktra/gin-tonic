@@ -29,6 +29,20 @@ macro_rules! decode_vector {
 }
 
 #[macro_export]
+macro_rules! decode_vector_nested {
+    ($vec:expr, $wire_type:expr, $decoder:expr, $decode_fn:path) => {
+        if WIRE_TYPE_LENGTH_ENCODED == $wire_type {
+            $vec.push($decode_fn($decoder)?);
+        } else {
+            return Err(DecodeError::UnexpectedWireType(
+                WIRE_TYPE_LENGTH_ENCODED,
+                $wire_type,
+            ));
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! decode_map {
     ($var:expr, $wire_type:expr, $decoder:expr, $decode_key_fn:path, $decode_value_fn:path) => {
         if WIRE_TYPE_LENGTH_ENCODED == $wire_type {
@@ -82,6 +96,16 @@ macro_rules! encode_vector_unpacked {
         for item in $var {
             $encoder.encode_uint32(u32::from_parts($field_number, <$prototy>::WIRE_TYPE));
             $encode_fn($encoder, item.clone());
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! encode_vector_nested {
+    ($field_number:expr, $var:expr, $encoder:expr, $encode_fn:path) => {
+        for item in $var {
+            $encoder.encode_uint32(u32::from_parts($field_number, WIRE_TYPE_LENGTH_ENCODED));
+            $encode_fn($encoder, item);
         }
     };
 }

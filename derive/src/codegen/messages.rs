@@ -1,6 +1,6 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
-use syn::{Ident, LitInt, Type};
+use syn::{spanned::Spanned, Ident, LitInt, Type};
 
 use crate::ast::{MessageField, Primitive};
 
@@ -46,8 +46,8 @@ pub fn optional(
     decode_set: &mut TokenStream,
 ) {
     encode_impl.extend(quote_spanned! { span=>
-        if let Some(value) = self.#field_ident {
-            #root::gin_tonic_core::encode_nested!(#tag, &value, encoder, Encode::encode_nested);
+        if let Some(value) = &self.#field_ident {
+            #root::gin_tonic_core::encode_nested!(#tag, value, encoder, Encode::encode_nested);
         }
     });
 
@@ -70,7 +70,6 @@ pub fn repeated(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
     field_ident: &Ident,
-    ty: &Type,
     span: Span,
     encode_impl: &mut TokenStream,
     decode_init: &mut TokenStream,
@@ -78,9 +77,7 @@ pub fn repeated(
     decode_set: &mut TokenStream,
 ) {
     encode_impl.extend(quote_spanned! { span=>
-        if let Some(value) = self.#field_ident {
-            #root::gin_tonic_core::encode_vector_unpacked!(#tag, #ty, &self.#field_ident, encoder, Encode::encode_nested);
-        }
+        #root::gin_tonic_core::encode_vector_nested!(#tag,  &self.#field_ident, encoder, Encode::encode_nested);
     });
 
     decode_init.extend(quote_spanned! { span=>
@@ -89,11 +86,11 @@ pub fn repeated(
 
     decode_impl.extend(quote_spanned! { span=>
         #tag => {
-            #root::gin_tonic_core::decode_vector!(#ty, &mut #field_ident, wire_type, decoder, Decode::decode_nested)
+            #root::gin_tonic_core::decode_vector_nested!(&mut #field_ident, wire_type, decoder, Decode::decode_nested)
         },
     });
 
     decode_set.extend(quote_spanned! { span=>
-        #field_ident: #field_ident.ok_or(#root::DecodeError::MissingField(#tag))?,
+        #field_ident,
     });
 }

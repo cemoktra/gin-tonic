@@ -183,6 +183,9 @@ where
         F: Fn(&mut Self) -> Result<M, DecodeError>,
     {
         let len = self.decode_uint32()? as usize;
+        if len == 0 {
+            return Ok(());
+        }
         let remaining_before = self.remaining();
 
         loop {

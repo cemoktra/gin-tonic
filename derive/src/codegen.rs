@@ -233,7 +233,6 @@ fn expand_message_message(
                         &root,
                         &tag,
                         &field_ident,
-                        &ty,
                         span.clone(),
                         &mut serialize_impl,
                         &mut deserialize_init,

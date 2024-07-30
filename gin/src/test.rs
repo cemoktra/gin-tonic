@@ -215,24 +215,196 @@ mod primitives {
             assert_eq!(test, read)
         }
 
-        // #[test]
-        // fn encode_decode_none() {
-        //     use gin_tonic_core::types::PbType;
+        #[test]
+        fn encode_decode_none() {
+            use gin_tonic_core::types::PbType;
 
-        //     let test = Test::default();
+            let test = Test::default();
 
-        //     let size_hint = test.size_hint();
-        //     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
-        //     test.encode(&mut buffer);
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
 
-        //     let actual_size = buffer.len();
-        //     assert_eq!(actual_size, 0);
-        //     assert_eq!(actual_size, size_hint);
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
 
-        //     let read = Test::decode(&mut buffer).unwrap();
+            let read = Test::decode(&mut buffer).unwrap();
 
-        //     assert_eq!(test, read)
-        // }
+            assert_eq!(test, read)
+        }
+    }
+}
+
+mod messages {
+    use gin_tonic_derive::Message;
+
+    #[derive(Debug, Message, PartialEq, Clone)]
+    #[gin(root = "crate")]
+    struct Nested {
+        #[gin(tag = 1, proto = "int32")]
+        int32: i32,
+    }
+
+    mod required {
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 1, kind = "message")]
+            nested_1: super::Nested,
+            #[gin(tag = 2, kind = "message")]
+            nested_2: super::Nested,
+            #[gin(tag = 3, kind = "message")]
+            nested_3: super::Nested,
+            #[gin(tag = 4, kind = "message")]
+            nested_4: super::Nested,
+        }
+
+        #[test]
+        fn encode_decode() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test {
+                nested_1: super::Nested { int32: 123 },
+                nested_2: super::Nested { int32: 123 },
+                nested_3: super::Nested { int32: 123 },
+                nested_4: super::Nested { int32: 123 },
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+    }
+
+    mod optional {
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 1, cardinality = "optional", kind = "message")]
+            nested_1: Option<super::Nested>,
+            #[gin(tag = 2, cardinality = "optional", kind = "message")]
+            nested_2: Option<super::Nested>,
+            #[gin(tag = 3, cardinality = "optional", kind = "message")]
+            nested_3: Option<super::Nested>,
+            #[gin(tag = 4, cardinality = "optional", kind = "message")]
+            nested_4: Option<super::Nested>,
+        }
+
+        #[test]
+        fn encode_decode_some() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test {
+                nested_1: Some(super::Nested { int32: 123 }),
+                nested_2: Some(super::Nested { int32: 123 }),
+                nested_3: Some(super::Nested { int32: 123 }),
+                nested_4: Some(super::Nested { int32: 123 }),
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+
+        #[test]
+        fn encode_decode_none() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test::default();
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert_eq!(actual_size, 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+    }
+
+    mod repeated {
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 1, cardinality = "repeated", kind = "message")]
+            nested_1: Vec<super::Nested>,
+            #[gin(tag = 2, cardinality = "repeated", kind = "message")]
+            nested_2: Vec<super::Nested>,
+            #[gin(tag = 3, cardinality = "repeated", kind = "message")]
+            nested_3: Vec<super::Nested>,
+            #[gin(tag = 4, cardinality = "repeated", kind = "message")]
+            nested_4: Vec<super::Nested>,
+        }
+
+        #[test]
+        fn encode_decode_some() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test {
+                nested_1: vec![super::Nested { int32: 123 }, super::Nested { int32: 123 }],
+                nested_2: vec![super::Nested { int32: 123 }],
+                nested_3: vec![super::Nested { int32: 123 }],
+                nested_4: vec![super::Nested { int32: 123 }],
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+
+        #[test]
+        fn encode_decode_none() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test::default();
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert_eq!(actual_size, 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
     }
 }
 
