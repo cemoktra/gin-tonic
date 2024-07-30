@@ -445,7 +445,7 @@ pub(crate) fn one_of_enumeration(
 
     quote_spanned! {span=>
         #[automatically_derived]
-        #[warn(unused_imports)]
+        #[allow(unused_imports)]
         impl #root::PbOneOf for #ty {
             fn matches(field_number: u32) -> bool {
                 [#tags].contains(&field_number)
