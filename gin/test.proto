@@ -14,11 +14,11 @@ message Test {
   repeated string protocols = 3;
   Nested nested = 4;
   Logging logging = 5;
-  // oneof one_of {
-  //   int32 num = 6;
-  //   string str = 7;
-  // }
-  // map<uint32, string> mapping = 8;
+  oneof one_of {
+    int32 num = 6;
+    string str = 7;
+  }
+  map<uint32, string> mapping = 8;
 }
 
 message Nested {

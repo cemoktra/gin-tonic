@@ -1,4 +1,4 @@
-use gin_tonic_derive::{Enumeration, Message};
+use gin_tonic_derive::{Enumeration, Message, OneOf};
 use std::collections::HashMap;
 
 mod primitives {
@@ -602,57 +602,57 @@ mod one_of {
         }
     }
 
-    // mod optional {
-    //     use gin_tonic_derive::Message;
+    mod optional {
+        use gin_tonic_derive::Message;
 
-    //     #[derive(Debug, Message, PartialEq, Default)]
-    //     #[gin(root = "crate")]
-    //     struct Test {
-    //         #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
-    //         choice: Option<super::Choice>,
-    //         #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
-    //         outcome: Option<super::Outcome>,
-    //     }
-    //     #[test]
-    //     fn encode_decode_some() {
-    //         use gin_tonic_core::types::PbType;
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
+            choice: Option<super::Choice>,
+            #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
+            outcome: Option<super::Outcome>,
+        }
+        #[test]
+        fn encode_decode_some() {
+            use gin_tonic_core::types::PbType;
 
-    //         let test = Test {
-    //             choice: Some(super::Choice::Double(3.14)),
-    //             outcome: Some(super::Outcome::Success("3.14".into())),
-    //         };
-    //         let size_hint = test.size_hint();
-    //         let mut buffer = bytes::BytesMut::with_capacity(size_hint);
-    //         test.encode(&mut buffer);
+            let test = Test {
+                choice: Some(super::Choice::Double(3.14)),
+                outcome: Some(super::Outcome::Success("3.14".into())),
+            };
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
 
-    //         let actual_size = buffer.len();
-    //         assert!(actual_size > 0);
-    //         assert_eq!(actual_size, size_hint);
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
 
-    //         let read = Test::decode(&mut buffer).unwrap();
+            let read = Test::decode(&mut buffer).unwrap();
 
-    //         assert_eq!(test, read)
-    //     }
+            assert_eq!(test, read)
+        }
 
-    //     #[test]
-    //     fn encode_decode_none() {
-    //         use gin_tonic_core::types::PbType;
+        #[test]
+        fn encode_decode_none() {
+            use gin_tonic_core::types::PbType;
 
-    //         let test = Test::default();
+            let test = Test::default();
 
-    //         let size_hint = test.size_hint();
-    //         let mut buffer = bytes::BytesMut::with_capacity(size_hint);
-    //         test.encode(&mut buffer);
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
 
-    //         let actual_size = buffer.len();
-    //         assert_eq!(actual_size, 0);
-    //         assert_eq!(actual_size, size_hint);
+            let actual_size = buffer.len();
+            assert_eq!(actual_size, 0);
+            assert_eq!(actual_size, size_hint);
 
-    //         let read = Test::decode(&mut buffer).unwrap();
+            let read = Test::decode(&mut buffer).unwrap();
 
-    //         assert_eq!(test, read)
-    //     }
-    // }
+            assert_eq!(test, read)
+        }
+    }
 }
 
 #[derive(Debug, Message)]
@@ -668,8 +668,8 @@ struct Test {
     nested: Nested,
     #[gin(tag = 5)]
     logging: Logging,
-    // #[gin(tag = 0, kind = "one_of")]
-    // one_of: OneOf,
+    #[gin(tag = 0, kind = "one_of")]
+    one_of: OneOf,
     #[gin(tag = 8, kind = "map", proto_key = "uint32", proto_value = "string")]
     map: HashMap<u32, String>,
 }
@@ -690,18 +690,18 @@ enum Logging {
     Json,
 }
 
-// #[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
-// #[gin(root = "crate")]
-// enum OneOf {
-//     #[gin(tag = 6)]
-//     Num(i32),
-//     #[gin(tag = 7)]
-//     Str(String),
-// }
+#[derive(Clone, Debug, Eq, PartialEq, OneOf)]
+#[gin(root = "crate")]
+enum OneOf {
+    #[gin(tag = 6, proto = "int32")]
+    Num(i32),
+    #[gin(tag = 7, proto = "string")]
+    Str(String),
+}
 
 #[test]
 fn pb_serde() {
-    use gin_tonic_core::types::PbType;
+    use gin_tonic_core::types::{PbOneOf, PbType};
 
     let test = Test {
         ip: std::net::Ipv4Addr::LOCALHOST,
@@ -709,20 +709,13 @@ fn pb_serde() {
         protocols: vec![],
         nested: Nested { number: -1 },
         logging: Logging::Human,
-        // one_of: OneOf::Num(123),
+        one_of: OneOf::Num(123),
         map: HashMap::new(),
     };
-
-    println!("{}", test.ip.to_bits());
 
     let size_hint = test.size_hint();
     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
     test.encode(&mut buffer);
-
-    for b in &buffer {
-        print!("{b:02x}");
-    }
-    println!();
 
     let actual_size = buffer.len();
     assert!(actual_size > 0);
@@ -735,10 +728,10 @@ fn pb_serde() {
     assert!(test.protocols.is_empty());
     assert_eq!(test.nested.number, -1);
     assert_eq!(test.logging, Logging::Human);
-    // match test.one_of {
-    //     OneOf::Num(n) => assert_eq!(n, 123),
-    //     _ => panic!("wrong one_of"),
-    // }
+    match test.one_of {
+        OneOf::Num(n) => assert_eq!(n, 123),
+        _ => panic!("wrong one_of"),
+    }
     assert!(test.map.is_empty());
 
     // first round with optional field set to Some
@@ -751,7 +744,7 @@ fn pb_serde() {
         protocols: vec![String::from("tcp"), String::from("udp")],
         nested: Nested { number: 1 },
         logging: Logging::Json,
-        //     one_of: OneOf::Str(String::from("hello")),
+        one_of: OneOf::Str(String::from("hello")),
         map,
     };
 
@@ -770,77 +763,77 @@ fn pb_serde() {
     assert_eq!(test.protocols.len(), 2);
     assert_eq!(test.nested.number, 1);
     assert_eq!(test.logging, Logging::Json);
-    // match test.one_of {
-    //     OneOf::Str(s) => assert_eq!(s, "hello"),
-    //     _ => panic!("wrong one_of"),
-    // }
+    match test.one_of {
+        OneOf::Str(s) => assert_eq!(s, "hello"),
+        _ => panic!("wrong one_of"),
+    }
     assert_eq!(test.map.len(), 2);
 }
 
-// #[derive(Debug, Message)]
-// #[gin(root = "crate")]
-// struct ResultMessage {
-//     #[gin(tag = 0, kind = "one_of")]
-//     result: ResultOneOf,
-// }
+#[derive(Debug, Message)]
+#[gin(root = "crate")]
+struct ResultMessage {
+    #[gin(tag = 0, kind = "one_of")]
+    result: ResultOneOf,
+}
 
-// #[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
-// #[gin(root = "crate")]
-// enum ResultOneOf {
-//     #[gin(tag = 1)]
-//     Success(i32),
-//     #[gin(tag = 2)]
-//     Error(i32),
-// }
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
+#[gin(root = "crate")]
+enum ResultOneOf {
+    #[gin(tag = 1, proto = "int32")]
+    Success(i32),
+    #[gin(tag = 2, proto = "int32")]
+    Error(i32),
+}
 
-// // this is on protobuf layer identical to ResultMessage and ResultOneOn but simplify the Rust layer
-// #[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
-// #[gin(root = "crate")]
-// enum UnwrappedResultOneOf {
-//     #[gin(tag = 1)]
-//     Success(i32),
-//     #[gin(tag = 2)]
-//     Error(i32),
-// }
+// this is on protobuf layer identical to ResultMessage and ResultOneOn but simplify the Rust layer
+#[derive(Clone, Debug, Eq, PartialEq, gin_tonic_derive::OneOf)]
+#[gin(root = "crate")]
+enum UnwrappedResultOneOf {
+    #[gin(tag = 1, proto = "int32")]
+    Success(i32),
+    #[gin(tag = 2, proto = "int32")]
+    Error(i32),
+}
 
-// #[test]
-// fn one_of_unwrapping() {
-//     use gin_tonic_core::Message;
+#[test]
+fn one_of_unwrapping() {
+    use gin_tonic_core::types::{PbOneOf, PbType};
 
-//     // wrapped to unwrapped
-//     let test = ResultMessage {
-//         result: ResultOneOf::Success(1),
-//     };
+    // wrapped to unwrapped
+    let test = ResultMessage {
+        result: ResultOneOf::Success(1),
+    };
 
-//     let size_hint = gin_tonic_core::Message::size_hint(&test);
-//     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+    let size_hint = test.size_hint();
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-//     test.serialize(&mut buffer);
+    test.encode(&mut buffer);
 
-//     let actual_size = buffer.len();
-//     assert!(actual_size > 0);
-//     assert_eq!(actual_size, size_hint);
+    let actual_size = buffer.len();
+    assert!(actual_size > 0);
+    assert_eq!(actual_size, size_hint);
 
-//     let (unwrapped, _) = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
-//     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
+    let unwrapped = UnwrappedResultOneOf::decode_standalone(&mut buffer).unwrap();
+    assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
-//     let (wrapped, _) = ResultMessage::deserialize(&buffer).unwrap();
-//     assert_eq!(wrapped.result, ResultOneOf::Success(1));
+    let wrapped = ResultMessage::decode(&mut buffer).unwrap();
+    assert_eq!(wrapped.result, ResultOneOf::Success(1));
 
-//     // unwrapped to wrapped
-//     let test = UnwrappedResultOneOf::Success(1);
+    // unwrapped to wrapped
+    let test = UnwrappedResultOneOf::Success(1);
 
-//     let size_hint = gin_tonic_core::Message::size_hint(&test);
-//     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+    let size_hint = test.size_hint();
+    let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
-//     test.serialize(&mut buffer);
-//     let actual_size = buffer.len();
-//     assert!(actual_size > 0);
-//     assert_eq!(actual_size, size_hint);
+    test.encode(&mut buffer);
+    let actual_size = buffer.len();
+    assert!(actual_size > 0);
+    assert_eq!(actual_size, size_hint);
 
-//     let (unwrapped, _) = UnwrappedResultOneOf::deserialize(&buffer).unwrap();
-//     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
+    let unwrapped = UnwrappedResultOneOf::decode_standalone(&mut buffer).unwrap();
+    assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
-//     let (wrapped, _) = ResultMessage::deserialize(&buffer).unwrap();
-//     assert_eq!(wrapped.result, ResultOneOf::Success(1));
-// }
+    let wrapped = ResultMessage::decode(&mut buffer).unwrap();
+    assert_eq!(wrapped.result, ResultOneOf::Success(1));
+}

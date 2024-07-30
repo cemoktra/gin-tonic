@@ -1,7 +1,7 @@
-use crate::ast::{Cardinality, Kind, MessageDeriveData, MessageField, OneOfVariant, Primitive};
+use crate::ast::{Cardinality, Kind, MessageDeriveData, MessageField, OneOfVariant};
 use darling::ast::Fields;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, quote_spanned};
+use quote::{quote, quote_spanned};
 use syn::Ident;
 
 mod map;
@@ -16,7 +16,7 @@ pub(crate) fn expand_message(
     let ty = input.ident;
 
     match input.data {
-        MessageDeriveData::Enum(variants) => panic!("TODO: unwrapped oneof"), //expand_unwrapped_oneof(root, ty, variants),
+        MessageDeriveData::Enum(variants) => expand_unwrapped_oneof(root, ty, variants),
         MessageDeriveData::Struct(fields) => expand_message_message(root, ty, fields),
     }
 }
@@ -41,7 +41,6 @@ fn expand_message_message(
             .clone()
             .expect("named struct fields have idents");
         let span = field_ident.span();
-        let field_size_ident = format_ident!("{}_size", field_ident);
 
         match field.cardinality.unwrap_or_default() {
             Cardinality::Required => match field.kind.unwrap_or_default() {
@@ -64,7 +63,6 @@ fn expand_message_message(
                         &root,
                         &tag,
                         &field_ident,
-                        &ty,
                         span.clone(),
                         &mut serialize_impl,
                         &mut deserialize_init,
@@ -121,7 +119,6 @@ fn expand_message_message(
                         &root,
                         &tag,
                         &field_ident,
-                        &ty,
                         span.clone(),
                         &mut serialize_impl,
                         &mut deserialize_init,
@@ -131,7 +128,6 @@ fn expand_message_message(
                 }
                 Kind::OneOf => {
                     oneof::optional(
-                        &tag,
                         &field_ident,
                         &ty,
                         span.clone(),
@@ -252,7 +248,6 @@ fn expand_unwrapped_oneof(
 
     let mut serialize_impl = TokenStream::new();
     let mut deserialize_impl = TokenStream::new();
-    let mut size_hint_impl = TokenStream::new();
     let mut tags = TokenStream::new();
 
     for variant in variants.into_iter() {
@@ -266,8 +261,6 @@ fn expand_unwrapped_oneof(
 
         let (pb_type, encode_fn, decode_fn, as_ref) =
             primitives::primitive_types(root, span, field_ty, protobuf_type, false);
-
-        //panic!("{ty}::{var_ident} => {pb_type} {encode_fn} {decode_fn}");
 
         tags.extend(quote_spanned! {span=>
             #tag,
@@ -298,6 +291,7 @@ fn expand_unwrapped_oneof(
 
     quote_spanned! {span=>
         #[automatically_derived]
+        #[warn(unused_imports)]
         impl #root::PbOneOf for #ty {
             fn matches(field_number: u32) -> bool {
                 [#tags].contains(&field_number)

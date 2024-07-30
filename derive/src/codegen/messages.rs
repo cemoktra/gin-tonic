@@ -1,14 +1,11 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
-use syn::{spanned::Spanned, Ident, LitInt, Type};
-
-use crate::ast::{MessageField, Primitive};
+use syn::{Ident, LitInt};
 
 pub fn required(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
     field_ident: &Ident,
-    ty: &Type,
     span: Span,
     encode_impl: &mut TokenStream,
     decode_init: &mut TokenStream,
@@ -38,7 +35,6 @@ pub fn optional(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
     field_ident: &Ident,
-    ty: &Type,
     span: Span,
     encode_impl: &mut TokenStream,
     decode_init: &mut TokenStream,

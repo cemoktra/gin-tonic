@@ -1,7 +1,7 @@
 use crate::{
     decoder::{Decode, DecodeError},
     encoder::{Encode, SizeHint},
-    WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
+    Tag, WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
 
 pub const fn sizeof_varint32(v: u32) -> usize {
@@ -58,6 +58,17 @@ pub trait PbOneOf {
     ) -> Result<Self, DecodeError>
     where
         Self: Sized;
+
+    fn decode_standalone(decoder: &mut impl Decode) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        let tag = decoder.decode_uint32()?;
+        let field_number = tag.field_number();
+        let wire_type = tag.wire_type();
+
+        Self::decode(field_number, wire_type, decoder)
+    }
 
     fn matches(field_number: u32) -> bool;
 }

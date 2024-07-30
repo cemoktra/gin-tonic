@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{Ident, LitInt, Type};
 
-use crate::ast::{MessageField, Primitive};
+use crate::ast::Primitive;
 
 fn primitive_types(
     root: &proc_macro2::TokenStream,

@@ -1,8 +1,6 @@
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, quote_spanned};
+use quote::quote_spanned;
 use syn::{Ident, LitInt, Type};
-
-use crate::ast::{MessageField, Primitive};
 
 pub fn required(
     root: &proc_macro2::TokenStream,
@@ -33,7 +31,6 @@ pub fn required(
 }
 
 pub fn optional(
-    tag: &LitInt,
     field_ident: &Ident,
     ty: &Type,
     span: Span,
@@ -42,6 +39,28 @@ pub fn optional(
     decode_impl: &mut TokenStream,
     decode_set: &mut TokenStream,
 ) {
+    let inner_ty = match ty {
+        Type::Path(path) => {
+            let Some(segment) = path.path.segments.first() else {
+                panic!("optional must be Option<T>");
+            };
+            match &segment.arguments {
+                syn::PathArguments::AngleBracketed(arguments) => {
+                    let Some(argument) = arguments.args.first() else {
+                        panic!("optional must be Option<T>");
+                    };
+
+                    match argument {
+                        syn::GenericArgument::Type(ty) => ty,
+                        _ => panic!("optional must be Option<T>"),
+                    }
+                }
+                _ => panic!("optional must be Option<T>"),
+            }
+        }
+        _ => panic!("optional must be Option<T>"),
+    };
+
     encode_impl.extend(quote_spanned! { span=>
         if let Some(value) = &self.#field_ident {
             value.encode(encoder);
@@ -53,7 +72,7 @@ pub fn optional(
     });
 
     decode_impl.extend(quote_spanned! { span=>
-        n if #ty::matches(n) => #field_ident = Some(#ty::decode(n, wire_type, decoder)?),
+        n if #inner_ty::matches(n) => #field_ident = Some(#inner_ty::decode(n, wire_type, decoder)?),
     });
 
     decode_set.extend(quote_spanned! { span=>
