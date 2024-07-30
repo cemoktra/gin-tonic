@@ -40,6 +40,7 @@ pub(crate) enum Primitive {
     Sfixed32,
     Sfixed64,
     String,
+    Bool,
 }
 
 #[derive(Clone, Copy, Default, Debug, FromMeta)]

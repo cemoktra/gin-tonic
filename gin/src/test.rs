@@ -30,6 +30,8 @@ mod primitives {
             sfixed64: i64,
             #[gin(tag = 11, proto = "string")]
             string: String,
+            #[gin(tag = 12, proto = "bool")]
+            boolean: bool,
         }
 
         #[test]
@@ -48,6 +50,7 @@ mod primitives {
                 sfixed32: -1234,
                 sfixed64: -1234,
                 string: "protobuf".into(),
+                boolean: true,
             };
 
             let size_hint = test.size_hint();
@@ -92,6 +95,8 @@ mod primitives {
             sfixed64: Option<i64>,
             #[gin(tag = 11, cardinality = "optional", proto = "string")]
             string: Option<String>,
+            #[gin(tag = 12, cardinality = "optional", proto = "bool")]
+            boolean: Option<bool>,
         }
 
         #[test]
@@ -110,6 +115,7 @@ mod primitives {
                 sfixed32: Some(-1234),
                 sfixed64: Some(-1234),
                 string: Some("protobuf".into()),
+                boolean: Some(true),
             };
 
             let size_hint = test.size_hint();
@@ -144,7 +150,90 @@ mod primitives {
             assert_eq!(test, read)
         }
     }
-    mod repeated {}
+
+    mod repeated {
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 1, cardinality = "repeated", proto = "int32")]
+            int32: Vec<i32>,
+            #[gin(tag = 2, cardinality = "repeated", proto = "int64")]
+            int64: Vec<i64>,
+            #[gin(tag = 3, cardinality = "repeated", proto = "uint32")]
+            uint32: Vec<u32>,
+            #[gin(tag = 4, cardinality = "repeated", proto = "uint64")]
+            uint64: Vec<u64>,
+            #[gin(tag = 5, cardinality = "repeated", proto = "sint32")]
+            sint32: Vec<i32>,
+            #[gin(tag = 6, cardinality = "repeated", proto = "sint64")]
+            sint64: Vec<i64>,
+            #[gin(tag = 7, cardinality = "repeated", proto = "fixed32")]
+            fixed32: Vec<u32>,
+            #[gin(tag = 8, cardinality = "repeated", proto = "fixed64")]
+            fixed64: Vec<u64>,
+            #[gin(tag = 9, cardinality = "repeated", proto = "sfixed32")]
+            sfixed32: Vec<i32>,
+            #[gin(tag = 10, cardinality = "repeated", proto = "sfixed64")]
+            sfixed64: Vec<i64>,
+            #[gin(tag = 11, cardinality = "repeated", proto = "string")]
+            string: Vec<String>,
+            #[gin(tag = 12, cardinality = "repeated", proto = "bool")]
+            boolean: Vec<bool>,
+        }
+
+        #[test]
+        fn encode_decode_some() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test {
+                int32: vec![1, 2, -3],
+                int64: vec![1, 2, -3],
+                uint32: vec![1, 2, 3],
+                uint64: vec![1, 2, 3],
+                sint32: vec![1, 2, -3],
+                sint64: vec![1, 2, -3],
+                fixed32: vec![1, 2, 3],
+                fixed64: vec![1, 2, 3],
+                sfixed32: vec![1, 2, -3],
+                sfixed64: vec![1, 2, -3],
+                string: vec!["hello".into(), "world".into()],
+                boolean: vec![true, false],
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+
+        // #[test]
+        // fn encode_decode_none() {
+        //     use gin_tonic_core::types::PbType;
+
+        //     let test = Test::default();
+
+        //     let size_hint = test.size_hint();
+        //     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+        //     test.encode(&mut buffer);
+
+        //     let actual_size = buffer.len();
+        //     assert_eq!(actual_size, 0);
+        //     assert_eq!(actual_size, size_hint);
+
+        //     let read = Test::decode(&mut buffer).unwrap();
+
+        //     assert_eq!(test, read)
+        // }
+    }
 }
 
 #[derive(Debug, Message)]

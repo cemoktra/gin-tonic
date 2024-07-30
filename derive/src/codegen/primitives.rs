@@ -145,6 +145,17 @@ pub fn required(
                 },
             });
         }
+        Some(Primitive::Bool) => {
+            encode_impl.extend(quote_spanned! { span=>
+                #root::gin_tonic_core::encode_field!(#tag, bool, self.#field_ident, encoder, Encode::encode_bool);
+            });
+
+            decode_impl.extend(quote_spanned! { span=>
+                #tag => {
+                    #root::gin_tonic_core::decode_field!(bool, #field_ident, wire_type, decoder, Decode::decode_bool);
+                },
+            });
+        }
         None => {
             encode_impl.extend(quote_spanned! { span=>
                 #root::gin_tonic_core::encode_field!(#tag, #ty, &self.#field_ident, encoder, Encode::encode_type);
@@ -322,6 +333,19 @@ pub fn optional(
                 },
             });
         }
+        Some(Primitive::Bool) => {
+            encode_impl.extend(quote_spanned! { span=>
+                if let Some(value) = self.#field_ident {
+                    #root::gin_tonic_core::encode_field!(#tag, bool, value, encoder, Encode::encode_bool);
+                }
+            });
+
+            decode_impl.extend(quote_spanned! { span=>
+                #tag => {
+                    #root::gin_tonic_core::decode_field!(bool, #field_ident, wire_type, decoder, Decode::decode_bool)
+                },
+            });
+        }
         None => {
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = self.#field_ident {
@@ -475,6 +499,17 @@ pub fn repeated(
             decode_impl.extend(quote_spanned! { span=>
                 #tag => {
                     #root::gin_tonic_core::decode_vector!(String, &mut #field_ident, wire_type, decoder, Decode::decode_string)
+                }
+            });
+        }
+        Some(Primitive::Bool) => {
+            encode_impl.extend(quote_spanned! { span=>
+                #root::gin_tonic_core::encode_vector_packed!(#tag, &self.#field_ident, encoder, Encode::encode_bool);
+            });
+
+            decode_impl.extend(quote_spanned! { span=>
+                #tag => {
+                    #root::gin_tonic_core::decode_vector!(bool, &mut #field_ident, wire_type, decoder, Decode::decode_bool)
                 }
             });
         }

@@ -76,6 +76,12 @@ fn primitive_types(
             let decode_fn = quote! { Decode::decode_string };
             (wire_type, encode_fn, decode_fn)
         }
+        Some(Primitive::Bool) => {
+            let wire_type = quote! { bool::WIRE_TYPE };
+            let encode_fn = quote! { Encode::encode_bool };
+            let decode_fn = quote! { Decode::decode_bool };
+            (wire_type, encode_fn, decode_fn)
+        }
         None => {
             let wire_type = quote! { #ty::WIRE_TYPE };
             let encode_fn = quote! { Encode::encode_type };
