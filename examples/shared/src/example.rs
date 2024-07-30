@@ -248,7 +248,7 @@ pub mod example_client {
 pub mod echo_response;
 #[derive(Clone, Debug, Message)]
 pub struct EchoRequest {
-    #[gin(tag = 1u32)]
+    #[gin(tag = 1u32, proto = "string")]
     pub echo: String,
     #[gin(tag = 2u32)]
     pub request_id: uuid::Uuid,
