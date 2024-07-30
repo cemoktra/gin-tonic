@@ -141,3 +141,63 @@ pub fn required(
         #field_ident,
     });
 }
+
+pub fn optional(
+    root: &proc_macro2::TokenStream,
+    tag: &LitInt,
+    field_ident: &Ident,
+    key_protobuf_type: Option<Primitive>,
+    value_protobuf_type: Option<Primitive>,
+    ty: &Type,
+    span: Span,
+    encode_impl: &mut TokenStream,
+    decode_init: &mut TokenStream,
+    decode_impl: &mut TokenStream,
+    decode_set: &mut TokenStream,
+) {
+    let (key_wire_type, key_encode_fn, key_decode_fn) =
+        primitive_types(root, ty, key_protobuf_type);
+    let (value_wire_type, value_encode_fn, value_decode_fn) =
+        primitive_types(root, ty, value_protobuf_type);
+
+    encode_impl.extend(quote_spanned! { span=>
+        if let Some(map) = &self.#field_ident {
+            #root::gin_tonic_core::encode_map!(
+                #tag,
+                map,
+                #key_wire_type,
+                #value_wire_type,
+                encoder,
+                #key_encode_fn,
+                #value_encode_fn,
+            );
+        }
+    });
+
+    decode_init.extend(quote_spanned! { span=>
+        let mut #field_ident = None;
+    });
+
+    decode_impl.extend(quote_spanned! { span=>
+        #tag => {
+            let map = match #field_ident.as_mut() {
+                Some(map) => map,
+                None => {
+                    #field_ident = Some(std::collections::HashMap::new());
+                    #field_ident.as_mut().expect("value has been set to some")
+                }
+            };
+            #root::gin_tonic_core::decode_map!(
+                map,
+                wire_type,
+                decoder,
+                #key_decode_fn,
+                #value_decode_fn
+            );
+        },
+    });
+
+    decode_set.extend(quote_spanned! { span=>
+        #field_ident,
+    });
+}

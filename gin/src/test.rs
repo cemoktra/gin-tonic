@@ -408,6 +408,126 @@ mod messages {
     }
 }
 
+mod map {
+    mod required {
+        use std::collections::HashMap;
+
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 1, kind = "map", proto_key = "uint32", proto_value = "string")]
+            map_1: HashMap<u32, String>,
+            #[gin(tag = 2, kind = "map", proto_key = "string", proto_value = "uint32")]
+            map_2: HashMap<String, u32>,
+        }
+
+        #[test]
+        fn encode_decode() {
+            use gin_tonic_core::types::PbType;
+
+            let mut map_1 = HashMap::new();
+            map_1.insert(10, "ten".into());
+            map_1.insert(20, "twenty".into());
+
+            let mut map_2 = HashMap::new();
+            map_2.insert("ten".into(), 10);
+            map_2.insert("twenty".into(), 20);
+
+            let test = Test { map_1, map_2 };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+    }
+
+    mod optional {
+        use std::collections::HashMap;
+
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(
+                tag = 1,
+                cardinality = "optional",
+                kind = "map",
+                proto_key = "uint32",
+                proto_value = "string"
+            )]
+            map_1: Option<HashMap<u32, String>>,
+            #[gin(
+                tag = 2,
+                cardinality = "optional",
+                kind = "map",
+                proto_key = "string",
+                proto_value = "uint32"
+            )]
+            map_2: Option<HashMap<String, u32>>,
+        }
+
+        #[test]
+        fn encode_decode_some() {
+            use gin_tonic_core::types::PbType;
+
+            let mut map_1 = HashMap::new();
+            map_1.insert(10, "ten".into());
+            map_1.insert(20, "twenty".into());
+
+            let mut map_2 = HashMap::new();
+            map_2.insert("ten".into(), 10);
+            map_2.insert("twenty".into(), 20);
+
+            let test = Test {
+                map_1: Some(map_1),
+                map_2: Some(map_2),
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+
+        #[test]
+        fn encode_decode_none() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test::default();
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert_eq!(actual_size, 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+    }
+}
+
 #[derive(Debug, Message)]
 #[gin(root = "crate")]
 struct Test {

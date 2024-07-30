@@ -160,57 +160,19 @@ fn expand_message_message(
                     });
                 }
                 Kind::Map => {
-                    serialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // if let Some(value) = self.#field_ident {
-                        //     // prepare a decent size buffer
-                        //     let mut buffer = #root::export::SmallVec::<[u8;512]>::new();
-                        //     buffer.resize(512, 0);
-
-                        //     for (key, value) in self.#field_ident {
-                        //         let size = key.size_hint(1) + value.size_hint(2);
-                        //         if size > buffer.len() {
-                        //             buffer.resize(size, 0);
-                        //         }
-
-                        //         let mut buffer_ref = buffer.as_mut_slice();
-
-                        //         let wire_type = key.into_wire();
-                        //         wire_type.serialize(1, &mut buffer_ref);
-
-                        //         let wire_type = value.into_wire();
-                        //         wire_type.serialize(2, &mut buffer_ref);
-
-                        //         let wire_type = #root::gin_tonic_core::WireTypeView::LengthEncoded(&buffer[0..size]);
-                        //         wire_type.serialize(#tag, writer);
-                        //     }
-                        // }
-                    });
-
-                    deserialize_init.extend(quote_spanned! { span=>
-                        let mut #field_ident = None;
-                    });
-
-                    deserialize_impl.extend(quote_spanned! { span=>
-                        #tag => {
-                            todo!()
-                            // let (key, value) = #root::gin_tonic_core::map_from_wire(wire_type)?;
-                            // match #field_ident.as_mut() {
-                            //     Some(map) => {
-                            //         map.insert(key, value);
-                            //     },
-                            //     None => {
-                            //         let mut map = HashMap::new();
-                            //         map.insert(key, value);
-                            //         #field_ident = Some(map);
-                            //     }
-                            // }
-                        }
-                    });
-
-                    deserialize_set.extend(quote_spanned! { span=>
-                        #field_ident,
-                    });
+                    map::optional(
+                        &root,
+                        &tag,
+                        &field_ident,
+                        field.proto_key,
+                        field.proto_value,
+                        &ty,
+                        span.clone(),
+                        &mut serialize_impl,
+                        &mut deserialize_init,
+                        &mut deserialize_impl,
+                        &mut deserialize_set,
+                    );
                 }
             },
             Cardinality::Repeated => match field.kind.unwrap_or_default() {
