@@ -2,6 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
 use syn::{Ident, LitInt, Type};
 
+#[allow(clippy::too_many_arguments)]
 pub fn required(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,

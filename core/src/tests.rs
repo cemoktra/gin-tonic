@@ -1,5 +1,6 @@
 // not using the constants as testing against protobuf pal would get difficult then
 #![allow(clippy::approx_constant)]
+#![allow(clippy::needless_late_init)]
 use std::collections::HashMap;
 
 use base64::prelude::*;
@@ -54,11 +55,7 @@ enum TestOneOf {
 
 impl PbOneOf for TestOneOf {
     fn matches(field_number: u32) -> bool {
-        match field_number {
-            23 => true,
-            24 => true,
-            _ => false,
-        }
+        matches!(field_number, 23 | 24)
     }
 
     fn encode(&self, encoder: &mut impl Encode) {

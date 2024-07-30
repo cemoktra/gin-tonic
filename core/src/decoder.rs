@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 use std::string::FromUtf8Error;
 
 use crate::{tag::Tag, types::PbType};
@@ -139,7 +141,7 @@ where
     }
 
     fn decode_sint64(&mut self) -> Result<i64, DecodeError> {
-        self.decode_varint().map(|u| zigzag_decode(u))
+        self.decode_varint().map(zigzag_decode)
     }
 
     fn decode_fixed32(&mut self) -> Result<u32, DecodeError> {

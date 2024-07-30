@@ -103,6 +103,7 @@ fn primitive_types(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn required(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
@@ -154,6 +155,7 @@ pub fn required(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn optional(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,

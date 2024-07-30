@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 use crate::{
     decoder::{Decode, DecodeError},
     encoder::{Encode, SizeHint},
@@ -272,7 +274,7 @@ impl PbType for String {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn encode(&self, encoder: &mut impl Encode) {
-        encoder.encode_str(&self)
+        encoder.encode_str(self)
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>

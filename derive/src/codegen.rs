@@ -46,12 +46,12 @@ fn expand_message_message(
             Cardinality::Required => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     primitives::required(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         field.proto,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -60,10 +60,10 @@ fn expand_message_message(
                 }
                 Kind::Message => {
                     messages::required(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -72,11 +72,11 @@ fn expand_message_message(
                 }
                 Kind::OneOf => {
                     oneof::required(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -85,13 +85,13 @@ fn expand_message_message(
                 }
                 Kind::Map => {
                     map::required(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         field.proto_key,
                         field.proto_value,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -102,12 +102,12 @@ fn expand_message_message(
             Cardinality::Optional => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     primitives::optional(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         field.proto,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -116,10 +116,10 @@ fn expand_message_message(
                 }
                 Kind::Message => {
                     messages::optional(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -130,7 +130,7 @@ fn expand_message_message(
                     oneof::optional(
                         &field_ident,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -139,13 +139,13 @@ fn expand_message_message(
                 }
                 Kind::Map => {
                     map::optional(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         field.proto_key,
                         field.proto_value,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -156,12 +156,12 @@ fn expand_message_message(
             Cardinality::Repeated => match field.kind.unwrap_or_default() {
                 Kind::Primitive => {
                     primitives::repeated(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
                         field.proto,
                         &ty,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -170,10 +170,10 @@ fn expand_message_message(
                 }
                 Kind::Message => {
                     messages::repeated(
-                        &root,
+                        root,
                         &tag,
                         &field_ident,
-                        span.clone(),
+                        span,
                         &mut serialize_impl,
                         &mut deserialize_init,
                         &mut deserialize_impl,
@@ -303,6 +303,7 @@ fn expand_unwrapped_oneof(
                 }
             }
 
+            #[allow(clippy::needless_late_init)]
             fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
             where
                 Self: Sized
@@ -318,7 +319,7 @@ fn expand_unwrapped_oneof(
                 match field_number {
                     #decode_impl
                     n => {
-                        return Err(#root::DecodeError::UnexpectedFieldNumber(n))
+                        Err(#root::DecodeError::UnexpectedFieldNumber(n))
                     }
                 }
             }

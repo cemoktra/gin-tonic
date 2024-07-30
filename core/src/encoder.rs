@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 use crate::{
     tag::Tag,
     types::{sizeof_varint64, PbType},
@@ -61,6 +63,7 @@ pub trait Encode {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn encode_map_element<K, V, FK, FV, FSK, FSV>(
         &mut self,
         key: K,

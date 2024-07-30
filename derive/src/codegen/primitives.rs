@@ -109,6 +109,7 @@ pub(super) fn primitive_types(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn required(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
@@ -122,7 +123,7 @@ pub fn required(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, as_ref) =
-        primitive_types(root, span.clone(), ty, protobuf_type, false);
+        primitive_types(root, span, ty, protobuf_type, false);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = None;
@@ -148,6 +149,7 @@ pub fn required(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn optional(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
@@ -161,7 +163,7 @@ pub fn optional(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, as_ref) =
-        primitive_types(root, span.clone(), ty, protobuf_type, false);
+        primitive_types(root, span, ty, protobuf_type, false);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = None;
@@ -191,6 +193,7 @@ pub fn optional(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn repeated(
     root: &proc_macro2::TokenStream,
     tag: &LitInt,
@@ -204,7 +207,7 @@ pub fn repeated(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, unpacked) =
-        primitive_types(root, span.clone(), ty, protobuf_type, true);
+        primitive_types(root, span, ty, protobuf_type, true);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = vec![];

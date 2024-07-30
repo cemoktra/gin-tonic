@@ -800,7 +800,7 @@ enum UnwrappedResultOneOf {
 
 #[test]
 fn one_of_unwrapping() {
-    use gin_tonic_core::types::{PbOneOf, PbType};
+    use gin_tonic_core::types::PbType;
 
     // wrapped to unwrapped
     let test = ResultMessage {
