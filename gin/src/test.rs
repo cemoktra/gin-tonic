@@ -814,7 +814,7 @@ fn one_of_unwrapping() {
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer).unwrap();
+    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer.clone()).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
     let wrapped = ResultMessage::decode(&mut buffer).unwrap();
@@ -827,11 +827,12 @@ fn one_of_unwrapping() {
     let mut buffer = bytes::BytesMut::with_capacity(size_hint);
 
     test.encode(&mut buffer);
+
     let actual_size = buffer.len();
     assert!(actual_size > 0);
     assert_eq!(actual_size, size_hint);
 
-    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer).unwrap();
+    let unwrapped = UnwrappedResultOneOf::decode(&mut buffer.clone()).unwrap();
     assert_eq!(unwrapped, UnwrappedResultOneOf::Success(1));
 
     let wrapped = ResultMessage::decode(&mut buffer).unwrap();
