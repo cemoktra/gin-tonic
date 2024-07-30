@@ -9,7 +9,7 @@ use bytes::BytesMut;
 use crate::{
     decode_field, decode_map, decode_nested, decode_vector,
     decoder::{Decode, DecodeError},
-    encode_field, encode_map, encode_nested, encode_vector_packed, encode_vector_unpacked,
+    encode_field, encode_map, encode_nested, encode_vector_packed, encode_vector_unpacked_clone,
     encoder::Encode,
     tag::Tag,
     types::{
@@ -173,7 +173,7 @@ impl PbType for Test {
         encode_field!(22, TestEnum, &self.e, encoder, Encode::encode_type);
         self.o.encode(encoder);
         encode_vector_packed!(25, &self.packed, encoder, Encode::encode_uint32);
-        encode_vector_unpacked!(26, UInt32, &self.unpacked, encoder, Encode::encode_uint32);
+        encode_vector_unpacked_clone!(26, UInt32, &self.unpacked, encoder, Encode::encode_uint32);
         encode_nested!(27, &self.nested, encoder, Encode::encode_nested);
     }
 

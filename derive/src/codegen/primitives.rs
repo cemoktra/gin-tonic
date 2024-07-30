@@ -2,7 +2,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
 use syn::{Ident, LitInt, Type};
 
-use crate::ast::Primitive;
+use crate::{ast::Primitive, codegen::utils::inner_type};
 
 pub(super) fn primitive_types(
     root: &proc_macro2::TokenStream,
@@ -10,6 +10,7 @@ pub(super) fn primitive_types(
     ty: &Type,
     protobuf_type: Option<Primitive>,
     repeated: bool,
+    optional: bool,
 ) -> (TokenStream, TokenStream, TokenStream, bool) {
     match protobuf_type {
         Some(Primitive::Float) => {
@@ -86,11 +87,7 @@ pub(super) fn primitive_types(
         }
         Some(Primitive::String) => {
             let pb_type = quote_spanned! { span=>String };
-            let encode_fn = if repeated {
-                quote_spanned! { span=>Encode::encode_string }
-            } else {
-                quote_spanned! { span=>Encode::encode_str }
-            };
+            let encode_fn = quote_spanned! { span=>Encode::encode_str };
             let decode_fn = quote_spanned! { span=>Decode::decode_string };
             (pb_type, encode_fn, decode_fn, true)
         }
@@ -101,7 +98,13 @@ pub(super) fn primitive_types(
             (pb_type, encode_fn, decode_fn, false)
         }
         None => {
-            let pb_type = quote_spanned! { span=>#ty };
+            let pb_type = if optional || repeated {
+                let inner_ty = inner_type(ty);
+                quote_spanned! { span=>#inner_ty }
+            } else {
+                quote_spanned! { span=>#ty }
+            };
+
             let encode_fn = quote_spanned! { span=>Encode::encode_type };
             let decode_fn = quote_spanned! { span=>Decode::decode_type };
             (pb_type, encode_fn, decode_fn, true)
@@ -123,7 +126,7 @@ pub fn required(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, as_ref) =
-        primitive_types(root, span, ty, protobuf_type, false);
+        primitive_types(root, span, ty, protobuf_type, false, false);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = None;
@@ -163,7 +166,7 @@ pub fn optional(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, as_ref) =
-        primitive_types(root, span, ty, protobuf_type, false);
+        primitive_types(root, span, ty, protobuf_type, false, true);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = None;
@@ -207,7 +210,7 @@ pub fn repeated(
     decode_set: &mut TokenStream,
 ) {
     let (pb_type, encode_fn, decode_fn, unpacked) =
-        primitive_types(root, span, ty, protobuf_type, true);
+        primitive_types(root, span, ty, protobuf_type, true, false);
 
     decode_init.extend(quote_spanned! { span=>
         let mut #field_ident = vec![];

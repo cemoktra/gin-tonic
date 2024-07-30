@@ -2,6 +2,8 @@ use proc_macro2::{Span, TokenStream};
 use quote::quote_spanned;
 use syn::{Ident, LitInt, Type};
 
+use super::utils::inner_type;
+
 #[allow(clippy::too_many_arguments)]
 pub fn required(
     root: &proc_macro2::TokenStream,
@@ -40,27 +42,7 @@ pub fn optional(
     decode_impl: &mut TokenStream,
     decode_set: &mut TokenStream,
 ) {
-    let inner_ty = match ty {
-        Type::Path(path) => {
-            let Some(segment) = path.path.segments.first() else {
-                panic!("optional must be Option<T>");
-            };
-            match &segment.arguments {
-                syn::PathArguments::AngleBracketed(arguments) => {
-                    let Some(argument) = arguments.args.first() else {
-                        panic!("optional must be Option<T>");
-                    };
-
-                    match argument {
-                        syn::GenericArgument::Type(ty) => ty,
-                        _ => panic!("optional must be Option<T>"),
-                    }
-                }
-                _ => panic!("optional must be Option<T>"),
-            }
-        }
-        _ => panic!("optional must be Option<T>"),
-    };
+    let inner_ty = inner_type(ty);
 
     encode_impl.extend(quote_spanned! { span=>
         if let Some(value) = &self.#field_ident {

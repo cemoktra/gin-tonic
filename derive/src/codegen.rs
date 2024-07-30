@@ -8,6 +8,7 @@ mod map;
 mod messages;
 mod oneof;
 mod primitives;
+mod utils;
 
 pub(crate) fn expand_message(
     root: &proc_macro2::TokenStream,
@@ -260,7 +261,7 @@ fn expand_unwrapped_oneof(
         let protobuf_type = variant.proto;
 
         let (pb_type, encode_fn, decode_fn, as_ref) =
-            primitives::primitive_types(root, span, field_ty, protobuf_type, false);
+            primitives::primitive_types(root, span, field_ty, protobuf_type, false, false);
 
         tags.extend(quote_spanned! {span=>
             #tag,
@@ -414,7 +415,7 @@ pub(crate) fn one_of_enumeration(
         let protobuf_type = variant.proto;
 
         let (pb_type, encode_fn, decode_fn, as_ref) =
-            primitives::primitive_types(root, span, field_ty, protobuf_type, false);
+            primitives::primitive_types(root, span, field_ty, protobuf_type, false, false);
 
         tags.extend(quote_spanned! {span=>
             #tag,

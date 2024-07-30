@@ -91,11 +91,21 @@ macro_rules! encode_vector_packed {
 }
 
 #[macro_export]
-macro_rules! encode_vector_unpacked {
+macro_rules! encode_vector_unpacked_clone {
     ($field_number:expr, $prototy:ty, $var:expr, $encoder:expr, $encode_fn:path) => {
         for item in $var {
             $encoder.encode_uint32(u32::from_parts($field_number, <$prototy>::WIRE_TYPE));
             $encode_fn($encoder, item.clone());
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! encode_vector_unpacked {
+    ($field_number:expr, $prototy:ty, $var:expr, $encoder:expr, $encode_fn:path) => {
+        for item in $var {
+            $encoder.encode_uint32(u32::from_parts($field_number, <$prototy>::WIRE_TYPE));
+            $encode_fn($encoder, item);
         }
     };
 }
