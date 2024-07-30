@@ -29,6 +29,8 @@ pub(crate) struct MessageField {
 
 #[derive(Clone, Copy, Debug, FromMeta)]
 pub(crate) enum Primitive {
+    Float,
+    Double,
     Int32,
     Int64,
     Uint32,
@@ -83,6 +85,7 @@ pub(crate) type OneOfDeriveData = Data<OneOfVariant, ()>;
 #[darling(attributes(gin), supports(enum_tuple))]
 pub(crate) struct OneOfInput {
     pub(crate) ident: Ident,
+
     pub(crate) data: OneOfDeriveData,
     pub(crate) root: Option<syn::Path>,
 }
@@ -91,5 +94,8 @@ pub(crate) struct OneOfInput {
 #[darling(attributes(gin))]
 pub(crate) struct OneOfVariant {
     pub(crate) ident: Ident,
+    pub(crate) fields: darling::ast::Fields<syn::Type>,
+
     pub(crate) tag: LitInt,
+    pub(crate) proto: Option<Primitive>,
 }

@@ -4,7 +4,7 @@ use syn::{Ident, LitInt, Type};
 
 use crate::ast::{MessageField, Primitive};
 
-fn primitive_types(
+pub(super) fn primitive_types(
     root: &proc_macro2::TokenStream,
     span: Span,
     ty: &Type,
@@ -12,6 +12,18 @@ fn primitive_types(
     repeated: bool,
 ) -> (TokenStream, TokenStream, TokenStream, bool) {
     match protobuf_type {
+        Some(Primitive::Float) => {
+            let pb_type = quote_spanned! { span=>f32 };
+            let encode_fn = quote_spanned! { span=>Encode::encode_float };
+            let decode_fn = quote_spanned! { span=>Decode::decode_float };
+            (pb_type, encode_fn, decode_fn, false)
+        }
+        Some(Primitive::Double) => {
+            let pb_type = quote_spanned! { span=>f64 };
+            let encode_fn = quote_spanned! { span=>Encode::encode_double };
+            let decode_fn = quote_spanned! { span=>Decode::decode_double };
+            (pb_type, encode_fn, decode_fn, false)
+        }
         Some(Primitive::Int32) => {
             let pb_type = quote_spanned! { span=>#root::types::Int32 };
             let encode_fn = quote_spanned! { span=>Encode::encode_int32 };

@@ -10,6 +10,18 @@ fn primitive_types(
     protobuf_type: Option<Primitive>,
 ) -> (TokenStream, TokenStream, TokenStream) {
     match protobuf_type {
+        Some(Primitive::Float) => {
+            let wire_type = quote! { f32::WIRE_TYPE };
+            let encode_fn = quote! { Encode::encode_float };
+            let decode_fn = quote! { Decode::decode_float };
+            (wire_type, encode_fn, decode_fn)
+        }
+        Some(Primitive::Double) => {
+            let wire_type = quote! { f64::WIRE_TYPE };
+            let encode_fn = quote! { Encode::encode_double };
+            let decode_fn = quote! { Decode::decode_double };
+            (wire_type, encode_fn, decode_fn)
+        }
         Some(Primitive::Int32) => {
             let wire_type = quote! { #root::types::Int32::WIRE_TYPE };
             let encode_fn = quote! { Encode::encode_int32 };

@@ -7,7 +7,7 @@
 pub use gin_tonic_core;
 pub use gin_tonic_derive;
 
-pub use gin_tonic_core::{types, types::PbType, Decode, DecodeError, Encode, Tag};
+pub use gin_tonic_core::{types, types::PbOneOf, types::PbType, Decode, DecodeError, Encode, Tag};
 pub use gin_tonic_derive::{Enumeration, Message, OneOf};
 
 pub mod export {

@@ -13,6 +13,8 @@ pub enum DecodeError {
     UnexpectedFieldNumber(u32),
     #[error("Unexpected enum variant {0}")]
     UnexpectedEnumVariant(u64),
+    #[error("Unexpected oneof variant {0}")]
+    UnexpectedOneOfVariant(u32),
     #[error("Field number {0} is missing")]
     MissingField(u32),
     #[error("OneOf of field numbers {0:?} is missing")]

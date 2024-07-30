@@ -32,6 +32,10 @@ mod primitives {
             string: String,
             #[gin(tag = 12, proto = "bool")]
             boolean: bool,
+            #[gin(tag = 13, proto = "float")]
+            float: f32,
+            #[gin(tag = 14, proto = "double")]
+            double: f64,
         }
 
         #[test]
@@ -51,6 +55,8 @@ mod primitives {
                 sfixed64: -1234,
                 string: "protobuf".into(),
                 boolean: true,
+                double: 3.14,
+                float: 3.14,
             };
 
             let size_hint = test.size_hint();
@@ -97,6 +103,10 @@ mod primitives {
             string: Option<String>,
             #[gin(tag = 12, cardinality = "optional", proto = "bool")]
             boolean: Option<bool>,
+            #[gin(tag = 13, cardinality = "optional", proto = "float")]
+            float: Option<f32>,
+            #[gin(tag = 14, cardinality = "optional", proto = "double")]
+            double: Option<f64>,
         }
 
         #[test]
@@ -116,6 +126,8 @@ mod primitives {
                 sfixed64: Some(-1234),
                 string: Some("protobuf".into()),
                 boolean: Some(true),
+                float: Some(3.14),
+                double: Some(3.14),
             };
 
             let size_hint = test.size_hint();
@@ -181,6 +193,10 @@ mod primitives {
             string: Vec<String>,
             #[gin(tag = 12, cardinality = "repeated", proto = "bool")]
             boolean: Vec<bool>,
+            #[gin(tag = 13, cardinality = "repeated", proto = "float")]
+            float: Option<f32>,
+            #[gin(tag = 14, cardinality = "repeated", proto = "double")]
+            double: Option<f64>,
         }
 
         #[test]
@@ -200,6 +216,8 @@ mod primitives {
                 sfixed64: vec![1, 2, -3],
                 string: vec!["hello".into(), "world".into()],
                 boolean: vec![true, false],
+                float: vec![3.14, 3.14],
+                double: vec![3.14, 3.14],
             };
 
             let size_hint = test.size_hint();
@@ -526,6 +544,113 @@ mod map {
             assert_eq!(test, read)
         }
     }
+}
+
+mod one_of {
+    use gin_tonic_derive::OneOf;
+
+    #[derive(Debug, PartialEq, OneOf)]
+    enum Choice {
+        #[gin(tag = 1, proto = "float")]
+        Float(f32),
+        #[gin(tag = 2, proto = "double")]
+        Double(f64),
+    }
+
+    #[derive(Debug, PartialEq, OneOf)]
+    enum Outcome {
+        #[gin(tag = 3, proto = "string")]
+        Success(String),
+        #[gin(tag = 4, proto = "uint32")]
+        ErrorCode(u32),
+    }
+
+    mod required {
+        use gin_tonic_derive::Message;
+
+        #[derive(Debug, Message, PartialEq, Default)]
+        #[gin(root = "crate")]
+        struct Test {
+            #[gin(tag = 0, kind = "one_of")]
+            choice: super::Choice,
+            #[gin(tag = 0, kind = "one_of")]
+            outcome: super::Outcome,
+        }
+
+        #[test]
+        fn encode_decode() {
+            use gin_tonic_core::types::PbType;
+
+            let test = Test {
+                choice: super::Choice::Double(3.14),
+                outcome: super::Outcome::Success("3.14".into()),
+            };
+
+            let size_hint = test.size_hint();
+            let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+            test.encode(&mut buffer);
+
+            let actual_size = buffer.len();
+            assert!(actual_size > 0);
+            assert_eq!(actual_size, size_hint);
+
+            let read = Test::decode(&mut buffer).unwrap();
+
+            assert_eq!(test, read)
+        }
+    }
+
+    // mod optional {
+    //     use gin_tonic_derive::Message;
+
+    //     #[derive(Debug, Message, PartialEq, Default)]
+    //     #[gin(root = "crate")]
+    //     struct Test {
+    //         #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
+    //         choice: Option<super::Choice>,
+    //         #[gin(tag = 0, cardinality = "optional", kind = "one_of")]
+    //         outcome: Option<super::Outcome>,
+    //     }
+    //     #[test]
+    //     fn encode_decode_some() {
+    //         use gin_tonic_core::types::PbType;
+
+    //         let test = Test {
+    //             choice: Some(super::Choice::Double(3.14)),
+    //             outcome: Some(super::Outcome::Success("3.14".into())),
+    //         };
+    //         let size_hint = test.size_hint();
+    //         let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+    //         test.encode(&mut buffer);
+
+    //         let actual_size = buffer.len();
+    //         assert!(actual_size > 0);
+    //         assert_eq!(actual_size, size_hint);
+
+    //         let read = Test::decode(&mut buffer).unwrap();
+
+    //         assert_eq!(test, read)
+    //     }
+
+    //     #[test]
+    //     fn encode_decode_none() {
+    //         use gin_tonic_core::types::PbType;
+
+    //         let test = Test::default();
+
+    //         let size_hint = test.size_hint();
+    //         let mut buffer = bytes::BytesMut::with_capacity(size_hint);
+    //         test.encode(&mut buffer);
+
+    //         let actual_size = buffer.len();
+    //         assert_eq!(actual_size, 0);
+    //         assert_eq!(actual_size, size_hint);
+
+    //         let read = Test::decode(&mut buffer).unwrap();
+
+    //         assert_eq!(test, read)
+    //     }
+    // }
 }
 
 #[derive(Debug, Message)]

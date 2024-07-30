@@ -6,6 +6,7 @@ use syn::Ident;
 
 mod map;
 mod messages;
+mod oneof;
 mod primitives;
 
 pub(crate) fn expand_message(
@@ -72,25 +73,17 @@ fn expand_message_message(
                     );
                 }
                 Kind::OneOf => {
-                    serialize_impl.extend(quote_spanned! { span=>
-                        //#root::gin_tonic_core::Message::serialize(self.#field_ident, writer);
-                        todo!()
-                    });
-
-                    deserialize_init.extend(quote_spanned! { span=>
-                        let mut #field_ident = None;
-                    });
-
-                    deserialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // tag if <#ty as #root::gin_tonic_core::OneOf>::matches_tag(tag) => {
-                        //     #field_ident = Some(#root::gin_tonic_core::OneOf::deserialize_wire(tag, wire_type)?);
-                        // }
-                    });
-
-                    deserialize_set.extend(quote_spanned! { span=>
-                        #field_ident: #field_ident.ok_or(#root::DecodeError::MissingField(#tag))?,
-                    });
+                    oneof::required(
+                        &root,
+                        &tag,
+                        &field_ident,
+                        &ty,
+                        span.clone(),
+                        &mut serialize_impl,
+                        &mut deserialize_init,
+                        &mut deserialize_impl,
+                        &mut deserialize_set,
+                    );
                 }
                 Kind::Map => {
                     map::required(
@@ -137,27 +130,16 @@ fn expand_message_message(
                     );
                 }
                 Kind::OneOf => {
-                    serialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // if let Some(value) = self.#field_ident {
-                        //     #root::gin_tonic_core::Message::serialize(value, writer);
-                        // }
-                    });
-
-                    deserialize_init.extend(quote_spanned! { span=>
-                        let mut #field_ident = None;
-                    });
-
-                    deserialize_impl.extend(quote_spanned! { span=>
-                        todo!()
-                        // tag if #ty::matches_tag(tag) => {
-                        //     #field_ident = Some(#root::gin_tonic_core::OneOf::deserialize_wire(tag, wire_type)?);
-                        // }
-                    });
-
-                    deserialize_set.extend(quote_spanned! { span=>
-                        #field_ident,
-                    });
+                    oneof::optional(
+                        &tag,
+                        &field_ident,
+                        &ty,
+                        span.clone(),
+                        &mut serialize_impl,
+                        &mut deserialize_init,
+                        &mut deserialize_impl,
+                        &mut deserialize_set,
+                    );
                 }
                 Kind::Map => {
                     map::optional(
@@ -233,7 +215,7 @@ fn expand_message_message(
             where
                 Self: Sized
             {
-                use #root::{Decode, DecodeError, Tag};
+                use #root::{Decode, DecodeError, Tag, PbOneOf};
                 use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
 
                 #deserialize_init
@@ -259,98 +241,88 @@ fn expand_message_message(
     }
 }
 
-// fn expand_unwrapped_oneof(
-//     root: &proc_macro2::TokenStream,
-//     ty: Ident,
-//     variants: Vec<OneOfVariant>,
-// ) -> TokenStream {
-//     let span = ty.span();
+fn expand_unwrapped_oneof(
+    root: &proc_macro2::TokenStream,
+    ty: Ident,
+    variants: Vec<OneOfVariant>,
+) -> TokenStream {
+    let span = ty.span();
 
-//     let mut serialize_impl = TokenStream::new();
-//     let mut deserialize_impl = TokenStream::new();
-//     let mut size_hint_impl = TokenStream::new();
-//     let mut tags = TokenStream::new();
+    let mut serialize_impl = TokenStream::new();
+    let mut deserialize_impl = TokenStream::new();
+    let mut size_hint_impl = TokenStream::new();
+    let mut tags = TokenStream::new();
 
-//     for variant in variants.into_iter() {
-//         let var_ident = variant.ident;
-//         let span = var_ident.span();
-//         let tag = variant.tag;
+    for variant in variants.into_iter() {
+        let Some(field_ty) = variant.fields.fields.first() else {
+            panic!("OneOfs must contain fields for now");
+        };
+        let var_ident = variant.ident;
+        let span = var_ident.span();
+        let tag = variant.tag;
+        let protobuf_type = variant.proto;
 
-//         tags.extend(quote_spanned! {span=>
-//             #tag,
-//         });
+        let (pb_type, encode_fn, decode_fn, as_ref) =
+            primitives::primitive_types(root, span, field_ty, protobuf_type, false);
 
-//         serialize_impl.extend(quote_spanned! {span=>
-//             #ty::#var_ident(v) => {
-//                 let wire_type = v.into_wire();
-//                 wire_type.serialize(#tag, writer);
-//             }
-//         });
+        //panic!("{ty}::{var_ident} => {pb_type} {encode_fn} {decode_fn}");
 
-//         deserialize_impl.extend(quote_spanned! { span=>
-//             if tag == #tag {
-//                 let value = FromWire::from_wire(wire_type)?;
-//                 return Ok(#ty::#var_ident(value));
-//             }
-//         });
+        tags.extend(quote_spanned! {span=>
+            #tag,
+        });
 
-//         size_hint_impl.extend(quote_spanned! {span=>
-//             #ty::#var_ident(v) => {
-//                 IntoWire::size_hint(v, #tag)
-//             },
-//         });
-//     }
+        if as_ref {
+            serialize_impl.extend(quote_spanned! {span=>
+                #ty::#var_ident(v) => {
+                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, v, encoder, #encode_fn);
+                },
+            });
+        } else {
+            serialize_impl.extend(quote_spanned! {span=>
+                #ty::#var_ident(v) => {
+                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, *v, encoder, #encode_fn);
+                }
+            });
+        }
 
-//     quote_spanned! {span=>
-//         #[automatically_derived]
-//         #[allow(unused_imports)]
-//         impl #root::gin_tonic_core::Message for #ty {
-//             fn serialize(self, writer: &mut impl #root::gin_tonic_core::bytes::BufMut) {
-//                 use #root::IntoWire;
+        deserialize_impl.extend(quote_spanned! { span=>
+            #tag => {
+                let mut inner;
+                #root::gin_tonic_core::decode_field!(#pb_type, inner, wire_type, decoder, #decode_fn);
+                Ok(#ty::#var_ident(inner.ok_or(#root::DecodeError::MissingField(#tag))?))
+            },
+        });
+    }
 
-//                 match self {
-//                     #serialize_impl
-//                 }
-//             }
+    quote_spanned! {span=>
+        #[automatically_derived]
+        impl #root::PbOneOf for #ty {
+            fn matches(field_number: u32) -> bool {
+                [#tags].contains(&tag)
+            }
 
-//             fn size_hint(&self) -> usize {
-//                 use #root::IntoWire;
-//                 use #root::export::VarInt;
+            fn encode(&self, encoder: &mut impl #root::Encode) {
+                match self {
+                    #serialize_impl
+                };
+            }
 
-//                 match self {
-//                     #size_hint_impl
-//                 }
-//             }
-
-//             fn deserialize_tags<'a>(tags: impl Iterator<Item = #root::gin_tonic_core::Tag<'a>>) -> Result<Self, #root::Error> {
-//                 let mut slf = None;
-
-//                 for tag in tags {
-//                     let (field_number, wire_type) = tag.into_parts();
-//                     slf = Some(<Self as #root::gin_tonic_core::OneOf>::deserialize_wire(field_number, wire_type)?);
-//                 }
-
-//                 slf.ok_or(#root::Error::InvalidOneOf)
-//             }
-//         }
-
-//         #[automatically_derived]
-//         #[allow(unused_imports)]
-//         impl #root::gin_tonic_core::OneOf for #ty {
-//             fn matches_tag(tag: u32) -> bool {
-//                 [#tags].contains(&tag)
-//             }
-
-//             fn deserialize_wire(tag: u32, wire_type: #root::gin_tonic_core::WireTypeView) -> Result<Self, #root::Error> {
-//                 use #root::FromWire;
-
-//                 #deserialize_impl
-
-//                 Err(#root::Error::InvalidOneOf)
-//             }
-//         }
-//     }
-// }
+            fn decode(
+                field_number: u32,
+                wire_type: u8,
+                decoder: &mut impl #root::Decode,
+            ) -> Result<Self, #root::DecodeError>
+            where
+                Self: Sized,
+            {
+                match field_number {
+                    #deserialize_impl
+                    n => Err(#root::DecodeError::UnexpectedOneOfVariant(n)),
+                }
+            }
+        }
+    }
+}
 
 pub(crate) fn expand_enumeration(
     root: &proc_macro2::TokenStream,
@@ -374,7 +346,7 @@ pub(crate) fn expand_enumeration(
 
         encode_impl.extend(quote_spanned! {span=>
             #ty::#var_ident => {
-                encoder.encode_uint64(#tag)
+                encoder.encode_uint64(#tag);
             },
         });
 
@@ -409,52 +381,19 @@ pub(crate) fn expand_enumeration(
                 }
             }
         }
-
-        // #[automatically_derived]
-        // #[allow(unused_imports)]
-        // impl #root::IntoWire for #ty {
-        //     fn into_wire(self) -> #root::gin_tonic_core::WireType {
-        //         match self {
-        //             #into_impl
-        //         }
-        //     }
-
-        //     fn size_hint(&self, tag: u32) -> usize {
-        //         use #root::export::VarInt;
-
-        //         tag.required_space() as usize
-        //             + match self {
-        //                 #size_hint_impl
-        //             }
-        //     }
-        // }
-
-        // #[automatically_derived]
-        // #[allow(unused_imports)]
-        // impl #root::FromWire for #ty {
-        //     fn from_wire(wire: #root::gin_tonic_core::WireTypeView) -> Result<Self, #root::Error>
-        //     where
-        //         Self: Sized,
-        //     {
-        //         match u32::from_wire(wire)? {
-        //             #from_impluse #root::Tag;
-        //             n => Err(#root::Error::UnknownEnumVariant(n)),
-        //         }
-        //     }
-        // }
     }
 }
 
-// pub(crate) fn one_of_enumeration(
-//     root: &proc_macro2::TokenStream,
-//     input: crate::ast::OneOfInput,
-// ) -> TokenStream {
-//     let ty = input.ident;
+pub(crate) fn one_of_enumeration(
+    root: &proc_macro2::TokenStream,
+    input: crate::ast::OneOfInput,
+) -> TokenStream {
+    let ty = input.ident;
 
-//     let variants = input
-//         .data
-//         .take_enum()
-//         .expect("OneOF derive only works on newtype enums");
+    let variants = input
+        .data
+        .take_enum()
+        .expect("OneOF derive only works on newtype enums");
 
-//     expand_unwrapped_oneof(root, ty, variants)
-// }
+    expand_unwrapped_oneof(root, ty, variants)
+}

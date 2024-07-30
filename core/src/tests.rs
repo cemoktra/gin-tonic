@@ -10,7 +10,8 @@ use crate::{
     encoder::Encode,
     tag::Tag,
     types::{
-        Fixed32, Fixed64, Int32, Int64, PbType, SFixed32, SFixed64, SInt32, SInt64, UInt32, UInt64,
+        Fixed32, Fixed64, Int32, Int64, PbOneOf, PbType, SFixed32, SFixed64, SInt32, SInt64,
+        UInt32, UInt64,
     },
     WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
@@ -47,6 +48,50 @@ impl PbType for TestEnum {
 enum TestOneOf {
     Int(i32),
     Str(String),
+}
+
+impl PbOneOf for TestOneOf {
+    fn matches(field_number: u32) -> bool {
+        match field_number {
+            23 => true,
+            24 => true,
+            _ => false,
+        }
+    }
+
+    fn encode(&self, encoder: &mut impl Encode) {
+        match self {
+            TestOneOf::Int(i) => {
+                encode_field!(23, Int32, *i, encoder, Encode::encode_int32);
+            }
+            TestOneOf::Str(s) => {
+                encode_field!(24, String, s.clone(), encoder, Encode::encode_string);
+            }
+        };
+    }
+
+    fn decode(
+        field_number: u32,
+        wire_type: u8,
+        decoder: &mut impl Decode,
+    ) -> Result<Self, DecodeError>
+    where
+        Self: Sized,
+    {
+        match field_number {
+            23 => {
+                let mut inner;
+                decode_field!(Int32, inner, wire_type, decoder, Decode::decode_int32);
+                Ok(TestOneOf::Int(inner.ok_or(DecodeError::MissingField(23))?))
+            }
+            24 => {
+                let mut inner;
+                decode_field!(String, inner, wire_type, decoder, Decode::decode_string);
+                Ok(TestOneOf::Str(inner.ok_or(DecodeError::MissingField(24))?))
+            }
+            n => Err(DecodeError::UnexpectedOneOfVariant(n)),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -127,14 +172,7 @@ impl PbType for Test {
         encode_field!(20, String, &self.empty, encoder, Encode::encode_str);
         encode_field!(21, String, &self.hello, encoder, Encode::encode_str);
         encode_field!(22, TestEnum, &self.e, encoder, Encode::encode_type);
-        match &self.o {
-            TestOneOf::Int(i) => {
-                encode_field!(23, Int32, *i, encoder, Encode::encode_int32);
-            }
-            TestOneOf::Str(s) => {
-                encode_field!(24, String, s, encoder, Encode::encode_str);
-            }
-        };
+        self.o.encode(encoder);
         encode_vector_packed!(25, &self.packed, encoder, Encode::encode_uint32);
         encode_vector_unpacked!(26, UInt32, &self.unpacked, encoder, Encode::encode_uint32);
         encode_nested!(27, &self.nested, encoder, Encode::encode_nested);
@@ -261,34 +299,7 @@ impl PbType for Test {
                 20 => decode_field!(String, empty, wire_type, decoder, Decode::decode_string),
                 21 => decode_field!(String, hello, wire_type, decoder, Decode::decode_string),
                 22 => decode_field!(TestEnum, e, wire_type, decoder, Decode::decode_type),
-                23 => {
-                    #[allow(unused_assignments)]
-                    let mut one_of_inner = None;
-                    decode_field!(
-                        Int32,
-                        one_of_inner,
-                        wire_type,
-                        decoder,
-                        Decode::decode_int32
-                    );
-                    o = Some(TestOneOf::Int(
-                        one_of_inner.ok_or(DecodeError::MissingField(23))?,
-                    ))
-                }
-                24 => {
-                    #[allow(unused_assignments)]
-                    let mut one_of_inner = None;
-                    decode_field!(
-                        String,
-                        one_of_inner,
-                        wire_type,
-                        decoder,
-                        Decode::decode_string
-                    );
-                    o = Some(TestOneOf::Str(
-                        one_of_inner.ok_or(DecodeError::MissingField(24))?,
-                    ))
-                }
+                n if TestOneOf::matches(n) => o = Some(TestOneOf::decode(n, wire_type, decoder)?),
                 25 => {
                     decode_vector!(
                         UInt32,
@@ -310,7 +321,9 @@ impl PbType for Test {
                 27 => {
                     decode_nested!(nested, wire_type, decoder, Decode::decode_nested);
                 }
-                n => return Err(DecodeError::UnexpectedFieldNumber(n)),
+                n => {
+                    return Err(DecodeError::UnexpectedFieldNumber(n));
+                }
             }
         }
 
@@ -360,7 +373,7 @@ impl PbType for MapTest {
             WIRE_TYPE_LENGTH_ENCODED,
             WIRE_TYPE_VARINT,
             encoder,
-            Encode::encode_str,
+            Encode::encode_string,
             Encode::encode_bool,
         )
     }

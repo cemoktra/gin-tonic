@@ -28,7 +28,7 @@ pub const fn sizeof_varint64(v: u64) -> usize {
     }
 }
 
-pub trait PbType<T = ()> {
+pub trait PbType {
     const WIRE_TYPE: u8;
 
     fn size_hint(&self) -> usize {
@@ -41,6 +41,25 @@ pub trait PbType<T = ()> {
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
     where
         Self: Sized;
+}
+
+pub trait PbOneOf {
+    fn size_hint(&self) -> usize {
+        let mut hint = SizeHint::default();
+        self.encode(&mut hint);
+        hint.size()
+    }
+
+    fn encode(&self, encoder: &mut impl Encode);
+    fn decode(
+        field_number: u32,
+        wire_type: u8,
+        decoder: &mut impl Decode,
+    ) -> Result<Self, DecodeError>
+    where
+        Self: Sized;
+
+    fn matches(field_number: u32) -> bool;
 }
 
 pub struct Int32(pub i32);
