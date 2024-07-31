@@ -305,7 +305,7 @@ impl PbType for uuid::Uuid {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn encode(&self, encoder: &mut impl Encode) {
-        encoder.encode_string(self.as_simple().to_string().as_ref())
+        encoder.encode_string(self.as_simple().to_string())
     }
 
     fn decode(decoder: &mut impl Decode) -> Result<Self, DecodeError>
