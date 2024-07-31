@@ -11,6 +11,7 @@ criterion_main!(crate::gin_bench::benches);
 pub(crate) mod gin_bench {
     use std::collections::HashMap;
 
+    use bytes::Buf;
     use criterion::{black_box, criterion_group, Criterion};
     use gin_tonic::Message;
 
@@ -103,10 +104,13 @@ pub(crate) mod gin_bench {
 
         let size = data.size_hint();
         let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
-        data.clone().encode(&mut buffer);
+        data.encode(&mut buffer);
 
         c.bench_function("gin_de", |b| {
-            b.iter(|| GinTonic::decode(&mut buffer).expect("benchmark works"));
+            b.iter(|| {
+                let mut buf = buffer.chunk();
+                GinTonic::decode(&mut buf).expect("benchmark works")
+            });
         });
     }
 }
