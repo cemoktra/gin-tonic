@@ -2,7 +2,7 @@
 
 use crate::{
     tag::Tag,
-    types::{sizeof_varint64, PbType},
+    types::{sizeof_varint32, sizeof_varint64, PbType},
 };
 
 pub trait Encode {
@@ -246,7 +246,7 @@ impl Encode for SizeHint {
     }
 
     fn encode_uint32(&mut self, n: u32) {
-        self.encode_varint(n as _);
+        self.size += sizeof_varint32(n);
     }
 
     fn encode_uint64(&mut self, n: u64) {
@@ -254,7 +254,7 @@ impl Encode for SizeHint {
     }
 
     fn encode_sint32(&mut self, n: i32) {
-        self.encode_varint(zigzag_encode(n as i64));
+        self.size += sizeof_varint32(zigzag_encode(n as i64) as u32);
     }
 
     fn encode_sint64(&mut self, n: i64) {
