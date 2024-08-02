@@ -1,3 +1,4 @@
+//! gin-tonic wrapepr for code generation (models and service)
 mod codec;
 mod codegen;
 
