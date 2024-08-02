@@ -55,7 +55,7 @@ For the UUID case `gin-tonic` offers two features:
 - `uuid_string` => proto transport is `string`, parsing error is handled within wire type conversion
 - `uuid_bytes` => proto transport is `bytes`, this does not require additional error handling
 
-You can add you own types by implementing the `FromWire` and `IntoWire` traits for your type.
+You can add you own types by implementing the `PbType` trait for your type.
 
 
 ## Benchmarks
