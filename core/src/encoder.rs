@@ -223,7 +223,7 @@ where
 }
 
 #[derive(Debug, Default)]
-/// an [Encode] implementation that does not actually encode data but calculated the size it will need
+/// an [Encode] implementation that does not actually encode data but calculates the size it will need
 pub struct SizeHint {
     size: usize,
 }

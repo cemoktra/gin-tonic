@@ -1,3 +1,4 @@
+//! this crate adds derive macros for implementing [PbType] and [PbOneOf]
 pub(crate) mod ast;
 pub(crate) mod codegen;
 

@@ -8,7 +8,7 @@ mod tests;
 pub mod types;
 
 pub use decoder::{Decode, DecodeError};
-pub use encoder::Encode;
+pub use encoder::{Encode, SizeHint};
 pub use tag::Tag;
 
 pub const WIRE_TYPE_VARINT: u8 = 0;
