@@ -1,3 +1,4 @@
+/// a protobuf tag is a u32 the combines the field number and a wire type
 pub trait Tag {
     fn from_parts(field_number: u32, wire_type: u8) -> Self;
 

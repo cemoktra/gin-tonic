@@ -6,27 +6,38 @@ use crate::{tag::Tag, types::PbType};
 
 #[derive(Debug, thiserror::Error)]
 #[allow(dead_code)]
+/// decoding protobuf can end up in errors which are handled in this enumeration
 pub enum DecodeError {
     #[error("VarInt limitof 10 bytes reached")]
+    /// VarInt limitof 10 bytes reached
     VarIntLimit,
     #[error("Unexpected wire type: expected {0}, actual {1}")]
+    /// an unexpected wire type was read from the tag
     UnexpectedWireType(u8, u8),
     #[error("Unexpected field number {0}")]
+    /// an unexpected/unhandled field number was read
     UnexpectedFieldNumber(u32),
     #[error("Unexpected enum variant {0}")]
+    /// an unexpected enum variant was read
     UnexpectedEnumVariant(u64),
     #[error("Unexpected oneof variant {0}")]
+    /// an unexpected oneof field number was read
     UnexpectedOneOfVariant(u32),
     #[error("Field number {0} is missing")]
+    /// an expected field number was not read
     MissingField(u32),
     #[error("OneOf of field numbers {0:?} is missing")]
+    /// no variants field number of the oneof was found
     MissingOneOf(Vec<u32>),
     #[error(transparent)]
+    /// converting bytes into UTF-8 string failed
     Utf8(#[from] FromUtf8Error),
     #[error(transparent)]
+    /// generic conversion error occured while converting the protobuf representation into an actual type
     Conversion(Box<dyn std::error::Error>),
 }
 
+/// main decode trait, currenlty implemented for anything that implements [bytes::Buf]
 pub trait Decode {
     fn eof(&self) -> bool;
 

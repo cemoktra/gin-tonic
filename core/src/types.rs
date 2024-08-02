@@ -32,6 +32,7 @@ pub const fn sizeof_varint64(v: u64) -> usize {
     }
 }
 
+/// any protobuf message or type needs to imlement this trait
 pub trait PbType {
     const WIRE_TYPE: u8;
 
@@ -47,6 +48,8 @@ pub trait PbType {
         Self: Sized;
 }
 
+/// a special traits for oneof that adds matching for field numbers of oneofs and removes
+/// the `WIRE_TYPE` const as this is not const in the case of oneofs
 pub trait PbOneOf {
     fn size_hint(&self) -> usize {
         let mut hint = SizeHint::default();
@@ -66,15 +69,25 @@ pub trait PbOneOf {
     fn matches(field_number: u32) -> bool;
 }
 
+/// an i32 wrapper for protobuf `int32`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct Int32(pub i32);
+/// an i64 wrapper for protobuf `int64`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct Int64(pub i64);
+/// a u32 wrapper for protobuf `uint32`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct UInt32(pub u32);
+/// a u64 wrapper for protobuf `uint64`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct UInt64(pub u64);
+/// a i32 wrapper for protobuf `sint32`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct SInt32(pub i32);
+/// an i64 wrapper for protobuf `sint64`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct SInt64(pub i64);
+/// a u32 wrapper for protobuf `fixed32`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct Fixed32(pub u32);
+/// a u64 wrapper for protobuf `fixed64`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct Fixed64(pub u64);
+/// a i32 wrapper for protobuf `sfixed32`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct SFixed32(pub i32);
+/// an i64 wrapper for protobuf `sfixed64`, required to define the way this Rust primitive is presented on the protobuf protocol
 pub struct SFixed64(pub i64);
 
 impl PbType for Int32 {

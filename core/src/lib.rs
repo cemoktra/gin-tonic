@@ -1,3 +1,4 @@
+//! The gin-tonic-core library handles protobuf encode and decoding
 mod decoder;
 mod encoder;
 pub mod macros;

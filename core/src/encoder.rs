@@ -5,6 +5,7 @@ use crate::{
     types::{sizeof_varint32, sizeof_varint64, PbType},
 };
 
+/// main encode trait, currently implement for anything that implements [bytes::BufMut] and [SizeHint]
 pub trait Encode {
     fn encode_float(&mut self, n: f32);
     fn encode_double(&mut self, n: f64);
@@ -222,6 +223,7 @@ where
 }
 
 #[derive(Debug, Default)]
+/// an [Encode] implementation that does not actually encode data but calculated the size it will need
 pub struct SizeHint {
     size: usize,
 }
