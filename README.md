@@ -56,3 +56,19 @@ For the UUID case `gin-tonic` offers two features:
 - `uuid_bytes` => proto transport is `bytes`, this does not require additional error handling
 
 You can add you own types by implementing the `FromWire` and `IntoWire` traits for your type.
+
+
+## Benchmarks
+Currently the decoding performance is slightly better than prost, while encoding requires some work.
+
+gin tonic:
+```
+decode                  time:   [699.72 ns 700.71 ns 701.81 ns]
+encode                  time:   [846.49 ns 848.09 ns 849.86 ns]
+```
+
+prost:
+```
+decode                  time:   [778.30 ns 782.24 ns 788.19 ns]
+encode                  time:   [622.77 ns 623.87 ns 625.02 ns]
+```
