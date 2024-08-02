@@ -1,8 +1,10 @@
-//! this crate adds derive macros for implementing [PbType] and [PbOneOf]
+//! this crate adds derive macros for implementing [PbType](https://docs.rs/gin-tonic-core/latest/gin_tonic_core/types/trait.PbType.html) and
+//! [https://docs.rs/gin-tonic-core/latest/gin_tonic_core/types/trait.PbOneOf.html]
 pub(crate) mod ast;
 pub(crate) mod codegen;
 
 #[proc_macro_derive(Message, attributes(gin))]
+/// a macro to derive protobof messages
 pub fn message_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     let input: ast::MessageInput = match darling::FromDeriveInput::from_derive_input(&input) {
@@ -24,6 +26,7 @@ pub fn message_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream
 }
 
 #[proc_macro_derive(Enumeration, attributes(gin))]
+/// a macro to derive enumerations
 pub fn enum_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     let input: ast::EnumerationInput = match darling::FromDeriveInput::from_derive_input(&input) {
@@ -45,6 +48,7 @@ pub fn enum_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 #[proc_macro_derive(OneOf, attributes(gin))]
+/// a macro to derive a message as oneof if it only contains a oneof
 pub fn one_of_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     let input: ast::OneOfInput = match darling::FromDeriveInput::from_derive_input(&input) {

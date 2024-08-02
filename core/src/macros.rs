@@ -1,3 +1,4 @@
+//! a collection of macros to encode/decode data. Mainly used by the derive macros of [gin_tonic_derive](https://docs.rs/gin-tonic-derive/latest/gin_tonic_derive/)
 #[macro_export]
 macro_rules! decode_field {
     ($prototy:ty, $var:expr, $wire_type:expr, $decoder:expr, $decode_fn:path) => {
