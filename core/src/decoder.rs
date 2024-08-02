@@ -86,18 +86,22 @@ impl<T> Decode for T
 where
     T: bytes::Buf,
 {
+    #[inline]
     fn eof(&self) -> bool {
         !self.has_remaining()
     }
 
+    #[inline]
     fn decode_float(&mut self) -> Result<f32, DecodeError> {
         Ok(self.get_f32_le())
     }
 
+    #[inline]
     fn decode_double(&mut self) -> Result<f64, DecodeError> {
         Ok(self.get_f64_le())
     }
 
+    #[inline]
     fn decode_varint(&mut self) -> Result<u64, DecodeError> {
         let b = self.get_u8();
         if b & 0x80 == 0 {
@@ -120,60 +124,74 @@ where
         Err(DecodeError::VarIntLimit)
     }
 
+    #[inline]
     fn decode_int32(&mut self) -> Result<i32, DecodeError> {
         self.decode_varint().map(|u| u as i32)
     }
 
+    #[inline]
     fn decode_int64(&mut self) -> Result<i64, DecodeError> {
         self.decode_varint().map(|u| u as i64)
     }
 
+    #[inline]
     fn decode_uint32(&mut self) -> Result<u32, DecodeError> {
         self.decode_varint().map(|u| u as u32)
     }
 
+    #[inline]
     fn decode_uint64(&mut self) -> Result<u64, DecodeError> {
         self.decode_varint()
     }
 
+    #[inline]
     fn decode_sint32(&mut self) -> Result<i32, DecodeError> {
         self.decode_varint().map(|u| zigzag_decode(u) as i32)
     }
 
+    #[inline]
     fn decode_sint64(&mut self) -> Result<i64, DecodeError> {
         self.decode_varint().map(zigzag_decode)
     }
 
+    #[inline]
     fn decode_fixed32(&mut self) -> Result<u32, DecodeError> {
         Ok(self.get_u32_le())
     }
 
+    #[inline]
     fn decode_fixed64(&mut self) -> Result<u64, DecodeError> {
         Ok(self.get_u64_le())
     }
 
+    #[inline]
     fn decode_sfixed32(&mut self) -> Result<i32, DecodeError> {
         Ok(self.get_i32_le())
     }
 
+    #[inline]
     fn decode_sfixed64(&mut self) -> Result<i64, DecodeError> {
         Ok(self.get_i64_le())
     }
 
+    #[inline]
     fn decode_bool(&mut self) -> Result<bool, DecodeError> {
         Ok(self.get_u8() != 0)
     }
 
+    #[inline]
     fn decode_bytes(&mut self) -> Result<bytes::Bytes, DecodeError> {
         let len = self.decode_uint32()?;
         Ok(self.copy_to_bytes(len as usize))
     }
 
+    #[inline]
     fn decode_string(&mut self) -> Result<String, DecodeError> {
         let bytes = self.decode_bytes()?;
         Ok(String::from_utf8(bytes.to_vec())?)
     }
 
+    #[inline]
     fn decode_type<M>(&mut self) -> Result<M, DecodeError>
     where
         M: PbType,
@@ -181,6 +199,7 @@ where
         M::decode(self)
     }
 
+    #[inline]
     fn decode_packed<M, F>(&mut self, buffer: &mut Vec<M>, decode_fn: F) -> Result<(), DecodeError>
     where
         M: Clone,
@@ -202,6 +221,7 @@ where
         Ok(())
     }
 
+    #[inline]
     fn decode_map_element<K, V, KF, VF>(
         &mut self,
         decode_key_fn: KF,
@@ -243,6 +263,7 @@ where
         }
     }
 
+    #[inline]
     fn decode_nested<N>(&mut self) -> Result<N, DecodeError>
     where
         N: PbType,

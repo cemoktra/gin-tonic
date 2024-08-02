@@ -37,10 +37,9 @@ pub trait Encode {
     where
         Self: Sized,
     {
-        let mut hint = SizeHint::default();
-        msg.encode(&mut hint);
+        let size = msg.size_hint();
 
-        self.encode_uint32(hint.size() as _);
+        self.encode_uint32(size as _);
         msg.encode(self);
     }
 
@@ -106,14 +105,17 @@ impl<T> Encode for T
 where
     T: bytes::BufMut,
 {
+    #[inline]
     fn encode_float(&mut self, n: f32) {
         self.put_f32_le(n)
     }
 
+    #[inline]
     fn encode_double(&mut self, n: f64) {
         self.put_f64_le(n)
     }
 
+    #[inline]
     fn encode_varint(&mut self, mut n: u64) {
         while n >= 0x80 {
             self.put_u8(0x80 | (n as u8));
@@ -123,6 +125,7 @@ where
         self.put_u8(n as u8);
     }
 
+    #[inline]
     fn encode_int32(&mut self, n: i32) {
         let negative = n < 0;
         let mut n = n as u32;
@@ -151,55 +154,68 @@ where
         }
     }
 
+    #[inline]
     fn encode_int64(&mut self, n: i64) {
         self.encode_varint(n as u64);
     }
 
+    #[inline]
     fn encode_uint32(&mut self, n: u32) {
         self.encode_varint(n as u64);
     }
 
+    #[inline]
     fn encode_uint64(&mut self, n: u64) {
         self.encode_varint(n);
     }
 
+    #[inline]
     fn encode_sint32(&mut self, n: i32) {
         self.encode_varint(zigzag_encode(n as i64));
     }
 
+    #[inline]
     fn encode_sint64(&mut self, n: i64) {
         self.encode_varint(zigzag_encode(n));
     }
 
+    #[inline]
     fn encode_fixed32(&mut self, n: u32) {
         self.put_u32_le(n);
     }
 
+    #[inline]
     fn encode_fixed64(&mut self, n: u64) {
         self.put_u64_le(n);
     }
 
+    #[inline]
     fn encode_sfixed32(&mut self, n: i32) {
         self.put_i32_le(n);
     }
 
+    #[inline]
     fn encode_sfixed64(&mut self, n: i64) {
         self.put_i64_le(n);
     }
 
+    #[inline]
     fn encode_bool(&mut self, b: bool) {
         self.put_u8(b as u8);
     }
 
+    #[inline]
     fn encode_bytes(&mut self, b: &[u8]) {
         self.encode_uint32(b.len() as u32);
         self.put_slice(b);
     }
 
+    #[inline]
     fn encode_str(&mut self, s: &str) {
         self.encode_bytes(s.as_bytes());
     }
 
+    #[inline]
     fn encode_type(&mut self, ty: &impl PbType) {
         ty.encode(self)
     }
@@ -221,18 +237,22 @@ impl SizeHint {
 }
 
 impl Encode for SizeHint {
+    #[inline]
     fn encode_float(&mut self, _n: f32) {
         self.size += std::mem::size_of::<f32>();
     }
 
+    #[inline]
     fn encode_double(&mut self, _n: f64) {
         self.size += std::mem::size_of::<f64>();
     }
 
+    #[inline]
     fn encode_varint(&mut self, n: u64) {
         self.size += sizeof_varint64(n);
     }
 
+    #[inline]
     fn encode_int32(&mut self, n: i32) {
         if n < 0 {
             self.size += 10;
@@ -241,55 +261,68 @@ impl Encode for SizeHint {
         }
     }
 
+    #[inline]
     fn encode_int64(&mut self, n: i64) {
         self.encode_varint(n as _);
     }
 
+    #[inline]
     fn encode_uint32(&mut self, n: u32) {
         self.size += sizeof_varint32(n);
     }
 
+    #[inline]
     fn encode_uint64(&mut self, n: u64) {
         self.encode_varint(n as _);
     }
 
+    #[inline]
     fn encode_sint32(&mut self, n: i32) {
         self.size += sizeof_varint32(zigzag_encode(n as i64) as u32);
     }
 
+    #[inline]
     fn encode_sint64(&mut self, n: i64) {
         self.encode_varint(zigzag_encode(n));
     }
 
+    #[inline]
     fn encode_fixed32(&mut self, _n: u32) {
         self.size += std::mem::size_of::<u32>();
     }
 
+    #[inline]
     fn encode_fixed64(&mut self, _n: u64) {
         self.size += std::mem::size_of::<u64>();
     }
 
+    #[inline]
     fn encode_sfixed32(&mut self, _n: i32) {
         self.size += std::mem::size_of::<i32>();
     }
 
+    #[inline]
     fn encode_sfixed64(&mut self, _n: i64) {
         self.size += std::mem::size_of::<i64>();
     }
 
+    #[inline]
     fn encode_bool(&mut self, _b: bool) {
         self.size += 1;
     }
 
+    #[inline]
     fn encode_bytes(&mut self, b: &[u8]) {
         self.encode_uint32(b.len() as u32);
         self.size += b.len();
     }
 
+    #[inline]
     fn encode_str(&mut self, s: &str) {
         self.encode_bytes(s.as_bytes());
     }
 
+    #[inline]
     fn encode_type(&mut self, msg: &impl PbType) {
         msg.encode(self)
     }

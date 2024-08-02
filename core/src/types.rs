@@ -6,6 +6,7 @@ use crate::{
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT,
 };
 
+#[inline(always)]
 pub const fn sizeof_varint32(v: u32) -> usize {
     match v {
         0x0..=0x7F => 1,
@@ -16,6 +17,7 @@ pub const fn sizeof_varint32(v: u32) -> usize {
     }
 }
 
+#[inline(always)]
 pub const fn sizeof_varint64(v: u64) -> usize {
     const U32_MAX: u64 = u32::MAX as u64;
     const U32_OVER_MAX: u64 = U32_MAX + 1;
