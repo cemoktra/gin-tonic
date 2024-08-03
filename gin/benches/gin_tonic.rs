@@ -67,7 +67,12 @@ pub(crate) mod gin_bench {
         let mut buffer = black_box(bytes::BytesMut::with_capacity(size));
         let mut buffer_ref = black_box(&mut buffer);
 
-        c.bench_function("gin_ser", |b| b.iter(|| data.encode(&mut buffer_ref)));
+        c.bench_function("gin_ser", |b| {
+            b.iter(|| {
+                buffer_ref.clear();
+                data.encode(&mut buffer_ref);
+            })
+        });
     }
 
     fn de(c: &mut Criterion) {

@@ -369,10 +369,12 @@ impl PbType for MapTest {
         encode_map!(
             1,
             &self.map,
+            String::as_str,
+            bool::clone,
             WIRE_TYPE_LENGTH_ENCODED,
             WIRE_TYPE_VARINT,
             encoder,
-            Encode::encode_string,
+            Encode::encode_str,
             Encode::encode_bool,
         )
     }
@@ -428,8 +430,6 @@ impl PbType for Nested {
             let tag = decoder.decode_uint32()?;
             let field_number = tag.field_number();
             let wire_type = tag.wire_type();
-
-            println!("[CHILD] {field_number}:{wire_type}");
 
             match field_number {
                 1 => decode_field!(SInt32, number, wire_type, decoder, Decode::decode_sint32),
@@ -561,11 +561,6 @@ fn encode() {
 
     let mut buffer = BytesMut::with_capacity(size);
     test.encode(&mut buffer);
-
-    for b in &buffer {
-        print!("{:02x}", b);
-    }
-    println!();
 
     // ensure it is identical to protobuf pal
     assert_eq!(PROTOBUF_PAL, BASE64_STANDARD.encode(&buffer));

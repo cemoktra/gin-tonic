@@ -151,7 +151,7 @@ where
         }
 
         if negative {
-            self.put_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0x01]);
+            self.put([0xFF, 0xFF, 0xFF, 0xFF, 0x01].as_ref());
         }
     }
 
@@ -208,7 +208,7 @@ where
     #[inline]
     fn encode_bytes(&mut self, b: &[u8]) {
         self.encode_uint32(b.len() as u32);
-        self.put_slice(b);
+        self.put(b);
     }
 
     #[inline]
@@ -233,6 +233,7 @@ impl SizeHint {
         self.size = 0;
     }
 
+    #[inline]
     pub fn size(&self) -> usize {
         self.size
     }

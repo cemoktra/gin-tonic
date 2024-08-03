@@ -59,12 +59,10 @@ You can add you own types by implementing the `PbType` trait for your type.
 
 
 ## Benchmarks
-Currently the decoding performance is slightly better than prost, while encoding requires some work.
-
 gin tonic:
 ```
 decode                  time:   [699.72 ns 700.71 ns 701.81 ns]
-encode                  time:   [846.49 ns 848.09 ns 849.86 ns]
+encode                  time:   [451.35 ns 453.22 ns 455.56 ns]
 ```
 
 prost:

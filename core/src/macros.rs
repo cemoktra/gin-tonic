@@ -126,6 +126,8 @@ macro_rules! encode_map {
     (
         $field_number:expr,
         $var:expr,
+        $key_access:path,
+        $value_access:path,
         $key_wire_type:expr,
         $value_wire_type:expr,
         $encoder:expr,
@@ -135,8 +137,8 @@ macro_rules! encode_map {
         for (key, value) in $var {
             $encoder.encode_uint32(u32::from_parts($field_number, WIRE_TYPE_LENGTH_ENCODED));
             $encoder.encode_map_element(
-                key.clone(),
-                value.clone(),
+                $key_access(key),
+                $value_access(value),
                 $key_wire_type,
                 $value_wire_type,
                 $key_encode_fn,
