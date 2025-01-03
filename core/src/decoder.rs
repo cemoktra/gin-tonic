@@ -19,7 +19,7 @@ pub enum DecodeError {
     UnexpectedFieldNumber(u32),
     #[error("Unexpected enum variant {0}")]
     /// an unexpected enum variant was read
-    UnexpectedEnumVariant(u64),
+    UnexpectedEnumVariant(i32),
     #[error("Unexpected oneof variant {0}")]
     /// an unexpected oneof field number was read
     UnexpectedOneOfVariant(u32),

@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic-core"
-version = "0.5.5"
+version = "0.5.6"
 edition = "2021"
 repository = "https://github.com/cemoktra/gin-tonic/"
 description = "core functions for gin-tonic"

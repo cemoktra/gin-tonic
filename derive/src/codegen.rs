@@ -350,7 +350,7 @@ pub(crate) fn expand_enumeration(
 
         encode_impl.extend(quote_spanned! {span=>
             #ty::#var_ident => {
-                encoder.encode_uint64(#tag);
+                encoder.encode_varint(#tag as u64);
             },
         });
 
@@ -379,7 +379,7 @@ pub(crate) fn expand_enumeration(
             {
                 use #root::{Decode, DecodeError, Tag};
 
-                match decoder.decode_uint64()? {
+                match decoder.decode_varint()? as i32 {
                     #decode_impl
                     n => Err(#root::DecodeError::UnexpectedEnumVariant(n)),
                 }
