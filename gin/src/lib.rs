@@ -1,7 +1,9 @@
 //! gin-tonic wrapepr for code generation (models and service)
+#[cfg(feature = "tonic")]
 mod codec;
 mod codegen;
 
+#[cfg(feature = "tonic")]
 pub use codec::GinCodec;
 pub use codegen::CompileConfig;
 
