@@ -9,9 +9,10 @@ readme = "../README.md"
 keywords = ["grpc", "protobuf", "tonic"]
 
 [features]
-default = []
+default = ["tonic"]
 uuid_string = ["gin-tonic-core/uuid_string"]
 uuid_bytes = ["gin-tonic-core/uuid_bytes"]
+tonic = ["dep:tonic", "dep:tonic-build"]
 
 [dependencies]
 bytes = { workspace = true }
@@ -23,9 +24,10 @@ protox = { workspace = true }
 quote = { workspace = true }
 syn = { workspace = true }
 thiserror = { workspace = true }
-tonic = { workspace = true }
-tonic-build = { workspace = true }
 tracing = { workspace = true }
+
+tonic = { workspace = true, optional = true }
+tonic-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"

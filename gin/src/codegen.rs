@@ -4,6 +4,7 @@ pub mod external_type;
 pub(crate) mod messages;
 pub(crate) mod module;
 pub(crate) mod one_of;
+#[cfg(feature = "tonic")]
 pub(crate) mod service;
 #[cfg(test)]
 mod test;
@@ -28,6 +29,9 @@ pub struct CompileConfig {
     external_types: Vec<ExternalType>,
     proto_files: Vec<PathBuf>,
     well_known_types: bool,
+
+    #[cfg(feature = "tonic")]
+    generate_services: bool,
 }
 
 impl CompileConfig {
@@ -47,6 +51,9 @@ impl CompileConfig {
             external_types: vec![],
             proto_files: vec![],
             well_known_types: true,
+
+            #[cfg(feature = "tonic")]
+            generate_services: true,
         }
     }
 
@@ -140,6 +147,13 @@ impl CompileConfig {
         self
     }
 
+    /// Skip tonic service generation.
+    #[cfg(feature = "tonic")]
+    pub fn skip_services(mut self) -> Self {
+        self.generate_services = false;
+        self
+    }
+
     pub fn compile(self) -> Result<(), CompilerError> {
         let out_dir = std::env::var("OUT_DIR").inspect_err(|err| {
             tracing::error!("failed to read OUT_DIR environment variable: {err}")
@@ -192,9 +206,18 @@ impl CompileConfig {
             .open_files(proto_files)
             .inspect_err(|err| tracing::error!("compiler failed open files: {err}"))?;
 
+        #[cfg(feature = "tonic")]
+        let generate_services = self.generate_services;
+
         let ctx = Context::from_config(self);
 
-        generate(&compiler.descriptor_pool(), ctx, &target)?;
+        generate(
+            &compiler.descriptor_pool(),
+            ctx,
+            &target,
+            #[cfg(feature = "tonic")]
+            generate_services,
+        )?;
 
         Ok(())
     }
@@ -261,6 +284,8 @@ impl Context {
             external_types,
             proto_files: _,
             well_known_types,
+            #[cfg(feature = "tonic")]
+                generate_services: _,
         } = config;
 
         let mut external_types = external_types;
@@ -354,6 +379,7 @@ pub(crate) fn generate(
     pool: &DescriptorPool,
     ctx: Context,
     out: &std::path::Path,
+    #[cfg(feature = "tonic")] generate_services: bool,
 ) -> Result<(), CompilerError> {
     let mut root = Module::new("<root>");
 
@@ -377,9 +403,12 @@ pub(crate) fn generate(
         messages::generate(&ctx, &mut root, &module_path, ty);
     }
 
-    for svc in pool.services() {
-        let module_path = String::from(svc.package_name());
-        service::generate(&mut root, &module_path, svc);
+    #[cfg(feature = "tonic")]
+    if generate_services {
+        for svc in pool.services() {
+            let module_path = String::from(svc.package_name());
+            service::generate(&mut root, &module_path, svc);
+        }
     }
 
     for module in root.children {
