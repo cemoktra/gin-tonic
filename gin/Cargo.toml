@@ -9,22 +9,28 @@ readme = "../README.md"
 keywords = ["grpc", "protobuf", "tonic"]
 
 [features]
-default = ["tonic"]
+default = ["derive", "tonic", "generator"]
 uuid_string = ["gin-tonic-core/uuid_string"]
 uuid_bytes = ["gin-tonic-core/uuid_bytes"]
+
 tonic = ["dep:tonic", "dep:tonic-build"]
+generator = ["dep:heck", "dep:proc-macro2", "dep:protox", "dep:quote", "dep:syn"]
+derive = ["dep:gin-tonic-derive"]
 
 [dependencies]
 bytes = { workspace = true }
 gin-tonic-core = { workspace = true }
-gin-tonic-derive = { workspace = true }
-heck = { workspace = true }
-proc-macro2 = { workspace = true }
-protox = { workspace = true }
-quote = { workspace = true }
-syn = { workspace = true }
+
+gin-tonic-derive = { workspace = true, optional = true }
+
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+syn = { workspace = true, optional = true }
+heck = { workspace = true, optional = true }
+proc-macro2 = { workspace = true, optional = true }
+protox = { workspace = true, optional = true }
+quote = { workspace = true, optional = true }
 
 tonic = { workspace = true, optional = true }
 tonic-build = { workspace = true, optional = true }
