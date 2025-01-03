@@ -5,9 +5,9 @@ members = ["gin", "derive", "core"]
 [workspace.dependencies]
 bytes = "1.6.0"
 darling = "0.20.9"
-gin-tonic = "0.5.3"
-gin-tonic-core = "0.5.3"
-gin-tonic-derive = "0.5.3"
+gin-tonic = { path = "gin", version = "0.5.4" }
+gin-tonic-core = { path = "core", version = "0.5.4" }
+gin-tonic-derive = { path = "derive", version = "0.5.4" }
 heck = "0.5.0"
 proc-macro2 = "1.0.85"
 prost = "0.13.1"
@@ -25,11 +25,6 @@ uuid = { version = "1.10.0", features = ["v4"] }
 [workspace.lints.clippy]
 unwrap_used = "deny"
 cast_possible_truncation = "warn"
-
-[patch.crates-io]
-gin-tonic = { path = "gin" }
-gin-tonic-core = { path = "core" }
-gin-tonic-derive = { path = "derive" }
 
 [profile.release-with-debug]
 inherits = "release"
