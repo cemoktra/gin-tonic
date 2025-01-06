@@ -1,9 +1,9 @@
 use protox::prost_reflect::{FieldDescriptor, MessageDescriptor, OneofDescriptor};
 
-use crate::codegen::{case, enums, messages, module, utils, Context};
+use crate::codegen::{case, enums, messages, module, utils, Generator};
 
 pub(crate) fn generate(
-    ctx: &Context,
+    ctx: &Generator,
     parent: &mut module::Module,
     module_path: &str,
     ty: OneofDescriptor,
@@ -64,7 +64,7 @@ pub(crate) fn generate(
 }
 
 pub(crate) fn generate_unwrapped(
-    ctx: &Context,
+    ctx: &Generator,
     parent: &mut module::Module,
     module_path: &str,
     ty: OneofDescriptor,

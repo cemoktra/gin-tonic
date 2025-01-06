@@ -6,7 +6,7 @@ use protox::prost_reflect::{
 };
 use quote::quote;
 
-use crate::codegen::{case, Context};
+use crate::codegen::{case, Generator};
 
 const RUST_TYPE: &str = ".gin_tonic.v1.rust_type";
 
@@ -24,7 +24,7 @@ pub fn ext_ref<'a>(
     }
 }
 
-pub fn resolve_message(ctx: &Context, origin_type: &str, qualified_name: &str) -> TokenStream {
+pub fn resolve_message(ctx: &Generator, origin_type: &str, qualified_name: &str) -> TokenStream {
     if let Some(external) = ctx.resolve_ident(qualified_name) {
         let ty = syn::parse_str::<syn::Type>(&external).expect("Invalid path");
         quote::quote!(#ty)
@@ -236,7 +236,7 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
     }
 }
 
-pub fn field_type(ctx: &Context, enclosed_type: &str, field: &FieldDescriptor) -> TokenStream {
+pub fn field_type(ctx: &Generator, enclosed_type: &str, field: &FieldDescriptor) -> TokenStream {
     let options = field.options();
 
     if let Some(Value::String(rust_type)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {

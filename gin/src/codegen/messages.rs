@@ -1,10 +1,10 @@
 use protox::prost_reflect::{Cardinality, Kind, MessageDescriptor};
 
-use crate::codegen::{case, enums, module, one_of, utils, Context};
+use crate::codegen::{case, enums, module, one_of, utils, Generator};
 
 /// generate message
 pub(crate) fn generate(
-    ctx: &Context,
+    ctx: &Generator,
     parent: &mut module::Module,
     module_path: &str,
     ty: MessageDescriptor,

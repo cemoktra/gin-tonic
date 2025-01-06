@@ -11,6 +11,12 @@ pub use codec::GinCodec;
 #[cfg(feature = "generator")]
 pub use codegen::{CompileConfig, CompilerError};
 
+#[cfg(all(feature = "generator", feature = "internals"))]
+pub use codegen::Generator;
+
+#[cfg(all(feature = "generator", feature = "internals"))]
+pub use protox;
+
 pub use gin_tonic_core;
 
 #[cfg(feature = "derive")]
