@@ -9,7 +9,7 @@ mod codegen;
 pub use codec::GinCodec;
 
 #[cfg(feature = "generator")]
-pub use codegen::CompileConfig;
+pub use codegen::{CompileConfig, CompilerError};
 
 pub use gin_tonic_core;
 
