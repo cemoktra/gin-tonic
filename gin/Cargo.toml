@@ -16,6 +16,7 @@ uuid_bytes = ["gin-tonic-core/uuid_bytes"]
 tonic = ["dep:tonic", "dep:tonic-build"]
 generator = ["dep:heck", "dep:proc-macro2", "dep:protox", "dep:quote", "dep:syn"]
 derive = ["dep:gin-tonic-derive"]
+internals = []
 
 [dependencies]
 bytes = { workspace = true }
