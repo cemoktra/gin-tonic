@@ -1,0 +1,15 @@
+[package]
+name = "gin-tonic-proto"
+version = "0.7.0"
+edition = "2024"
+
+[dependencies]
+indexmap = { workspace = true }
+thiserror = { workspace = true }
+varint-simd = { workspace = true }
+
+[dev-dependencies]
+hex = { workspace = true }
+
+[lints]
+workspace = true

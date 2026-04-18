@@ -1,0 +1,41 @@
+use crate::{Scalar, scalars::Fixed64, wire_types::WIRE_TYPE_I64};
+
+impl Scalar<Fixed64> for u64 {
+    const WIRE_TYPE: u8 = WIRE_TYPE_I64;
+
+    fn encode(&self, encoder: &mut impl crate::Encode) {
+        encoder.encode_fixed64(*self);
+    }
+
+    fn decode(decoder: &mut impl crate::Decode) -> Result<Self, crate::error::ProtoError>
+    where
+        Self: Sized,
+    {
+        decoder.decode_fixed64()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::scalars::Fixed64;
+
+    #[test]
+    fn encode_decode() {
+        let test_cases = [
+            (2u64.pow(0), 8, b"\x01\x00\x00\x00\x00\x00\x00\x00"),
+            (2u64.pow(7), 8, b"\x80\x00\x00\x00\x00\x00\x00\x00"),
+            (2u64.pow(15), 8, b"\x00\x80\x00\x00\x00\x00\x00\x00"),
+            (2u64.pow(31), 8, b"\x00\x00\x00\x80\x00\x00\x00\x00"),
+            (2u64.pow(47), 8, b"\x00\x00\x00\x00\x00\x80\x00\x00"),
+            (2u64.pow(63), 8, b"\x00\x00\x00\x00\x00\x00\x00\x80"),
+        ];
+
+        for (value, expected_size, expected_bytes) in test_cases {
+            crate::scalars::test_scalar_encode_decode::<_, Fixed64>(
+                value,
+                expected_size,
+                expected_bytes,
+            );
+        }
+    }
+}
