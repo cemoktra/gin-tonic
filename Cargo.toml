@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["gin", "derive", "core"]
+members = ["gin", "derive", "core", "proto"]
 
 [workspace.dependencies]
 bytes = "1.6.0"
@@ -8,7 +8,10 @@ darling = "0.20.9"
 gin-tonic = { path = "gin", version = "0.5.6" }
 gin-tonic-core = { path = "core", version = "0.5.6" }
 gin-tonic-derive = { path = "derive", version = "0.5.6" }
+gin-tonic-proto = { path = "proto", version = "0.5.6" }
 heck = "0.5.0"
+hex = "0.4.3"
+indexmap = "2.3.0"
 proc-macro2 = "1.0.85"
 prost = "0.13.1"
 protox = "0.7.0"
@@ -19,6 +22,7 @@ tonic = { version = "0.12.0", default-features = false, features = ["codegen"] }
 tonic-build = "0.12.0"
 tracing = "0.1.40"
 uuid = { version = "1.10.0", features = ["v4"] }
+varint-simd = "0.4.1"
 
 [workspace.lints.rust]
 
