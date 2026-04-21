@@ -43,7 +43,7 @@ mod test {
 
     #[test]
     fn unpacked() {
-        fn inner<'i, RustType, ProtobufType>(data: &Vec<RustType>, expected_bytes: &'static [u8])
+        fn inner<RustType, ProtobufType>(data: &Vec<RustType>, expected_bytes: &'static [u8])
         where
             RustType: Scalar<ProtobufType> + PartialEq + Debug,
         {

@@ -79,6 +79,7 @@ mod scalars {
         // }
 
         #[test]
+        #[allow(clippy::approx_constant)]
         fn encode_decode() {
             let test = Test {
                 int32: -1234,
@@ -297,6 +298,7 @@ mod scalars {
         // }
 
         #[test]
+        #[allow(clippy::approx_constant)]
         fn encode_decode_some() {
             let test = Test {
                 int32: Some(-1234),
@@ -441,6 +443,7 @@ mod scalars {
         // }
 
         #[test]
+        #[allow(clippy::approx_constant)]
         fn encode_decode_non_empty() {
             let test = Test {
                 int32: vec![1, 2, -3],
@@ -966,8 +969,7 @@ mod enumeration {
         //             e: <super::TestEnum as Scalar<UInt32>>::decode(&mut Decoder::new(
         //                 raw_message
         //                     .tag_data(Tag::from_parts(1, WIRE_TYPE_VARINT))
-        //                     .rev()
-        //                     .next()
+        //                     .next_back()
         //                     .ok_or(gin_tonic_core::ProtoError::MissingField(1))?,
         //             ))?,
         //         })
@@ -1205,8 +1207,7 @@ mod one_of {
     //                     1,
     //                     <String as Scalar<ProtoString>>::WIRE_TYPE,
     //                 ))
-    //                 .rev()
-    //                 .next()
+    //                 .next_back()
     //             {
     //                 slf = Some(Self::A(<String as Scalar<ProtoString>>::decode(
     //                     &mut Decoder::new(bytes),
@@ -1215,8 +1216,7 @@ mod one_of {
 
     //             if let Some(bytes) = raw_message
     //                 .tag_data(Tag::from_parts(2, <u32 as Scalar<UInt32>>::WIRE_TYPE))
-    //                 .rev()
-    //                 .next()
+    //                 .next_back()
     //             {
     //                 slf = Some(Self::B(<u32 as Scalar<UInt32>>::decode(
     //                     &mut Decoder::new(bytes),

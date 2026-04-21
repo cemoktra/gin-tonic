@@ -272,8 +272,7 @@ pub(crate) fn one_of_enumeration(
                     #id,
                     <#field_ty as #root::Scalar<#scalar_ty>>::WIRE_TYPE,
                 ))
-                .rev()
-                .next()
+                .next_back()
             {
                 slf = Some(Self::#var_ident(<#field_ty as #root::Scalar<#scalar_ty>>::decode(
                     &mut #root::decoder::Decoder::new(bytes),
