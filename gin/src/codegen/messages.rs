@@ -1,4 +1,4 @@
-use protox::prost_reflect::{Cardinality, Kind, MessageDescriptor};
+use protox::prost_reflect::MessageDescriptor;
 
 use crate::codegen::{case, enums, module, one_of, utils, Generator};
 
@@ -40,8 +40,7 @@ pub(crate) fn generate(
     let mut body = quote::quote!();
 
     for field in ty.fields() {
-        let tag = field.number();
-        let proto3_optional = field.field_descriptor_proto().proto3_optional();
+        let id = field.number();
 
         if let Some(one_of) = one_of::fetch_one_of(&field) {
             let Some(first) = one_of.fields().next() else {
@@ -57,61 +56,20 @@ pub(crate) fn generate(
 
             let field_type = utils::resolve_message(ctx, qualified_name, one_of.full_name());
 
-            let cardinality = if proto3_optional {
-                quote::quote! {
-                    , cardinality = "optional"
-                }
-            } else {
-                quote::quote! {}
-            };
-
             body.extend(quote::quote! {
-                #[gin(tag = 0, kind = "one_of" #cardinality )]
+                #[gin(id = 0 )]
                 pub #field_name: #field_type,
             });
 
             continue;
         }
 
-        let cardinality = match field.cardinality() {
-            Cardinality::Repeated => {
-                if field.is_map() {
-                    quote::quote! {}
-                } else {
-                    quote::quote! {
-                        , cardinality = "repeated"
-                    }
-                }
-            }
-            _ => {
-                if proto3_optional {
-                    quote::quote! {
-                        , cardinality = "optional"
-                    }
-                } else {
-                    quote::quote! {}
-                }
-            }
-        };
-
-        let kind = if let Kind::Message(_) = field.kind() {
-            quote::quote! {
-                , kind = "message"
-            }
-        } else if field.is_map() {
-            quote::quote! {
-                , kind = "map"
-            }
-        } else {
-            quote::quote! {}
-        };
-
         let field_name = quote::format_ident!("{}", field.name());
         let field_type = utils::field_type(ctx, qualified_name, &field);
         let proto_attributes = utils::proto_attribute(&field);
 
         body.extend(quote::quote! {
-            #[gin(tag = #tag #cardinality #kind #proto_attributes)]
+            #[gin(id = #id #proto_attributes)]
             pub #field_name: #field_type,
         });
     }

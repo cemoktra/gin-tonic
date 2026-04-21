@@ -1,9 +1,10 @@
 //! [tonic::codec::Codec] implementation for gin-tonic
 
+use protox::prost::bytes::{Buf, BufMut};
 use std::marker::PhantomData;
 use tonic::codec::{DecodeBuf, EncodeBuf};
 
-use gin_tonic_core::types::PbType;
+use gin_tonic_core::{Message, decoder::Decoder, encoder::Encoder};
 
 #[derive(Debug, Clone)]
 pub struct GinCodec<T, U> {
@@ -28,8 +29,8 @@ pub struct GinDecoder<U> {
 
 impl<T, U> tonic::codec::Codec for GinCodec<T, U>
 where
-    T: PbType + Send + 'static + std::fmt::Debug,
-    U: PbType + Send + 'static + std::fmt::Debug,
+    T: Message + Send + 'static + std::fmt::Debug,
+    U: Message + Send + 'static + std::fmt::Debug,
 {
     type Encode = T;
     type Decode = U;
@@ -45,26 +46,37 @@ where
     }
 }
 
-impl<T: PbType + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
+impl<T: Message + std::fmt::Debug> tonic::codec::Encoder for GinEncoder<T> {
     type Item = T;
     type Error = tonic::Status;
 
     fn encode(&mut self, item: Self::Item, dst: &mut EncodeBuf<'_>) -> Result<(), Self::Error> {
-        item.encode(dst);
+        let size_hint = item.message_size_hint();
+        unsafe {
+            let slice = std::slice::from_raw_parts_mut(dst.chunk_mut().as_mut_ptr(), size_hint);
+            let mut encoder = Encoder::new(slice);
+            item.encode_message(&mut encoder);
+            dst.advance_mut(size_hint);
+        }
+
         Ok(())
     }
 }
 
-impl<U: PbType + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
+impl<U: Message + std::fmt::Debug> tonic::codec::Decoder for GinDecoder<U> {
     type Item = U;
     type Error = tonic::Status;
 
     fn decode(&mut self, src: &mut DecodeBuf<'_>) -> Result<Option<Self::Item>, Self::Error> {
-        let decoded = Self::Item::decode(src).map_err(map_core_err)?;
+        let len = src.remaining();
+        let decoded =
+            Self::Item::decode_message(&mut Decoder::new(src.chunk())).map_err(map_core_err)?;
+        src.advance(len);
+
         Ok(Some(decoded))
     }
 }
 
-fn map_core_err(err: gin_tonic_core::DecodeError) -> tonic::Status {
+fn map_core_err(err: gin_tonic_core::ProtoError) -> tonic::Status {
     tonic::Status::internal(err.to_string())
 }

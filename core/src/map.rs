@@ -1,83 +1,10 @@
-//! conceptionally a map is a repated message with two fields (1, 2) for key and value
-
-// use std::marker::PhantomData;
-
-// use crate::{Message, Scalar, Tag, decoder::Decoder, error::ProtoError};
-
-// pub struct KeyValuePair<RustKey, ProtobufKey, RustValue, ProtobufValue> {
-//     pub key: RustKey,
-//     pub value: RustValue,
-//     pub _protobuf_key: PhantomData<ProtobufKey>,
-//     pub _protobuf_value: PhantomData<ProtobufValue>,
-// }
-
-// impl<RustKey, ProtobufKey, RustValue, ProtobufValue>
-//     KeyValuePair<RustKey, ProtobufKey, RustValue, ProtobufValue>
-// {
-//     pub fn new(key: RustKey, value: RustValue) -> Self {
-//         Self {
-//             key,
-//             value,
-//             _protobuf_key: PhantomData,
-//             _protobuf_value: PhantomData,
-//         }
-//     }
-// }
-
-// impl<RustKey, ProtobufKey, RustValue, ProtobufValue> Message
-//     for KeyValuePair<RustKey, ProtobufKey, RustValue, ProtobufValue>
-// where
-//     RustKey: Scalar<ProtobufKey>,
-//     RustValue: Scalar<ProtobufValue>,
-// {
-//     fn encode(&self, encoder: &mut impl crate::Encode) {
-//         let tag = Tag::from_parts(1u32, <RustKey as Scalar<ProtobufKey>>::WIRE_TYPE);
-//         encoder.encode_tag(tag);
-//         <RustKey as Scalar<ProtobufKey>>::encode(&self.key, encoder);
-
-//         let tag = Tag::from_parts(2u32, <RustValue as Scalar<ProtobufValue>>::WIRE_TYPE);
-//         encoder.encode_tag(tag);
-//         <RustValue as Scalar<ProtobufValue>>::encode(&self.value, encoder);
-//     }
-
-//     fn decode_raw_message<'buf>(
-//         raw_message: crate::RawMessageView<'buf>,
-//     ) -> Result<Self, crate::error::ProtoError>
-//     where
-//         Self: Sized,
-//     {
-//         let tag = Tag::from_parts(1u32, <RustKey as Scalar<ProtobufKey>>::WIRE_TYPE);
-//         let bytes = raw_message
-//             .tag_data(tag)
-//             .next()
-//             .ok_or(ProtoError::MissingField(1))?;
-//         let mut decoder = Decoder::new(bytes);
-//         let key = <RustKey as Scalar<ProtobufKey>>::decode(&mut decoder)?;
-
-//         let tag = Tag::from_parts(2u32, <RustValue as Scalar<ProtobufValue>>::WIRE_TYPE);
-//         let bytes = raw_message
-//             .tag_data(tag)
-//             .next()
-//             .ok_or(ProtoError::MissingField(2))?;
-//         let mut decoder = Decoder::new(bytes);
-//         let value = <RustValue as Scalar<ProtobufValue>>::decode(&mut decoder)?;
-
-//         Ok(Self {
-//             key,
-//             value,
-//             _protobuf_key: PhantomData,
-//             _protobuf_value: PhantomData,
-//         })
-//     }
-// }
-
 use std::hash::Hash;
 
 use indexmap::IndexMap;
 
 use crate::{
     Decode, Encode, Map, RawMessageView, Scalar, Tag, decoder::Decoder, encoder::SizeHint,
-    error::ProtoError,
+    error::ProtoError, wire_types::WIRE_TYPE_LENGTH_ENCODED,
 };
 
 pub struct KeyValuePairView<'p, RustKey, RustValue> {
@@ -127,7 +54,7 @@ impl<RustKey, RustValue> KeyValuePairOwned<RustKey, RustValue> {
         let tag = Tag::from_parts(1u32, <RustKey as Scalar<ProtobufKey>>::WIRE_TYPE);
         let bytes = raw_message
             .tag_data(tag)
-            .next()
+            .next_back()
             .ok_or(ProtoError::MissingField(1))?;
         let mut decoder = Decoder::new(bytes);
         let key = <RustKey as Scalar<ProtobufKey>>::decode(&mut decoder)?;
@@ -135,7 +62,7 @@ impl<RustKey, RustValue> KeyValuePairOwned<RustKey, RustValue> {
         let tag = Tag::from_parts(2u32, <RustValue as Scalar<ProtobufValue>>::WIRE_TYPE);
         let bytes = raw_message
             .tag_data(tag)
-            .next()
+            .next_back()
             .ok_or(ProtoError::MissingField(2))?;
         let mut decoder = Decoder::new(bytes);
         let value = <RustValue as Scalar<ProtobufValue>>::decode(&mut decoder)?;
@@ -150,9 +77,9 @@ where
     RustKey: Scalar<ProtobufKey> + Hash + Eq,
     RustValue: Scalar<ProtobufValue>,
 {
-    fn encode(&self, tag: Tag, encoder: &mut impl Encode) {
+    fn encode(&self, field_number: u32, encoder: &mut impl Encode) {
         for (key, value) in self.iter() {
-            encoder.encode_tag(tag);
+            encoder.encode_tag(Tag::from_parts(field_number, WIRE_TYPE_LENGTH_ENCODED));
 
             let pair = KeyValuePairView { key, value };
 
@@ -161,13 +88,17 @@ where
         }
     }
 
-    fn decode<'buf>(tag: Tag, raw_message: &'buf RawMessageView<'buf>) -> Result<Self, ProtoError>
+    fn decode<'buf>(
+        field_number: u32,
+        raw_message: &'buf RawMessageView<'buf>,
+    ) -> Result<Self, ProtoError>
     where
         Self: Sized,
     {
         let mut map = Self::new();
 
-        for buffer in raw_message.tag_data(tag) {
+        for buffer in raw_message.tag_data(Tag::from_parts(field_number, WIRE_TYPE_LENGTH_ENCODED))
+        {
             let mut decoder = Decoder::new(buffer);
             let _size = decoder.decode_uint64()?;
 

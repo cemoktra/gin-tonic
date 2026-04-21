@@ -200,7 +200,7 @@ impl Generator {
                         convert(segment, Case::Snake).to_string()
                     }
                 })
-                .chain(ident_type.into_iter())
+                .chain(ident_type)
                 .collect::<Vec<_>>();
 
             return Some(segments.join("::"));

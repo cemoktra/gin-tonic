@@ -1,4 +1,4 @@
-use crate::{RawMessageView, Tag, encoder::SizeHint, error::ProtoError};
+use crate::{RawMessageView, Tag, decoder::Decoder, encoder::SizeHint, error::ProtoError};
 
 pub trait Scalar<ProtobufType> {
     const WIRE_TYPE: u8;
@@ -18,6 +18,25 @@ pub trait Scalar<ProtobufType> {
     fn encode_field(&self, field_number: u32, encoder: &mut impl Encode) {
         encoder.encode_tag(Tag::from_parts(field_number, Self::WIRE_TYPE));
         self.encode(encoder);
+    }
+
+    fn decode_field<'buf>(
+        field_number: u32,
+        raw_message: &'buf RawMessageView<'buf>,
+    ) -> Result<Self, ProtoError>
+    where
+        Self: Sized,
+    {
+        let mut decoder = Decoder::new(
+            raw_message
+                .tag_data(Tag::from_parts(
+                    field_number,
+                    <Self as Scalar<ProtobufType>>::WIRE_TYPE,
+                ))
+                .next_back()
+                .ok_or(ProtoError::MissingField(1))?,
+        );
+        Self::decode(&mut decoder)
     }
 }
 
@@ -74,6 +93,7 @@ pub trait Decode {
     #[inline]
     fn decode_int32(&mut self) -> Result<i32, ProtoError> {
         let v = self.decode_uint64()?;
+        #[allow(clippy::cast_possible_truncation)]
         Ok(v as _)
     }
     #[inline]
@@ -111,12 +131,16 @@ pub trait Decode {
 }
 
 pub trait Message {
-    fn encode(&self, encoder: &mut impl Encode);
+    fn message_size_hint(&self) -> usize {
+        let mut hint = SizeHint::default();
+        self.encode_message(&mut hint);
+        hint.size()
+    }
 
-    // TODO: maybe add an equivalent of decode_raw_message for encoding too
+    fn encode_message(&self, encoder: &mut impl Encode);
 
     #[inline]
-    fn decode(decoder: &mut impl Decode) -> Result<Self, ProtoError>
+    fn decode_message(decoder: &mut impl Decode) -> Result<Self, ProtoError>
     where
         Self: Sized,
     {
@@ -169,15 +193,18 @@ pub trait Unpacked<ProtobufType> {
 }
 
 pub trait Map<ProtobufKey, ProtobufValue> {
-    fn size_hint(&self, tag: Tag) -> usize {
+    fn size_hint(&self, field_number: u32) -> usize {
         let mut hint = SizeHint::default();
-        self.encode(tag, &mut hint);
+        self.encode(field_number, &mut hint);
         hint.size()
     }
 
-    fn encode(&self, tag: Tag, encoder: &mut impl Encode);
+    fn encode(&self, field_number: u32, encoder: &mut impl Encode);
 
-    fn decode<'buf>(tag: Tag, raw_message: &'buf RawMessageView<'buf>) -> Result<Self, ProtoError>
+    fn decode<'buf>(
+        field_number: u32,
+        raw_message: &'buf RawMessageView<'buf>,
+    ) -> Result<Self, ProtoError>
     where
         Self: Sized;
 }

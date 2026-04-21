@@ -361,13 +361,14 @@ checksum = "40ecd4077b5ae9fd2e9e169b102c6c330d0605168eb0e8bf79952b256dbefffd"
 
 [[package]]
 name = "gin-tonic"
-version = "0.5.6"
+version = "0.6.0"
 dependencies = [
- "bytes",
  "criterion",
  "gin-tonic-core",
  "gin-tonic-derive",
  "heck",
+ "hex",
+ "indexmap",
  "proc-macro2",
  "prost",
  "protox",
@@ -382,33 +383,23 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.5.6"
-dependencies = [
- "base64",
- "bytes",
- "thiserror",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "gin-tonic-derive"
-version = "0.5.6"
-dependencies = [
- "darling",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "gin-tonic-proto"
 version = "0.7.0"
 dependencies = [
  "hex",
  "indexmap",
  "thiserror",
+ "uuid",
  "varint-simd",
+]
+
+[[package]]
+name = "gin-tonic-derive"
+version = "0.6.0"
+dependencies = [
+ "darling",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

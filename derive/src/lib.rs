@@ -1,5 +1,5 @@
-//! this crate adds derive macros for implementing [PbType](https://docs.rs/gin-tonic-core/latest/gin_tonic_core/types/trait.PbType.html) and
-//! [https://docs.rs/gin-tonic-core/latest/gin_tonic_core/types/trait.PbOneOf.html]
+//! this crate adds derive macros for implementing [Message](https://docs.rs/gin-tonic-core/latest/gin_tonic_core/types/trait.Message.html)
+
 pub(crate) mod ast;
 pub(crate) mod codegen;
 

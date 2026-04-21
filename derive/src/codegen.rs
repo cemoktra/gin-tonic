@@ -1,14 +1,11 @@
-use crate::ast::{Cardinality, Kind, MessageDeriveData, MessageField, OneOfVariant};
 use darling::ast::Fields;
 use proc_macro2::TokenStream;
 use quote::{quote, quote_spanned};
 use syn::Ident;
 
-mod map;
-mod messages;
-mod oneof;
-mod primitives;
-mod utils;
+use crate::ast::{
+    IsMap, IsOption, IsPackable, IsRepeated, MessageDeriveData, MessageField, ScalarToken,
+};
 
 pub(crate) fn expand_message(
     root: &proc_macro2::TokenStream,
@@ -17,25 +14,22 @@ pub(crate) fn expand_message(
     let ty = input.ident;
 
     match input.data {
-        MessageDeriveData::Enum(variants) => expand_unwrapped_oneof(root, ty, variants),
-        MessageDeriveData::Struct(fields) => expand_message_message(root, ty, fields),
+        MessageDeriveData::Enum(_) => quote! { compile_error!("enum_tuple not supported") },
+        MessageDeriveData::Struct(fields) => expand_struct_message(root, ty, fields),
     }
 }
-
-fn expand_message_message(
+fn expand_struct_message(
     root: &proc_macro2::TokenStream,
     ty: Ident,
     fields: Fields<MessageField>,
 ) -> TokenStream {
     let span = ty.span();
 
-    let mut serialize_impl = TokenStream::new();
-    let mut deserialize_init = TokenStream::new();
-    let mut deserialize_impl = TokenStream::new();
-    let mut deserialize_set = TokenStream::new();
+    let mut encode_impl = TokenStream::new();
+    let mut decode_impl = TokenStream::new();
 
     for field in fields {
-        let tag = field.tag;
+        let id = field.id;
         let ty = field.ty;
         let field_ident = field
             .ident
@@ -43,286 +37,127 @@ fn expand_message_message(
             .expect("named struct fields have idents");
         let span = field_ident.span();
 
-        match field.cardinality.unwrap_or_default() {
-            Cardinality::Required => match field.kind.unwrap_or_default() {
-                Kind::Primitive => {
-                    primitives::required(
-                        root,
-                        &tag,
-                        &field_ident,
-                        field.proto,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
+        if field.oneof.is_present() {
+            encode_impl.extend(quote_spanned! { span=>
+                self.#field_ident.encode_message(encoder);
+            });
+            decode_impl.extend(quote_spanned! { span=>
+                #field_ident: #ty::decode_raw_message(raw_message)?,
+            });
+        } else if let Some(inner) = ty.is_option() {
+            let scalar_ty = match field.scalar {
+                Some(scalar) => scalar.scalar_token(root),
+                None => inner.scalar_token(root),
+            };
+
+            encode_impl.extend(quote_spanned! { span=>
+                if let Some(value) = &self.#field_ident {
+                    <#inner as Scalar::<#scalar_ty>>::encode_field(value, #id, encoder);
                 }
-                Kind::Message => {
-                    messages::required(
-                        root,
-                        &tag,
-                        &field_ident,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::OneOf => {
-                    oneof::required(
-                        root,
-                        &tag,
-                        &field_ident,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::Map => {
-                    map::required(
-                        root,
-                        &tag,
-                        &field_ident,
-                        field.proto_key,
-                        field.proto_value,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-            },
-            Cardinality::Optional => match field.kind.unwrap_or_default() {
-                Kind::Primitive => {
-                    primitives::optional(
-                        root,
-                        &tag,
-                        &field_ident,
-                        field.proto,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::Message => {
-                    messages::optional(
-                        root,
-                        &tag,
-                        &field_ident,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::OneOf => {
-                    oneof::optional(
-                        &field_ident,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::Map => {
-                    map::optional(
-                        root,
-                        &tag,
-                        &field_ident,
-                        field.proto_key,
-                        field.proto_value,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-            },
-            Cardinality::Repeated => match field.kind.unwrap_or_default() {
-                Kind::Primitive => {
-                    primitives::repeated(
-                        root,
-                        &tag,
-                        &field_ident,
-                        field.proto,
-                        &ty,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::Message => {
-                    messages::repeated(
-                        root,
-                        &tag,
-                        &field_ident,
-                        span,
-                        &mut serialize_impl,
-                        &mut deserialize_init,
-                        &mut deserialize_impl,
-                        &mut deserialize_set,
-                    );
-                }
-                Kind::OneOf => {
-                    return quote! {
-                        compile_error!("A repeated OneOf is not a thing")
-                    }
-                }
-                Kind::Map => {
-                    return quote! {
-                        compile_error!("A repeated map is not a thing")
-                    }
-                }
-            },
-        }
-    }
-
-    quote_spanned! {span=>
-        #[automatically_derived]
-        #[allow(unused_imports)]
-        impl #root::PbType for #ty {
-            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_LENGTH_ENCODED;
-
-            fn encode(&self, encoder: &mut impl #root::Encode) {
-                use #root::{Encode, Tag};
-                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
-                use #root::gin_tonic_core::types::{PbOneOf, PbType};
-
-                #serialize_impl
-            }
-
-            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
-            where
-                Self: Sized
-            {
-                use #root::{Decode, DecodeError, Tag};
-                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
-                use #root::gin_tonic_core::types::{PbOneOf, PbType};
-
-                #deserialize_init
-
-                while !decoder.eof() {
-                    let tag = decoder.decode_uint32()?;
-                    let field_number = tag.field_number();
-                    let wire_type = tag.wire_type();
-
-                    match field_number {
-                        #deserialize_impl
-                        n => {
-                            return Err(#root::DecodeError::UnexpectedFieldNumber(n))
-                        }
-                    }
-                }
-
-                Ok(Self {
-                    #deserialize_set
-                })
-            }
-        }
-    }
-}
-
-fn expand_unwrapped_oneof(
-    root: &proc_macro2::TokenStream,
-    ty: Ident,
-    variants: Vec<OneOfVariant>,
-) -> TokenStream {
-    let span = ty.span();
-
-    let mut encode_impl = TokenStream::new();
-    let mut decode_impl = TokenStream::new();
-    let mut tags = TokenStream::new();
-
-    for variant in variants.into_iter() {
-        let Some(field_ty) = variant.fields.fields.first() else {
-            panic!("OneOfs must contain fields for now");
-        };
-        let var_ident = variant.ident;
-        let span = var_ident.span();
-        let tag = variant.tag;
-        let protobuf_type = variant.proto;
-
-        let (pb_type, encode_fn, decode_fn, as_ref) =
-            primitives::primitive_types(root, span, field_ty, protobuf_type, false, false);
-
-        tags.extend(quote_spanned! {span=>
-            #tag,
-        });
-
-        if as_ref {
-            encode_impl.extend(quote_spanned! {span=>
-                #ty::#var_ident(v) => {
-                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, v, encoder, #encode_fn);
+            });
+            decode_impl.extend(quote_spanned! { span=>
+                #field_ident: match <#inner as Scalar::<#scalar_ty>>::decode_field(#id, &raw_message) {
+                    Ok(#field_ident) => Some(#field_ident),
+                    Err(#root::ProtoError::MissingField(_)) => None,
+                    Err(err) => return Err(err),
                 },
             });
-        } else {
-            encode_impl.extend(quote_spanned! {span=>
-                #ty::#var_ident(v) => {
-                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, *v, encoder, #encode_fn);
+        } else if let Some(inner) = ty.is_repeated() {
+            let (scalar_ty, packed) = match field.scalar {
+                Some(scalar) => {
+                    let is_packable = scalar.is_packable();
+                    let packed = field
+                        .packed
+                        .map(|lit_bool| lit_bool.value)
+                        .unwrap_or(is_packable);
+                    let scalar_ty = scalar.scalar_token(root);
+                    (scalar_ty, packed)
                 }
+                None => {
+                    let is_packable = inner.is_packable();
+                    let packed = field
+                        .packed
+                        .map(|lit_bool| lit_bool.value)
+                        .unwrap_or(is_packable);
+                    let scalar_ty = inner.scalar_token(root);
+                    (scalar_ty, packed)
+                }
+            };
+
+            if packed {
+                encode_impl.extend(quote_spanned! { span=>
+                    <Vec<#inner> as #root::Packed::<#scalar_ty>>::encode(&self.#field_ident, #id, encoder);
+                });
+                decode_impl.extend(quote_spanned! { span=>
+                    #field_ident: <Vec<#inner> as #root::Packed<#scalar_ty>>::decode(#id, &raw_message)?,
+                });
+            } else {
+                encode_impl.extend(quote_spanned! { span=>
+                    <Vec<#inner> as #root::Unpacked::<#scalar_ty>>::encode(
+                        &self.#field_ident,
+                        #root::Tag::from_parts(#id, #root::WIRE_TYPE_LENGTH_ENCODED),
+                        encoder,
+                    );
+                });
+                decode_impl.extend(quote_spanned! { span=>
+                    #field_ident: <Vec<#inner> as #root::Unpacked<#scalar_ty>>::decode(
+                        #root::Tag::from_parts(#id, #root::WIRE_TYPE_LENGTH_ENCODED),
+                        &raw_message,
+                    )?,
+                });
+            }
+        } else if let Some((key_ty, value_ty)) = ty.is_map() {
+            let key_scalar_ty = match field.key_scalar {
+                Some(scalar) => scalar.scalar_token(root),
+                None => key_ty.scalar_token(root),
+            };
+            let value_scalar_ty = match field.value_scalar {
+                Some(scalar) => scalar.scalar_token(root),
+                None => value_ty.scalar_token(root),
+            };
+
+            encode_impl.extend(quote_spanned! { span=>
+                #root::Map::<#key_scalar_ty, #value_scalar_ty>::encode(&self.#field_ident, #id, encoder);
+            });
+            decode_impl.extend(quote_spanned! { span=>
+                #field_ident: #root::Map::<#key_scalar_ty, #value_scalar_ty>::decode(#id, &raw_message)?,
+            });
+        } else {
+            let scalar_ty = match field.scalar {
+                Some(scalar) => scalar.scalar_token(root),
+                None => ty.scalar_token(root),
+            };
+
+            encode_impl.extend(quote_spanned! { span=>
+                <#ty as Scalar::<#scalar_ty>>::encode_field(&self.#field_ident, #id, encoder);
+            });
+            decode_impl.extend(quote_spanned! { span=>
+                #field_ident: <#ty as Scalar::<#scalar_ty>>::decode_field(#id, &raw_message)?,
             });
         }
-
-        decode_impl.extend(quote_spanned! { span=>
-            #tag => {
-                let inner;
-                #root::gin_tonic_core::decode_field!(#pb_type, inner, wire_type, decoder, #decode_fn);
-                Ok(#ty::#var_ident(inner.ok_or(#root::DecodeError::MissingField(#tag))?))
-            },
-        });
     }
 
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::PbType for #ty {
-            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_LENGTH_ENCODED;
+        impl #root::Message for #ty {
+            fn encode_message(&self, encoder: &mut impl #root::Encode) {
+                use #root::Scalar;
 
-            fn encode(&self, encoder: &mut impl #root::Encode) {
-                use #root::{Encode, Tag};
-
-                match self {
-                    #encode_impl
-                }
+                #encode_impl
             }
 
-            #[allow(clippy::needless_late_init)]
-            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
+            fn decode_raw_message<'buf>(
+                raw_message: #root::RawMessageView<'buf>,
+            ) -> Result<Self, #root::ProtoError>
             where
                 Self: Sized
             {
-                use #root::{Decode, DecodeError, Tag};
-                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
-                use #root::gin_tonic_core::types::{PbOneOf, PbType};
+                use #root::Scalar;
 
-                let tag = decoder.decode_uint32()?;
-                let field_number = tag.field_number();
-                let wire_type = tag.wire_type();
-
-                match field_number {
+                Ok(Self {
                     #decode_impl
-                    n => {
-                        Err(#root::DecodeError::UnexpectedFieldNumber(n))
-                    }
-                }
+                })
             }
         }
     }
@@ -346,42 +181,47 @@ pub(crate) fn expand_enumeration(
     for variant in variants {
         let var_ident = variant.ident;
         let span = var_ident.span();
-        let tag = variant.tag;
+        let id = match variant.id.base10_parse::<u32>() {
+            Ok(id) => id,
+            Err(_) => return quote_spanned! {span=> compile_error!("field number (id) is no u32")},
+        };
 
         encode_impl.extend(quote_spanned! {span=>
-            #ty::#var_ident => {
-                encoder.encode_varint(#tag as u64);
-            },
+            Self::#var_ident => #id,
         });
 
         decode_impl.extend(quote_spanned! {span=>
-            #tag => Ok(Self::#var_ident),
+            #id => Ok(Self::#var_ident),
         });
     }
 
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::PbType for #ty {
-            const WIRE_TYPE: u8 = #root::gin_tonic_core::WIRE_TYPE_VARINT;
+        impl #root::PackableMarker<#root::scalars::UInt32> for #ty {}
+
+        #[automatically_derived]
+        #[allow(unused_imports)]
+        impl #root::Scalar<#root::scalars::UInt32> for #ty {
+            const WIRE_TYPE: u8 = #root::WIRE_TYPE_VARINT;
 
             fn encode(&self, encoder: &mut impl #root::Encode) {
-                use #root::{Encode, Tag};
-
-                match self {
+                let value = match self {
                     #encode_impl
-                }
+                };
+
+                <u32 as #root::Scalar::<#root::scalars::UInt32>>::encode(&value, encoder)
             }
 
-            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::DecodeError>
+            fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::ProtoError>
             where
                 Self: Sized
             {
-                use #root::{Decode, DecodeError, Tag};
+                let value = <u32 as #root::Scalar<#root::scalars::UInt32>>::decode(decoder)?;
 
-                match decoder.decode_varint()? as i32 {
+                match value {
                     #decode_impl
-                    n => Err(#root::DecodeError::UnexpectedEnumVariant(n)),
+                    n => Err(#root::ProtoError::UnknownEnumVariant(n)),
                 }
             }
         }
@@ -397,13 +237,13 @@ pub(crate) fn one_of_enumeration(
     let variants = input
         .data
         .take_enum()
-        .expect("OneOF derive only works on newtype enums");
+        .expect("OneOf derive only works on newtype enums");
 
     let span = ty.span();
 
-    let mut serialize_impl = TokenStream::new();
-    let mut deserialize_impl = TokenStream::new();
-    let mut tags = TokenStream::new();
+    let mut encode_impl = TokenStream::new();
+    let mut decode_impl = TokenStream::new();
+    let mut ids = TokenStream::new();
 
     for variant in variants.into_iter() {
         let Some(field_ty) = variant.fields.fields.first() else {
@@ -411,74 +251,58 @@ pub(crate) fn one_of_enumeration(
         };
         let var_ident = variant.ident;
         let span = var_ident.span();
-        let tag = variant.tag;
-        let protobuf_type = variant.proto;
+        let id = variant.id;
 
-        let (pb_type, encode_fn, decode_fn, as_ref) =
-            primitives::primitive_types(root, span, field_ty, protobuf_type, false, false);
+        let scalar_ty = match variant.scalar {
+            Some(scalar) => scalar.scalar_token(root),
+            None => field_ty.scalar_token(root),
+        };
 
-        tags.extend(quote_spanned! {span=>
-            #tag,
+        ids.extend(quote_spanned! {span=>
+            #id,
         });
 
-        if as_ref {
-            serialize_impl.extend(quote_spanned! {span=>
-                #ty::#var_ident(v) => {
-                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, v, encoder, #encode_fn);
-                },
-            });
-        } else {
-            serialize_impl.extend(quote_spanned! {span=>
-                #ty::#var_ident(v) => {
-                    #root::gin_tonic_core::encode_field!(#tag, #pb_type, *v, encoder, #encode_fn);
-                }
-            });
-        }
+        encode_impl.extend(quote_spanned! {span=>
+            Self::#var_ident(value) => #root::Scalar::<#scalar_ty>::encode_field(value, #id, encoder),
+        });
 
-        deserialize_impl.extend(quote_spanned! { span=>
-            #tag => {
-                let inner;
-                #root::gin_tonic_core::decode_field!(#pb_type, inner, wire_type, decoder, #decode_fn);
-                Ok(#ty::#var_ident(inner.ok_or(#root::DecodeError::MissingField(#tag))?))
-            },
+        decode_impl.extend(quote_spanned! {span=>
+            if let Some(bytes) = raw_message
+                .tag_data(#root::Tag::from_parts(
+                    #id,
+                    <#field_ty as #root::Scalar<#scalar_ty>>::WIRE_TYPE,
+                ))
+                .rev()
+                .next()
+            {
+                slf = Some(Self::#var_ident(<#field_ty as #root::Scalar<#scalar_ty>>::decode(
+                    &mut #root::decoder::Decoder::new(bytes),
+                )?));
+            }
         });
     }
 
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::PbOneOf for #ty {
-            fn matches(field_number: u32) -> bool {
-                [#tags].contains(&field_number)
-            }
-
-            fn encode(&self, encoder: &mut impl #root::Encode) {
-                use #root::{Encode, Tag};
-                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
-                use #root::gin_tonic_core::types::{PbOneOf, PbType};
-
+        impl #root::Message for #ty {
+            fn encode_message(&self, encoder: &mut impl #root::Encode) {
                 match self {
-                    #serialize_impl
-                };
+                    #encode_impl
+                }
             }
 
-            #[allow(clippy::needless_late_init)]
-            fn decode(
-                field_number: u32,
-                wire_type: u8,
-                decoder: &mut impl #root::Decode,
-            ) -> Result<Self, #root::DecodeError>
+            fn decode_raw_message<'buf>(
+                raw_message: #root::RawMessageView<'buf>,
+            ) -> Result<Self, #root::ProtoError>
             where
                 Self: Sized,
             {
-                use #root::{Decode, DecodeError, Tag};
-                use #root::gin_tonic_core::{WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};
-                use #root::gin_tonic_core::types::{PbOneOf, PbType};
+                let mut slf = None;
 
-                match field_number {
-                    #deserialize_impl
-                    n => Err(#root::DecodeError::UnexpectedOneOfVariant(n)),
-                }
+                #decode_impl
+
+                slf.ok_or(#root::ProtoError::MissingOneOf(&[#ids]))
             }
         }
     }

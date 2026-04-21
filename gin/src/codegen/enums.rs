@@ -31,7 +31,7 @@ pub(crate) fn generate(
     let mut body = quote::quote!();
 
     for value in ty.values() {
-        let tag = value.number();
+        let id = value.number();
         let (_package, value) = value
             .full_name()
             .rsplit_once('.')
@@ -48,7 +48,7 @@ pub(crate) fn generate(
         let value_name = quote::format_ident!("{}", value);
 
         body.extend(quote::quote! {
-            #[gin(tag = #tag)]
+            #[gin(id = #id)]
             #value_name,
         });
     }

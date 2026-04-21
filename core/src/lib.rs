@@ -1,17 +1,17 @@
-//! The gin-tonic-core library handles protobuf encode and decoding
-mod decoder;
-mod encoder;
-pub mod macros;
+pub mod decoder;
+pub mod encoder;
+mod error;
+mod map;
+mod message;
+mod repeated;
+pub mod scalars;
 mod tag;
-#[cfg(test)]
-mod tests;
-pub mod types;
+mod traits;
+mod types;
+mod wire_types;
 
-pub use decoder::{Decode, DecodeError};
-pub use encoder::{Encode, SizeHint};
+pub use error::ProtoError;
+pub use message::RawMessageView;
 pub use tag::Tag;
-
-pub const WIRE_TYPE_VARINT: u8 = 0;
-pub const WIRE_TYPE_I64: u8 = 1;
-pub const WIRE_TYPE_LENGTH_ENCODED: u8 = 2;
-pub const WIRE_TYPE_I32: u8 = 5;
+pub use traits::{Decode, Encode, Map, Message, PackableMarker, Packed, Scalar, Unpacked};
+pub use wire_types::{WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT};

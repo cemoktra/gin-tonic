@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use prost::Message;
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use prost::{Message, bytes};
 
 criterion_main!(benches);
 

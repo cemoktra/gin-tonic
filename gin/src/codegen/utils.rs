@@ -6,7 +6,7 @@ use protox::prost_reflect::{
 };
 use quote::quote;
 
-use crate::codegen::{case, Generator};
+use crate::codegen::{Generator, case};
 
 const RUST_TYPE: &str = ".gin_tonic.v1.rust_type";
 
@@ -41,13 +41,9 @@ pub fn common_prefix<'a, 'b>(
 ) -> Option<(&'a str, &'a str, &'b str)> {
     let mut index = 0;
 
-    loop {
-        let (Some(left), Some(right)) = (left_raw[index..].find('.'), right_raw[index..].find('.'))
-        else {
-            // One has more '.' than the other.
-            break;
-        };
-
+    while let (Some(left), Some(right)) =
+        (left_raw[index..].find('.'), right_raw[index..].find('.'))
+    {
         // Offset the indices, as we only inspect the slice after the previous index.
         let left = index + left;
         let right = index + right;
@@ -129,7 +125,10 @@ fn relative_path(origin_type: &str, qualified_name: &str) -> TokenStream {
             // We already checked for an exact package match, so there's no other possibility.
             // The "reference" implementation (the prost one) generates all non-external types it comes across.
             // In our case, we don't want to generate those, so we panic.
-            panic!("Unknown external type: \"{}\" [Did you forget to add the external type to the imports?]", qualified_name);
+            panic!(
+                "Unknown external type: \"{}\" [Did you forget to add the external type to the imports?]",
+                qualified_name
+            );
         };
         let (common_prefix, origin_diff, target_diff) = prefix;
 
@@ -163,8 +162,6 @@ fn relative_path(origin_type: &str, qualified_name: &str) -> TokenStream {
 pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
     fn resolve(field: &FieldDescriptor) -> Option<TokenStream> {
         match field.kind() {
-            Kind::Double => Some(quote! { "double" }),
-            Kind::Float => Some(quote! { "float" }),
             Kind::Int32 => Some(quote! { "int32" }),
             Kind::Int64 => Some(quote! { "int64" }),
             Kind::Uint32 => Some(quote! { "uint32" }),
@@ -175,11 +172,7 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
             Kind::Fixed64 => Some(quote! { "fixed64" }),
             Kind::Sfixed32 => Some(quote! { "sfixed32" }),
             Kind::Sfixed64 => Some(quote! { "sfixed64" }),
-            Kind::Bool => Some(quote! { "bool" }),
-            Kind::String => Some(quote! { "string" }),
-            Kind::Bytes => None,
-            Kind::Message(_) => None,
-            Kind::Enum(_) => None,
+            _ => None,
         }
     }
 
@@ -212,13 +205,13 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
 
             match (key_resolved, value_resolved) {
                 (Some(key), Some(value)) => quote! {
-                    , proto_key = #key, proto_value = #value
+                    , scalar_key = #key, scalar_value = #value
                 },
                 (Some(key), None) => quote! {
-                    , proto_key = #key
+                    , scalar_key = #key
                 },
                 (None, Some(value)) => quote! {
-                    , proto_value = #value
+                    , scalar_value = #value
                 },
                 (None, None) => quote! {},
             }
@@ -229,7 +222,7 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
         let resolved = resolve(field);
 
         if let Some(resolved) = resolved {
-            quote! { ,proto = #resolved }
+            quote! { ,scalar = #resolved }
         } else {
             quote! {}
         }

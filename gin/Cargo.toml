@@ -1,8 +1,8 @@
 [package]
 name = "gin-tonic"
-version = "0.5.6"
-edition = "2021"
-repository = "https://github.com/cemoktra/gin-tonic/"
+version = "0.6.0"
+edition = "2024"
+repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "main gin-tonic crate - rust protobuf with gin and tonic"
 license = "MIT"
 readme = "../README.md"
@@ -19,9 +19,7 @@ derive = ["dep:gin-tonic-derive"]
 internals = []
 
 [dependencies]
-bytes = { workspace = true }
 gin-tonic-core = { workspace = true }
-
 gin-tonic-derive = { workspace = true, optional = true }
 
 thiserror = { workspace = true }
@@ -38,8 +36,11 @@ tonic-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
+indexmap = { workspace = true }
 prost = { workspace = true }
 uuid = { workspace = true }
+
+hex = { workspace = true }
 
 [lints]
 workspace = true

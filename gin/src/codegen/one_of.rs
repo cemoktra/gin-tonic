@@ -34,7 +34,7 @@ pub(crate) fn generate(
     let mut body = quote::quote!();
 
     for variant in ty.fields() {
-        let tag = variant.number();
+        let id = variant.number();
 
         let variant_name = case::convert(variant.name(), case::Case::Pascal);
         let variant_name = quote::format_ident!("{}", variant_name);
@@ -48,7 +48,7 @@ pub(crate) fn generate(
             });
         } else {
             body.extend(quote::quote! {
-                #[gin(tag = #tag #proto_attributes)]
+                #[gin(id = #id #proto_attributes)]
                 #variant_name(#variant_type),
             });
         };
@@ -84,7 +84,7 @@ pub(crate) fn generate_unwrapped(
     let mut body = quote::quote!();
 
     for variant in ty.fields() {
-        let tag = variant.number();
+        let id = variant.number();
         let variant_name = case::convert(variant.name(), case::Case::Pascal);
         let variant_name = quote::format_ident!("{}", variant_name);
 
@@ -93,19 +93,19 @@ pub(crate) fn generate_unwrapped(
 
         if utils::is_unit_type(&variant_type) {
             body.extend(quote::quote! {
-                #[gin(tag = #tag #proto_attributes)]
+                #[gin(id = #id #proto_attributes)]
                 #variant_name,
             });
         } else {
             body.extend(quote::quote! {
-                #[gin(tag = #tag #proto_attributes)]
+                #[gin(id = #id #proto_attributes)]
                 #variant_name(#variant_type),
             });
         }
     }
 
     let item: syn::ItemEnum = syn::parse_quote! {
-        #[derive(Clone, Debug, ::gin_tonic::Message)]
+        #[derive(Clone, Debug, ::gin_tonic::OneOf)]
         #attributes
         pub enum #ty_name {
             #body
