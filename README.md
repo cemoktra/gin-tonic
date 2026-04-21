@@ -55,18 +55,18 @@ For the UUID case `gin-tonic` offers two features:
 - `uuid_string` => proto transport is `string`, parsing error is handled within wire type conversion
 - `uuid_bytes` => proto transport is `bytes`, this does not require additional error handling
 
-You can add you own types by implementing the `PbType` trait for your type.
+You can add you own types by implementing the `Scalar` trait for your type.
 
 
 ## Benchmarks
 gin tonic:
 ```
-decode                  time:   [699.72 ns 700.71 ns 701.81 ns]
-encode                  time:   [451.35 ns 453.22 ns 455.56 ns]
+decode                  time:   [1.7560 µs 1.7570 µs 1.7581 µs]
+encode                  time:   [322.80 ns 323.38 ns 323.97 ns]
 ```
 
 prost:
 ```
-decode                  time:   [778.30 ns 782.24 ns 788.19 ns]
-encode                  time:   [622.77 ns 623.87 ns 625.02 ns]
+decode                  time:   [661.40 ns 661.85 ns 662.33 ns]
+encode                  time:   [571.16 ns 572.20 ns 574.12 ns]
 ```
