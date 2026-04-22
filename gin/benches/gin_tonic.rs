@@ -11,7 +11,7 @@ criterion_main!(crate::gin_bench::benches);
 pub(crate) mod gin_bench {
     use criterion::{Criterion, black_box, criterion_group};
     use gin_tonic::{Message, Scalar, decoder::Decoder, encoder::Encoder};
-    use indexmap::IndexMap;
+    use std::collections::HashMap;
 
     criterion_group!(benches, encode, decode);
 
@@ -31,13 +31,13 @@ pub(crate) mod gin_bench {
     #[derive(Clone, Debug, Message)]
     pub struct GinTonicNested {
         #[gin(id = 1u32, value_scalar = "uint64")]
-        pub counts: IndexMap<String, u64>,
+        pub counts: HashMap<String, u64>,
     }
 
     fn encode(c: &mut Criterion) {
         use gin_tonic::gin_tonic_core::Message;
 
-        let mut counts = IndexMap::new();
+        let mut counts = HashMap::new();
         counts.insert("a".into(), 1);
         counts.insert("b".into(), 2);
         counts.insert("c".into(), 3);
@@ -73,7 +73,7 @@ pub(crate) mod gin_bench {
     }
 
     fn decode(c: &mut Criterion) {
-        let mut counts = IndexMap::new();
+        let mut counts = HashMap::new();
         counts.insert("a".into(), 1);
         counts.insert("b".into(), 2);
         counts.insert("c".into(), 3);

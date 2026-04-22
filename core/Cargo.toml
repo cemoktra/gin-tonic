@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic-core"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "core functions for gin-tonic"
@@ -14,7 +14,6 @@ uuid_string = ["dep:uuid"]
 uuid_bytes = ["dep:uuid"]
 
 [dependencies]
-indexmap = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, optional = true }
 varint-simd = { workspace = true }

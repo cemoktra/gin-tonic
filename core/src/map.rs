@@ -1,10 +1,8 @@
-use std::hash::Hash;
-
-use indexmap::IndexMap;
+use std::{collections::HashMap, hash::Hash};
 
 use crate::{
-    Decode, Encode, Map, RawMessageView, Scalar, Tag, decoder::Decoder, encoder::SizeHint,
-    error::ProtoError, wire_types::WIRE_TYPE_LENGTH_ENCODED,
+    Decode, Encode, Map, Scalar, Tag, encoder::SizeHint, error::ProtoError,
+    wire_types::WIRE_TYPE_LENGTH_ENCODED,
 };
 
 pub struct KeyValuePairView<'p, RustKey, RustValue> {
@@ -38,45 +36,13 @@ impl<'p, RustKey, RustValue> KeyValuePairView<'p, RustKey, RustValue> {
     }
 }
 
-pub struct KeyValuePairOwned<RustKey, RustValue> {
-    pub key: RustKey,
-    pub value: RustValue,
-}
-
-impl<RustKey, RustValue> KeyValuePairOwned<RustKey, RustValue> {
-    pub fn decode<ProtobufKey, ProtobufValue>(buffer: &[u8]) -> Result<Self, ProtoError>
-    where
-        RustKey: Scalar<ProtobufKey>,
-        RustValue: Scalar<ProtobufValue>,
-    {
-        let raw_message = RawMessageView::try_from(buffer)?;
-
-        let tag = Tag::from_parts(1u32, <RustKey as Scalar<ProtobufKey>>::WIRE_TYPE);
-        let bytes = raw_message
-            .tag_data(tag)
-            .next_back()
-            .ok_or(ProtoError::MissingField(1))?;
-        let mut decoder = Decoder::new(bytes);
-        let key = <RustKey as Scalar<ProtobufKey>>::decode(&mut decoder)?;
-
-        let tag = Tag::from_parts(2u32, <RustValue as Scalar<ProtobufValue>>::WIRE_TYPE);
-        let bytes = raw_message
-            .tag_data(tag)
-            .next_back()
-            .ok_or(ProtoError::MissingField(2))?;
-        let mut decoder = Decoder::new(bytes);
-        let value = <RustValue as Scalar<ProtobufValue>>::decode(&mut decoder)?;
-
-        Ok(Self { key, value })
-    }
-}
-
 impl<RustKey, ProtobufKey, RustValue, ProtobufValue> Map<ProtobufKey, ProtobufValue>
-    for IndexMap<RustKey, RustValue>
+    for HashMap<RustKey, RustValue>
 where
     RustKey: Scalar<ProtobufKey> + Hash + Eq,
     RustValue: Scalar<ProtobufValue>,
 {
+    #[inline]
     fn encode(&self, field_number: u32, encoder: &mut impl Encode) {
         for (key, value) in self.iter() {
             encoder.encode_tag(Tag::from_parts(field_number, WIRE_TYPE_LENGTH_ENCODED));
@@ -88,26 +54,29 @@ where
         }
     }
 
-    fn decode<'buf>(
-        field_number: u32,
-        raw_message: &'buf RawMessageView<'buf>,
-    ) -> Result<Self, ProtoError>
+    #[inline]
+    #[allow(clippy::cast_possible_truncation)]
+    fn decode<'buf>(decoder: &mut impl Decode, map: &mut Self) -> Result<(), ProtoError>
     where
         Self: Sized,
     {
-        let mut map = Self::new();
+        let size = decoder.decode_uint64()? as usize;
+        let mut entry = decoder.sub_decoder(size);
 
-        for buffer in raw_message.tag_data(Tag::from_parts(field_number, WIRE_TYPE_LENGTH_ENCODED))
-        {
-            let mut decoder = Decoder::new(buffer);
-            let _size = decoder.decode_uint64()?;
+        let tag1 = entry.decode_tag()?;
+        let (key, value) = if tag1.field_number() == 1 {
+            let key = <RustKey as Scalar<ProtobufKey>>::decode(&mut entry)?;
+            entry.decode_tag()?;
+            let value = <RustValue as Scalar<ProtobufValue>>::decode(&mut entry)?;
+            (key, value)
+        } else {
+            let value = <RustValue as Scalar<ProtobufValue>>::decode(&mut entry)?;
+            entry.decode_tag()?;
+            let key = <RustKey as Scalar<ProtobufKey>>::decode(&mut entry)?;
+            (key, value)
+        };
 
-            let pair = KeyValuePairOwned::<RustKey, RustValue>::decode::<ProtobufKey, ProtobufValue>(
-                decoder.buffer(),
-            )?;
-            map.insert(pair.key, pair.value);
-        }
-
-        Ok(map)
+        map.insert(key, value);
+        Ok(())
     }
 }

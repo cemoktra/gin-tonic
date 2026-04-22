@@ -6,6 +6,7 @@ pub struct Encoder<'buf> {
 }
 
 impl<'buf> Encoder<'buf> {
+    #[inline]
     pub fn new(buffer: &'buf mut [u8]) -> Self {
         Self {
             buffer,
@@ -30,60 +31,71 @@ impl<'buf> Encoder<'buf> {
 }
 
 impl<'buf> Encode for Encoder<'buf> {
+    #[inline]
     fn encode_sint32(&mut self, n: i32) {
         let (data, size) = varint_simd::encode_zigzag(n);
         self.buffer_mut()[0..size as usize].clone_from_slice(&data[0..size as usize]);
         self.advance(size as usize);
     }
 
+    #[inline]
     fn encode_sint64(&mut self, n: i64) {
         let (data, size) = varint_simd::encode_zigzag(n);
         self.buffer_mut()[0..size as usize].clone_from_slice(&data[0..size as usize]);
         self.advance(size as usize);
     }
 
+    #[inline]
     fn encode_uint32(&mut self, n: u32) {
         let (data, size) = varint_simd::encode(n);
         self.buffer_mut()[0..size as usize].clone_from_slice(&data[0..size as usize]);
         self.advance(size as usize);
     }
 
+    #[inline]
     fn encode_uint64(&mut self, n: u64) {
         let (data, size) = varint_simd::encode(n);
         self.buffer_mut()[0..size as usize].clone_from_slice(&data[0..size as usize]);
         self.advance(size as usize);
     }
 
+    #[inline]
     fn encode_sfixed32(&mut self, n: i32) {
         self.buffer_mut()[0..std::mem::size_of::<i32>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<i32>());
     }
 
+    #[inline]
     fn encode_sfixed64(&mut self, n: i64) {
         self.buffer_mut()[0..std::mem::size_of::<i64>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<i64>());
     }
 
+    #[inline]
     fn encode_fixed32(&mut self, n: u32) {
         self.buffer_mut()[0..std::mem::size_of::<u32>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<u32>());
     }
 
+    #[inline]
     fn encode_fixed64(&mut self, n: u64) {
         self.buffer_mut()[0..std::mem::size_of::<u64>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<u64>());
     }
 
+    #[inline]
     fn encode_float(&mut self, n: f32) {
         self.buffer_mut()[0..std::mem::size_of::<f32>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<f32>());
     }
 
+    #[inline]
     fn encode_double(&mut self, n: f64) {
         self.buffer_mut()[0..std::mem::size_of::<f64>()].clone_from_slice(&n.to_le_bytes());
         self.advance(std::mem::size_of::<f64>());
     }
 
+    #[inline]
     fn encode_bytes(&mut self, b: &[u8]) {
         let len = b.len();
         #[allow(clippy::cast_possible_truncation)]

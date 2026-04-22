@@ -61,12 +61,15 @@ You can add you own types by implementing the `Scalar` trait for your type.
 ## Benchmarks
 gin tonic:
 ```
-decode                  time:   [1.7560 µs 1.7570 µs 1.7581 µs]
-encode                  time:   [322.80 ns 323.38 ns 323.97 ns]
+gin_encode              time:   [269.91 ns 270.22 ns 270.79 ns]
+gin_decode              time:   [658.58 ns 658.75 ns 658.93 ns]
 ```
 
 prost:
 ```
-decode                  time:   [661.40 ns 661.85 ns 662.33 ns]
-encode                  time:   [571.16 ns 572.20 ns 574.12 ns]
+prost_encode            time:   [564.87 ns 566.21 ns 568.18 ns]
+prost_decode            time:   [667.34 ns 671.05 ns 675.87 ns]
 ```
+
+As you see decoding performance is comparible while encoding is about twice as fast compared to
+prost 0.13.1.

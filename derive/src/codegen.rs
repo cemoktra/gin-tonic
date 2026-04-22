@@ -1,6 +1,6 @@
 use darling::ast::Fields;
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
+use quote::{format_ident, quote, quote_spanned};
 use syn::Ident;
 
 use crate::ast::{
@@ -26,7 +26,14 @@ fn expand_struct_message(
     let span = ty.span();
 
     let mut encode_impl = TokenStream::new();
-    let mut decode_impl = TokenStream::new();
+
+    let builder_ident = format_ident!("{ty}Builder");
+    let mut builder_fields = TokenStream::new();
+    let mut builder_destructuring = TokenStream::new();
+    let mut finish_field = TokenStream::new();
+    let mut decode_field = TokenStream::new();
+
+    let mut oneof_match = TokenStream::new();
 
     for field in fields {
         let id = field.id;
@@ -38,29 +45,50 @@ fn expand_struct_message(
         let span = field_ident.span();
 
         if field.oneof.is_present() {
+            builder_fields.extend(quote_spanned! { span=>
+                #field_ident: Option<#ty>,
+            });
+            builder_destructuring.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            finish_field.extend(quote_spanned! { span=>
+                #field_ident: #field_ident.ok_or(#root::gin_tonic_core::ProtoError::MissingField(#id))?,
+            });
+            decode_field.extend(quote_spanned! { span=> });
+
             encode_impl.extend(quote_spanned! { span=>
                 self.#field_ident.encode_message(encoder);
             });
-            decode_impl.extend(quote_spanned! { span=>
-                #field_ident: #ty::decode_raw_message(raw_message)?,
-            });
+
+            oneof_match = quote_spanned! { span=>
+                if #ty::matches_tag(tag) {
+                    self.#field_ident = Some(#ty::decode_field(tag, decoder)?);
+                    return Ok(());
+                }
+            };
         } else if let Some(inner) = ty.is_option() {
             let scalar_ty = match field.scalar {
                 Some(scalar) => scalar.scalar_token(root),
                 None => inner.scalar_token(root),
             };
 
+            builder_fields.extend(quote_spanned! { span=>
+                #field_ident: #ty,
+            });
+            builder_destructuring.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            finish_field.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            decode_field.extend(quote_spanned! { span=>
+                #id => self.#field_ident = Some(<#inner as Scalar::<#scalar_ty>>::decode(decoder)?),
+            });
+
             encode_impl.extend(quote_spanned! { span=>
                 if let Some(value) = &self.#field_ident {
                     <#inner as Scalar::<#scalar_ty>>::encode_field(value, #id, encoder);
                 }
-            });
-            decode_impl.extend(quote_spanned! { span=>
-                #field_ident: match <#inner as Scalar::<#scalar_ty>>::decode_field(#id, &raw_message) {
-                    Ok(#field_ident) => Some(#field_ident),
-                    Err(#root::ProtoError::MissingField(_)) => None,
-                    Err(err) => return Err(err),
-                },
             });
         } else if let Some(inner) = ty.is_repeated() {
             let (scalar_ty, packed) = match field.scalar {
@@ -84,12 +112,22 @@ fn expand_struct_message(
                 }
             };
 
+            builder_fields.extend(quote_spanned! { span=>
+                #field_ident: #ty,
+            });
+            builder_destructuring.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            finish_field.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+
             if packed {
                 encode_impl.extend(quote_spanned! { span=>
                     <Vec<#inner> as #root::Packed::<#scalar_ty>>::encode(&self.#field_ident, #id, encoder);
                 });
-                decode_impl.extend(quote_spanned! { span=>
-                    #field_ident: <Vec<#inner> as #root::Packed<#scalar_ty>>::decode(#id, &raw_message)?,
+                decode_field.extend(quote_spanned! { span=>
+                    #id => <Vec<#inner> as #root::Packed<#scalar_ty>>::decode(decoder, &mut self.#field_ident)?,
                 });
             } else {
                 encode_impl.extend(quote_spanned! { span=>
@@ -99,11 +137,8 @@ fn expand_struct_message(
                         encoder,
                     );
                 });
-                decode_impl.extend(quote_spanned! { span=>
-                    #field_ident: <Vec<#inner> as #root::Unpacked<#scalar_ty>>::decode(
-                        #root::Tag::from_parts(#id, #root::WIRE_TYPE_LENGTH_ENCODED),
-                        &raw_message,
-                    )?,
+                decode_field.extend(quote_spanned! { span=>
+                    #id => self.#field_ident.push(<#inner as #root::Scalar<#scalar_ty>>::decode(decoder)?),
                 });
             }
         } else if let Some((key_ty, value_ty)) = ty.is_map() {
@@ -116,11 +151,21 @@ fn expand_struct_message(
                 None => value_ty.scalar_token(root),
             };
 
+            builder_fields.extend(quote_spanned! { span=>
+                #field_ident: #ty,
+            });
+            builder_destructuring.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            finish_field.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            decode_field.extend(quote_spanned! { span=>
+                #id => #root::Map::<#key_scalar_ty, #value_scalar_ty>::decode(decoder, &mut self.#field_ident)?,
+            });
+
             encode_impl.extend(quote_spanned! { span=>
                 #root::Map::<#key_scalar_ty, #value_scalar_ty>::encode(&self.#field_ident, #id, encoder);
-            });
-            decode_impl.extend(quote_spanned! { span=>
-                #field_ident: #root::Map::<#key_scalar_ty, #value_scalar_ty>::decode(#id, &raw_message)?,
             });
         } else {
             let scalar_ty = match field.scalar {
@@ -128,11 +173,21 @@ fn expand_struct_message(
                 None => ty.scalar_token(root),
             };
 
+            builder_fields.extend(quote_spanned! { span=>
+                #field_ident: Option<#ty>,
+            });
+            builder_destructuring.extend(quote_spanned! { span=>
+                #field_ident,
+            });
+            finish_field.extend(quote_spanned! { span=>
+                #field_ident: #field_ident.ok_or(#root::gin_tonic_core::ProtoError::MissingField(#id))?,
+            });
+            decode_field.extend(quote_spanned! { span=>
+                #id => self.#field_ident = Some(Scalar::<#scalar_ty>::decode(decoder)?),
+            });
+
             encode_impl.extend(quote_spanned! { span=>
                 <#ty as Scalar::<#scalar_ty>>::encode_field(&self.#field_ident, #id, encoder);
-            });
-            decode_impl.extend(quote_spanned! { span=>
-                #field_ident: <#ty as Scalar::<#scalar_ty>>::decode_field(#id, &raw_message)?,
             });
         }
     }
@@ -147,17 +202,51 @@ fn expand_struct_message(
                 #encode_impl
             }
 
-            fn decode_raw_message<'buf>(
-                raw_message: #root::RawMessageView<'buf>,
-            ) -> Result<Self, #root::ProtoError>
+            fn decode_message(decoder: &mut impl #root::Decode) -> Result<Self, #root::gin_tonic_core::ProtoError>
             where
-                Self: Sized
+                Self: Sized,
             {
-                use #root::Scalar;
+                let mut builder = #builder_ident::default();
 
-                Ok(Self {
-                    #decode_impl
+                while !decoder.eof() {
+                    let tag = decoder.decode_tag()?;
+                    builder.decode_field(tag, decoder)?;
+                }
+
+                builder.finish()
+            }
+        }
+
+        #[derive(Default)]
+        struct #builder_ident {
+            #builder_fields
+        }
+
+        #[allow(unused_imports)]
+        impl #builder_ident {
+            fn finish(self) -> Result<#ty, #root::ProtoError> {
+                let Self {
+                    #builder_destructuring
+                } = self;
+                Ok(#ty {
+                    #finish_field
                 })
+            }
+
+            fn decode_field(
+                &mut self,
+                tag: #root::Tag,
+                decoder: &mut impl #root::Decode,
+            ) -> Result<(), #root::ProtoError> {
+                use #root::{Scalar, scalars::*};
+
+                #oneof_match
+
+                match tag.field_number() {
+                    #decode_field
+                    _ => {}
+                }
+                Ok(())
             }
         }
     }
@@ -263,21 +352,11 @@ pub(crate) fn one_of_enumeration(
         });
 
         encode_impl.extend(quote_spanned! {span=>
-            Self::#var_ident(value) => #root::Scalar::<#scalar_ty>::encode_field(value, #id, encoder),
+            Self::#var_ident(value) => <#field_ty as #root::Scalar::<#scalar_ty>>::encode_field(value, #id, encoder),
         });
 
         decode_impl.extend(quote_spanned! {span=>
-            if let Some(bytes) = raw_message
-                .tag_data(#root::Tag::from_parts(
-                    #id,
-                    <#field_ty as #root::Scalar<#scalar_ty>>::WIRE_TYPE,
-                ))
-                .next_back()
-            {
-                slf = Some(Self::#var_ident(<#field_ty as #root::Scalar<#scalar_ty>>::decode(
-                    &mut #root::decoder::Decoder::new(bytes),
-                )?));
-            }
+            #id => return Ok(Self::#var_ident(<#field_ty as Scalar<#scalar_ty>>::decode(decoder)?)),
         });
     }
 
@@ -291,17 +370,42 @@ pub(crate) fn one_of_enumeration(
                 }
             }
 
-            fn decode_raw_message<'buf>(
-                raw_message: #root::RawMessageView<'buf>,
+            fn decode_message(
+                decoder: &mut impl #root::Decode,
             ) -> Result<Self, #root::ProtoError>
             where
                 Self: Sized,
             {
                 let mut slf = None;
 
-                #decode_impl
+                while !decoder.eof() {
+                    let tag = decoder.decode_tag()?;
+
+                    slf = Some(Self::decode_field(tag, decoder)?);
+                }
 
                 slf.ok_or(#root::ProtoError::MissingOneOf(&[#ids]))
+            }
+        }
+
+        #[allow(unused_imports)]
+        impl #ty {
+            fn matches_tag(tag: #root::Tag,)  -> bool {
+                [#ids].contains(&tag.field_number())
+            }
+
+            fn decode_field(
+                tag: #root::Tag,
+                decoder: &mut impl crate::Decode,
+            ) -> Result<Self, #root::ProtoError> {
+                use #root::{Scalar, scalars::*};
+
+                match tag.field_number() {
+                    #decode_impl
+                    _ => {}
+                }
+
+                Err(#root::ProtoError::MissingOneOf(&[#ids]))
             }
         }
     }

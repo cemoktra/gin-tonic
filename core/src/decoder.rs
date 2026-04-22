@@ -31,16 +31,46 @@ impl<'buf> Decoder<'buf> {
 }
 
 impl<'buf> Decode for Decoder<'buf> {
+    #[inline]
+    fn eof(&self) -> bool {
+        self.position >= self.buffer.len()
+    }
+
+    #[inline]
+    fn position(&self) -> usize {
+        self.position
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.buffer.len()
+    }
+
+    #[inline]
+    fn advance(&mut self, size: usize) {
+        self.position += size;
+    }
+
+    #[inline]
+    fn sub_decoder(&mut self, size: usize) -> impl Decode {
+        let sub_buffer = &self.buffer()[0..size];
+        self.advance(size);
+        Decoder::new(sub_buffer)
+    }
+
+    #[inline]
     fn buffer(&self) -> &[u8] {
         &self.buffer[self.position..]
     }
 
+    #[inline]
     fn decode_sint32(&mut self) -> Result<i32, crate::error::ProtoError> {
         let (value, size) = varint_simd::decode_zigzag(self.buffer())?;
         self.advance(size);
         Ok(value)
     }
 
+    #[inline]
     fn decode_sint64(&mut self) -> Result<i64, crate::error::ProtoError> {
         let (value, size) = varint_simd::decode_zigzag(self.buffer())?;
         self.advance(size);
@@ -61,42 +91,49 @@ impl<'buf> Decode for Decoder<'buf> {
         Ok(value)
     }
 
+    #[inline]
     fn decode_sfixed32(&mut self) -> Result<i32, crate::error::ProtoError> {
         let value = i32::from_le_bytes(self.buffer()[0..std::mem::size_of::<i32>()].try_into()?);
         self.advance(std::mem::size_of::<i32>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_sfixed64(&mut self) -> Result<i64, crate::error::ProtoError> {
         let value = i64::from_le_bytes(self.buffer()[0..std::mem::size_of::<i64>()].try_into()?);
         self.advance(std::mem::size_of::<i64>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_fixed32(&mut self) -> Result<u32, crate::error::ProtoError> {
         let value = u32::from_le_bytes(self.buffer()[0..std::mem::size_of::<u32>()].try_into()?);
         self.advance(std::mem::size_of::<u32>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_fixed64(&mut self) -> Result<u64, crate::error::ProtoError> {
         let value = u64::from_le_bytes(self.buffer()[0..std::mem::size_of::<u64>()].try_into()?);
         self.advance(std::mem::size_of::<u64>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_float(&mut self) -> Result<f32, crate::error::ProtoError> {
         let value = f32::from_le_bytes(self.buffer()[0..std::mem::size_of::<f32>()].try_into()?);
         self.advance(std::mem::size_of::<f32>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_double(&mut self) -> Result<f64, crate::error::ProtoError> {
         let value = f64::from_le_bytes(self.buffer()[0..std::mem::size_of::<f64>()].try_into()?);
         self.advance(std::mem::size_of::<f64>());
         Ok(value)
     }
 
+    #[inline]
     fn decode_bytes(&mut self) -> Result<Vec<u8>, crate::error::ProtoError> {
         let len = self.decode_uint32()? as usize;
         let vec = (self.buffer()[0..len]).to_vec();

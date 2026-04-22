@@ -181,16 +181,16 @@ impl IsMap for syn::Type {
     fn is_map(&self) -> Option<(&syn::Type, &syn::Type)> {
         match self {
             Type::Path(type_path) => {
-                // Get the last segment (e.g., 'IndexMap' in 'std::option::Option')
+                // Get the last segment (e.g., 'HashMap' in 'std::option::Option')
                 let segment: &PathSegment = type_path.path.segments.last()?;
 
                 // TODO: also add HashMap
-                if segment.ident != "IndexMap" {
+                if segment.ident != "HashMap" {
                     return None;
                 }
 
                 if let PathArguments::AngleBracketed(args) = &segment.arguments {
-                    // IndexMap requires two type arguments: IndexMap<K, V>
+                    // HashMap requires two type arguments: HashMap<K, V>
                     let mut types = args.args.iter().filter_map(|arg| {
                         if let GenericArgument::Type(inner_type) = arg {
                             Some(inner_type)

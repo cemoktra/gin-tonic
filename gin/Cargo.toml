@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "main gin-tonic crate - rust protobuf with gin and tonic"
@@ -36,7 +36,6 @@ tonic-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
-indexmap = { workspace = true }
 prost = { workspace = true }
 uuid = { workspace = true }
 

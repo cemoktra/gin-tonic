@@ -1,4 +1,4 @@
-use crate::{RawMessageView, Tag, decoder::Decoder, encoder::SizeHint, error::ProtoError};
+use crate::{Tag, encoder::SizeHint, error::ProtoError};
 
 pub trait Scalar<ProtobufType> {
     const WIRE_TYPE: u8;
@@ -18,25 +18,6 @@ pub trait Scalar<ProtobufType> {
     fn encode_field(&self, field_number: u32, encoder: &mut impl Encode) {
         encoder.encode_tag(Tag::from_parts(field_number, Self::WIRE_TYPE));
         self.encode(encoder);
-    }
-
-    fn decode_field<'buf>(
-        field_number: u32,
-        raw_message: &'buf RawMessageView<'buf>,
-    ) -> Result<Self, ProtoError>
-    where
-        Self: Sized,
-    {
-        let mut decoder = Decoder::new(
-            raw_message
-                .tag_data(Tag::from_parts(
-                    field_number,
-                    <Self as Scalar<ProtobufType>>::WIRE_TYPE,
-                ))
-                .next_back()
-                .ok_or(ProtoError::MissingField(1))?,
-        );
-        Self::decode(&mut decoder)
     }
 }
 
@@ -87,8 +68,14 @@ pub trait Encode {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 pub trait Decode {
     fn buffer(&self) -> &[u8];
+    fn len(&self) -> usize;
+    fn position(&self) -> usize;
+    fn advance(&mut self, size: usize);
+    fn eof(&self) -> bool;
+    fn sub_decoder(&mut self, size: usize) -> impl Decode;
 
     #[inline]
     fn decode_int32(&mut self) -> Result<i32, ProtoError> {
@@ -121,12 +108,17 @@ pub trait Decode {
 
     #[inline]
     fn decode_string(&mut self) -> Result<String, ProtoError> {
-        Ok(String::from_utf8(self.decode_bytes()?.to_vec())?)
+        Ok(String::from_utf8(self.decode_bytes()?)?)
     }
 
     #[inline]
     fn decode_bool(&mut self) -> Result<bool, ProtoError> {
         Ok(self.decode_uint32()? != 0)
+    }
+
+    #[inline]
+    fn decode_tag(&mut self) -> Result<Tag, ProtoError> {
+        Ok(Tag::from(self.decode_uint32()?))
     }
 }
 
@@ -139,15 +131,7 @@ pub trait Message {
 
     fn encode_message(&self, encoder: &mut impl Encode);
 
-    #[inline]
     fn decode_message(decoder: &mut impl Decode) -> Result<Self, ProtoError>
-    where
-        Self: Sized,
-    {
-        Self::decode_raw_message(RawMessageView::try_from(decoder.buffer())?)
-    }
-
-    fn decode_raw_message<'buf>(raw_message: RawMessageView<'buf>) -> Result<Self, ProtoError>
     where
         Self: Sized;
 }
@@ -165,10 +149,7 @@ pub trait Packed<ProtobufType> {
 
     fn encode(&self, field_number: u32, encoder: &mut impl Encode);
 
-    fn decode<'buf>(
-        field_number: u32,
-        raw_message: &'buf RawMessageView<'buf>,
-    ) -> Result<Vec<Self::Rust>, ProtoError>
+    fn decode(decoder: &mut impl Decode, v: &mut Self) -> Result<(), ProtoError>
     where
         Self: Sized;
 }
@@ -183,13 +164,6 @@ pub trait Unpacked<ProtobufType> {
     }
 
     fn encode(&self, tag: Tag, encoder: &mut impl Encode);
-
-    fn decode<'buf>(
-        tag: Tag,
-        raw_message: &'buf RawMessageView<'buf>,
-    ) -> Result<Vec<Self::Rust>, ProtoError>
-    where
-        Self: Sized;
 }
 
 pub trait Map<ProtobufKey, ProtobufValue> {
@@ -201,10 +175,7 @@ pub trait Map<ProtobufKey, ProtobufValue> {
 
     fn encode(&self, field_number: u32, encoder: &mut impl Encode);
 
-    fn decode<'buf>(
-        field_number: u32,
-        raw_message: &'buf RawMessageView<'buf>,
-    ) -> Result<Self, ProtoError>
+    fn decode(decoder: &mut impl Decode, m: &mut Self) -> Result<(), ProtoError>
     where
         Self: Sized;
 }

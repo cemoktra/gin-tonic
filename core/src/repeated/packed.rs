@@ -1,7 +1,4 @@
-use crate::{
-    Decode, PackableMarker, Packed, Scalar, Tag, decoder::Decoder,
-    wire_types::WIRE_TYPE_LENGTH_ENCODED,
-};
+use crate::{Decode, PackableMarker, Packed, Scalar, Tag, wire_types::WIRE_TYPE_LENGTH_ENCODED};
 
 impl<RustType, ProtobufType> Packed<ProtobufType> for Vec<RustType>
 where
@@ -9,6 +6,7 @@ where
 {
     type Rust = RustType;
 
+    #[inline]
     fn encode(&self, field_number: u32, encoder: &mut impl crate::Encode) {
         if self.is_empty() {
             return;
@@ -28,29 +26,19 @@ where
         }
     }
 
-    fn decode<'buf>(
-        field_number: u32,
-        raw_message: &'buf crate::RawMessageView<'buf>,
-    ) -> Result<Vec<Self::Rust>, crate::error::ProtoError>
+    #[inline]
+    #[allow(clippy::cast_possible_truncation)]
+    fn decode<'buf>(decoder: &mut impl Decode, v: &mut Self) -> Result<(), crate::ProtoError>
     where
         Self: Sized,
     {
-        let mut vec = vec![];
-        let mut read = 0;
-
-        for buffer in raw_message.tag_data(Tag::from_parts(field_number, WIRE_TYPE_LENGTH_ENCODED))
-        {
-            let mut decoder = Decoder::new(buffer);
-            let size = decoder.decode_uint64()?;
-
-            while read < size {
-                let rust_value = Scalar::<ProtobufType>::decode(&mut decoder)?;
-                read += Scalar::<ProtobufType>::size_hint(&rust_value) as u64;
-                vec.push(rust_value);
-            }
+        let size = decoder.decode_uint64()? as usize;
+        let end = decoder.position() + size;
+        while decoder.position() < end {
+            v.push(Scalar::<ProtobufType>::decode(decoder)?);
         }
 
-        Ok(vec)
+        Ok(())
     }
 }
 
@@ -58,7 +46,9 @@ where
 mod test {
     use std::fmt::Debug;
 
-    use crate::{PackableMarker, Packed, RawMessageView, Scalar, encoder::Encoder, scalars::*};
+    use crate::{
+        Decode, PackableMarker, Packed, Scalar, decoder::Decoder, encoder::Encoder, scalars::*,
+    };
 
     #[test]
     fn packed() {
@@ -75,9 +65,11 @@ mod test {
             assert_eq!(size_hint, buffer.len());
             assert_eq!(&expected_bytes[..size_hint], &buffer[..size_hint]);
 
-            let generic_message = RawMessageView::try_from(&buffer[..size_hint]).unwrap();
-            let deserialized =
-                <Vec<RustType> as Packed<ProtobufType>>::decode(1, &generic_message).unwrap();
+            let mut decoder = Decoder::new(&buffer[..size_hint]);
+            decoder.decode_tag().unwrap();
+            let mut deserialized = vec![];
+            <Vec<RustType> as Packed<ProtobufType>>::decode(&mut decoder, &mut deserialized)
+                .unwrap();
 
             assert_eq!(data, &deserialized)
         }
