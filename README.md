@@ -83,21 +83,21 @@ impl gin_tonic_core::Scalar<gin_tonic_core::scalars::ProtoString> for MyType {
 
 ## Benchmarks
 
-Measured against prost 0.13.1 on an equivalent message with a UUID, 10 IP addresses, a string, and a nested map with 5 entries.
+Measured against prost 0.14.3 on an equivalent message with a UUID, 10 IP addresses, a string, and a nested map with 5 entries on AMD Ryzen AI 7 350.
 
 **gin-tonic:**
 ```
-gin_encode    time: [269.91 ns 270.22 ns 270.79 ns]
-gin_decode    time: [658.58 ns 658.75 ns 658.93 ns]
+gin_encode    time:   [1.3608 µs 1.3627 µs 1.3654 µs]
+gin_decode    time:   [3.0161 µs 3.0198 µs 3.0238 µs]
 ```
 
 **prost** (including `From` conversions to idiomatic Rust types):
 ```
-prost_encode  time: [564.87 ns 566.21 ns 568.18 ns]
-prost_decode  time: [667.34 ns 671.05 ns 675.87 ns]
+prost_encode  time:   [2.4047 µs 2.4078 µs 2.4111 µs]
+prost_decode  time:   [2.8447 µs 2.8497 µs 2.8559 µs]
 ```
 
-Decode performance is on par with prost while encoding is roughly **2× faster**.
+Decode performance is roughly on par with prost while encoding is about 1.8× faster.
 
 ## Crates
 
