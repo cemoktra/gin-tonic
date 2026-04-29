@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic"
-version = "0.8.1"
+version = "0.8.2"
 edition = "2024"
 repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "main gin-tonic crate - rust protobuf with gin and tonic"
@@ -14,13 +14,15 @@ uuid_string = ["gin-tonic-core/uuid_string"]
 uuid_bytes = ["gin-tonic-core/uuid_bytes"]
 
 tonic = ["dep:tonic", "dep:tonic-build"]
-generator = ["dep:heck", "dep:proc-macro2", "dep:protox", "dep:quote", "dep:syn"]
+generator = ["dep:heck", "dep:proc-macro2", "dep:protox", "dep:quote", "dep:syn", "dep:prettyplease"]
 derive = ["dep:gin-tonic-derive"]
 internals = []
 
 [dependencies]
 gin-tonic-core = { workspace = true }
 gin-tonic-derive = { workspace = true, optional = true }
+
+prettyplease = { workspace = true, optional = true }
 
 thiserror = { workspace = true }
 tracing = { workspace = true }
