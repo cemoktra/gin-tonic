@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::codegen::{case, module, CompilerError};
+use crate::codegen::{CompilerError, case, module};
 
 pub struct Module {
     pub name: String,
@@ -38,22 +38,7 @@ impl Module {
 
     pub fn write(&self, target: impl Into<PathBuf>) -> Result<(), CompilerError> {
         let target = target.into();
-        let module_path = self.write_inner(target)?;
-
-        // TODO - add a way to disable this.
-        let output = std::process::Command::new("rustfmt")
-            .arg(module_path)
-            .output()
-            .expect("Unable to handle process");
-
-        let out = String::from_utf8(output.stdout).expect("Unable to handle process");
-        if !out.is_empty() {
-            panic!("{}", out);
-        }
-        let out = String::from_utf8(output.stderr).expect("Unable to handle process");
-        if !out.is_empty() {
-            panic!("{}", out);
-        }
+        self.write_inner(target)?;
 
         Ok(())
     }
@@ -167,7 +152,8 @@ fn write(tokens: TokenStream, out: impl AsRef<Path>) -> Result<(), CompilerError
         std::fs::create_dir_all(parent)?;
     }
 
-    let content = format!("{}", tokens);
+    let file = syn::parse2(tokens)?;
+    let content = prettyplease::unparse(&file);
 
     fn format(content: String) -> Result<String, CompilerError> {
         Ok(content)

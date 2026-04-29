@@ -1,17 +1,17 @@
-#![doc = r"THIS FILE HAS BEEN GENERATED"]
+//!THIS FILE HAS BEEN GENERATED
 #[allow(unused_imports)]
 use ::gin_tonic::{Enumeration, Message, OneOf};
-#[doc = r" Generated server implementations."]
+/// Generated server implementations.
 pub mod example_server {
     #![allow(
         unused_variables,
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value
+        clippy::let_unit_value,
     )]
     use tonic::codegen::*;
-    #[doc = " Generated trait containing gRPC methods that should be implemented for use with ExampleServer."]
+    /// Generated trait containing gRPC methods that should be implemented for use with ExampleServer.
     #[async_trait]
     pub trait Example: std::marker::Send + std::marker::Sync + 'static {
         async fn echo(
@@ -40,35 +40,38 @@ pub mod example_server {
                 max_encoding_message_size: None,
             }
         }
-        pub fn with_interceptor<F>(inner: T, interceptor: F) -> InterceptedService<Self, F>
+        pub fn with_interceptor<F>(
+            inner: T,
+            interceptor: F,
+        ) -> InterceptedService<Self, F>
         where
             F: tonic::service::Interceptor,
         {
             InterceptedService::new(Self::new(inner), interceptor)
         }
-        #[doc = r" Enable decompressing requests with the given encoding."]
+        /// Enable decompressing requests with the given encoding.
         #[must_use]
         pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
             self.accept_compression_encodings.enable(encoding);
             self
         }
-        #[doc = r" Compress responses with the given encoding, if the client supports it."]
+        /// Compress responses with the given encoding, if the client supports it.
         #[must_use]
         pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
             self.send_compression_encodings.enable(encoding);
             self
         }
-        #[doc = r" Limits the maximum size of a decoded message."]
-        #[doc = r""]
-        #[doc = r" Default: `4MB`"]
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
         #[must_use]
         pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
             self.max_decoding_message_size = Some(limit);
             self
         }
-        #[doc = r" Limits the maximum size of an encoded message."]
-        #[doc = r""]
-        #[doc = r" Default: `usize::MAX`"]
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
         #[must_use]
         pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
             self.max_encoding_message_size = Some(limit);
@@ -81,7 +84,7 @@ pub mod example_server {
         B: Body + std::marker::Send + 'static,
         B::Error: Into<StdError> + std::marker::Send + 'static,
     {
-        type Response = http::Response<tonic::body::BoxBody>;
+        type Response = http::Response<tonic::body::Body>;
         type Error = std::convert::Infallible;
         type Future = BoxFuture<Self::Response, Self::Error>;
         fn poll_ready(
@@ -95,15 +98,21 @@ pub mod example_server {
                 "/example.Example/echo" => {
                     #[allow(non_camel_case_types)]
                     struct echoSvc<T: Example>(pub Arc<T>);
-                    impl<T: Example> tonic::server::UnaryService<super::EchoRequest> for echoSvc<T> {
+                    impl<T: Example> tonic::server::UnaryService<super::EchoRequest>
+                    for echoSvc<T> {
                         type Response = super::EchoResponse;
-                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
                         fn call(
                             &mut self,
                             request: tonic::Request<super::EchoRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { <T as Example>::echo(&inner, request).await };
+                            let fut = async move {
+                                <T as Example>::echo(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -129,19 +138,25 @@ pub mod example_server {
                     };
                     Box::pin(fut)
                 }
-                _ => Box::pin(async move {
-                    let mut response = http::Response::new(empty_body());
-                    let headers = response.headers_mut();
-                    headers.insert(
-                        tonic::Status::GRPC_STATUS,
-                        (tonic::Code::Unimplemented as i32).into(),
-                    );
-                    headers.insert(
-                        http::header::CONTENT_TYPE,
-                        tonic::metadata::GRPC_CONTENT_TYPE,
-                    );
-                    Ok(response)
-                }),
+                _ => {
+                    Box::pin(async move {
+                        let mut response = http::Response::new(
+                            tonic::body::Body::default(),
+                        );
+                        let headers = response.headers_mut();
+                        headers
+                            .insert(
+                                tonic::Status::GRPC_STATUS,
+                                (tonic::Code::Unimplemented as i32).into(),
+                            );
+                        headers
+                            .insert(
+                                http::header::CONTENT_TYPE,
+                                tonic::metadata::GRPC_CONTENT_TYPE,
+                            );
+                        Ok(response)
+                    })
+                }
             }
         }
     }
@@ -157,30 +172,30 @@ pub mod example_server {
             }
         }
     }
-    #[doc = " Generated gRPC service name"]
+    /// Generated gRPC service name
     pub const SERVICE_NAME: &str = "example.Example";
     impl<T> tonic::server::NamedService for ExampleServer<T> {
         const NAME: &'static str = SERVICE_NAME;
     }
 }
-#[doc = r" Generated client implementations."]
+/// Generated client implementations.
 pub mod example_client {
     #![allow(
         unused_variables,
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value
+        clippy::let_unit_value,
     )]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct ExampleClient<T> {
         inner: tonic::client::Grpc<T>,
     }
     impl<T> ExampleClient<T>
     where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T: tonic::client::GrpcService<tonic::body::Body>,
         T::Error: Into<StdError>,
         T::ResponseBody: Body<Data = Bytes> + std::marker::Send + 'static,
         <T::ResponseBody as Body>::Error: Into<StdError> + std::marker::Send,
@@ -201,42 +216,43 @@ pub mod example_client {
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
             T: tonic::codegen::Service<
-                http::Request<tonic::body::BoxBody>,
+                http::Request<tonic::body::Body>,
                 Response = http::Response<
-                    <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
+                    <T as tonic::client::GrpcService<tonic::body::Body>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + std::marker::Send + std::marker::Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::Body>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             ExampleClient::new(InterceptedService::new(inner, interceptor))
         }
-        #[doc = r" Compress requests with the given encoding."]
-        #[doc = r""]
-        #[doc = r" This requires the server to support it otherwise it might respond with an"]
-        #[doc = r" error."]
+        /// Compress requests with the given encoding.
+        ///
+        /// This requires the server to support it otherwise it might respond with an
+        /// error.
         #[must_use]
         pub fn send_compressed(mut self, encoding: CompressionEncoding) -> Self {
             self.inner = self.inner.send_compressed(encoding);
             self
         }
-        #[doc = r" Enable decompressing responses."]
+        /// Enable decompressing responses.
         #[must_use]
         pub fn accept_compressed(mut self, encoding: CompressionEncoding) -> Self {
             self.inner = self.inner.accept_compressed(encoding);
             self
         }
-        #[doc = r" Limits the maximum size of a decoded message."]
-        #[doc = r""]
-        #[doc = r" Default: `4MB`"]
+        /// Limits the maximum size of a decoded message.
+        ///
+        /// Default: `4MB`
         #[must_use]
         pub fn max_decoding_message_size(mut self, limit: usize) -> Self {
             self.inner = self.inner.max_decoding_message_size(limit);
             self
         }
-        #[doc = r" Limits the maximum size of an encoded message."]
-        #[doc = r""]
-        #[doc = r" Default: `usize::MAX`"]
+        /// Limits the maximum size of an encoded message.
+        ///
+        /// Default: `usize::MAX`
         #[must_use]
         pub fn max_encoding_message_size(mut self, limit: usize) -> Self {
             self.inner = self.inner.max_encoding_message_size(limit);
@@ -246,14 +262,18 @@ pub mod example_client {
             &mut self,
             request: impl tonic::IntoRequest<super::EchoRequest>,
         ) -> std::result::Result<tonic::Response<super::EchoResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
-            })?;
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = ::gin_tonic::GinCodec::default();
             let path = http::uri::PathAndQuery::from_static("/example.Example/echo");
             let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(GrpcMethod::new("example.Example", "echo"));
+            req.extensions_mut().insert(GrpcMethod::new("example.Example", "echo"));
             self.inner.unary(req, path, codec).await
         }
     }
@@ -266,7 +286,7 @@ pub struct EchoRequest {
     #[gin(id = 2u32)]
     pub request_id: uuid::Uuid,
 }
-#[derive(Clone, Debug, :: gin_tonic :: OneOf)]
+#[derive(Clone, Debug, ::gin_tonic::OneOf)]
 pub enum EchoResponse {
     #[gin(id = 1u32)]
     Echo(echo_response::Echo),

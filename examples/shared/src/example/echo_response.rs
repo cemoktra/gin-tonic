@@ -1,4 +1,4 @@
-#![doc = r"THIS FILE HAS BEEN GENERATED"]
+//!THIS FILE HAS BEEN GENERATED
 #[allow(unused_imports)]
 use ::gin_tonic::{Enumeration, Message, OneOf};
 #[derive(Clone, Debug, Message)]

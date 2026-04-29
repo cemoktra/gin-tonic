@@ -396,7 +396,7 @@ pub(crate) fn one_of_enumeration(
 
             fn decode_field(
                 tag: #root::Tag,
-                decoder: &mut impl crate::Decode,
+                decoder: &mut impl #root::Decode,
             ) -> Result<Self, #root::ProtoError> {
                 use #root::{Scalar, scalars::*};
 
