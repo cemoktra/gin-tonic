@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "criterion",
  "gin-tonic-core",
@@ -326,7 +326,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "hex",
  "secrecy",
@@ -337,7 +337,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-derive"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "darling",
  "proc-macro2",
