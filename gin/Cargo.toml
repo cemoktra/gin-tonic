@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic"
-version = "0.8.3"
+version = "0.8.4"
 edition = "2024"
 repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "main gin-tonic crate - rust protobuf with gin and tonic"
@@ -10,6 +10,7 @@ keywords = ["grpc", "protobuf", "tonic"]
 
 [features]
 default = ["derive", "tonic", "generator"]
+secrecy = ["gin-tonic-core/secrecy"]
 uuid_string = ["gin-tonic-core/uuid_string"]
 uuid_bytes = ["gin-tonic-core/uuid_bytes"]
 
