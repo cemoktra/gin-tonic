@@ -14,6 +14,7 @@ proc-macro2 = "1.0.106"
 prost = "0.14.3"
 protox = "0.9.1"
 quote = "1.0.45"
+secrecy = "0.10.3"
 syn = { version = "2.0.117", features = ["full"] }
 thiserror = "2.0.18"
 tonic = { version = "0.14.5", default-features = false, features = ["codegen"] }

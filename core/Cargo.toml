@@ -10,10 +10,12 @@ keywords = ["grpc", "protobuf", "tonic"]
 
 [features]
 default = []
+secrecy = ["dep:secrecy"]
 uuid_string = ["dep:uuid"]
 uuid_bytes = ["dep:uuid"]
 
 [dependencies]
+secrecy = { workspace = true, optional = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, optional = true }
 varint-simd = { workspace = true }
