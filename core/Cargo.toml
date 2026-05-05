@@ -1,6 +1,6 @@
 [package]
 name = "gin-tonic-core"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2024"
 repository = "https://codeberg.org/cemoktra/gin-tonic"
 description = "core functions for gin-tonic"
@@ -10,10 +10,12 @@ keywords = ["grpc", "protobuf", "tonic"]
 
 [features]
 default = []
+secrecy = ["dep:secrecy"]
 uuid_string = ["dep:uuid"]
 uuid_bytes = ["dep:uuid"]
 
 [dependencies]
+secrecy = { workspace = true, optional = true }
 thiserror = { workspace = true }
 uuid = { workspace = true, optional = true }
 varint-simd = { workspace = true }

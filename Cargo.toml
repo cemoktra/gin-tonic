@@ -4,9 +4,9 @@ members = ["gin", "derive", "core"]
 
 [workspace.dependencies]
 darling = "0.23.0"
-gin-tonic = { path = "gin", version = "0.8.2" }
-gin-tonic-core = { path = "core", version = "0.8.2" }
-gin-tonic-derive = { path = "derive", version = "0.8.2" }
+gin-tonic = { path = "gin", version = "0.8.3" }
+gin-tonic-core = { path = "core", version = "0.8.3" }
+gin-tonic-derive = { path = "derive", version = "0.8.3" }
 heck = "0.5.0"
 hex = "0.4.3"
 prettyplease = "0.2.37"
@@ -14,6 +14,7 @@ proc-macro2 = "1.0.106"
 prost = "0.14.3"
 protox = "0.9.1"
 quote = "1.0.45"
+secrecy = "0.10.3"
 syn = { version = "2.0.117", features = ["full"] }
 thiserror = "2.0.18"
 tonic = { version = "0.14.5", default-features = false, features = ["codegen"] }
