@@ -65,6 +65,32 @@ impl ScalarToken for syn::Type {
                     return quote! { #root::scalars::UInt32 };
                 }
 
+                if let Some(segment) = type_path.path.segments.last()
+                    && segment.ident == "Uuid"
+                {
+                    #[cfg(feature = "uuid_bytes")]
+                    return quote! { #root::scalars::Bytes };
+                    #[cfg(feature = "uuid_string")]
+                    return quote! { #root::scalars::ProtoString };
+                }
+
+                #[cfg(feature = "secrecy")]
+                if let Some(segment) = type_path.path.segments.last() {
+                    if segment.ident == "SecretString" {
+                        return quote! { #root::scalars::ProtoString };
+                    }
+                    if segment.ident == "SecretBox" {
+                        if let PathArguments::AngleBracketed(inner) = &segment.arguments
+                            && let Some(inner) = inner.args.last()
+                            && let GenericArgument::Type(Type::Path(inner_type_path)) = inner
+                            && let Some(inner_segment) = inner_type_path.path.segments.last()
+                            && inner_segment.ident == "str"
+                        {
+                            return quote! { #root::scalars::ProtoString };
+                        }
+                    }
+                }
+
                 match ident {
                     Some(ident) => {
                         let text = ident.to_string();

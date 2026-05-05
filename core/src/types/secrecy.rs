@@ -2,7 +2,7 @@ use secrecy::ExposeSecret;
 
 use crate::WIRE_TYPE_LENGTH_ENCODED;
 
-impl crate::Scalar<crate::scalars::ProtoString> for secrecy::SecretString {
+impl crate::Scalar<crate::scalars::ProtoString> for secrecy::SecretBox<str> {
     const WIRE_TYPE: u8 = WIRE_TYPE_LENGTH_ENCODED;
 
     fn encode(&self, encoder: &mut impl crate::Encode) {
@@ -34,7 +34,7 @@ impl crate::Scalar<crate::scalars::Bytes> for secrecy::SecretBox<[u8]> {
 
 #[cfg(test)]
 mod test {
-    use secrecy::{ExposeSecret, SecretBox, SecretString};
+    use secrecy::{ExposeSecret, SecretBox};
 
     use crate::Scalar;
 
@@ -42,22 +42,22 @@ mod test {
     fn encode_decode_secret_string() {
         let test_cases = [
             (
-                SecretString::from("testing"),
+                SecretBox::<str>::from("testing"),
                 8,
                 b"\x07\x74\x65\x73\x74\x69\x6e\x67\x00\x00\x00\x00\x00",
             ),
             (
-                SecretString::from("Hello World!"),
+                SecretBox::<str>::from("Hello World!"),
                 13,
                 b"\x0c\x48\x65\x6c\x6c\x6f\x20\x57\x6f\x72\x6c\x64\x21",
             ),
             (
-                SecretString::from("protobuf"),
+                SecretBox::<str>::from("protobuf"),
                 9,
                 b"\x08\x70\x72\x6f\x74\x6f\x62\x75\x66\x00\x00\x00\x00",
             ),
             (
-                SecretString::from("gin-tonic"),
+                SecretBox::<str>::from("gin-tonic"),
                 10,
                 b"\x09\x67\x69\x6e\x2d\x74\x6f\x6e\x69\x63\x00\x00\x00",
             ),
@@ -82,7 +82,7 @@ mod test {
             );
 
             let mut decoder = Decoder::new(&buffer);
-            let deserialized = SecretString::decode(&mut decoder).unwrap();
+            let deserialized = SecretBox::<str>::decode(&mut decoder).unwrap();
             assert_eq!(value.expose_secret(), deserialized.expose_secret())
         }
     }
