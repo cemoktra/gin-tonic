@@ -3,9 +3,9 @@
 use ::gin_tonic::{Enumeration, Message, OneOf};
 #[derive(Clone, Debug, Message)]
 pub struct Echo {
-    #[gin(id = 1u32)]
+    #[gin(id = 1u32, scalar = "string")]
     pub echo: String,
-    #[gin(id = 2u32)]
+    #[gin(id = 2u32, scalar = "uint32")]
     pub ip: std::net::Ipv4Addr,
 }
 #[derive(Clone, Debug, Message)]

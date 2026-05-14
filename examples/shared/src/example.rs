@@ -281,9 +281,9 @@ pub mod example_client {
 pub mod echo_response;
 #[derive(Clone, Debug, Message)]
 pub struct EchoRequest {
-    #[gin(id = 1u32)]
+    #[gin(id = 1u32, scalar = "string")]
     pub echo: String,
-    #[gin(id = 2u32)]
+    #[gin(id = 2u32, scalar = "bytes")]
     pub request_id: uuid::Uuid,
 }
 #[derive(Clone, Debug, ::gin_tonic::OneOf)]

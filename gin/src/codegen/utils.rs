@@ -172,15 +172,16 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
             Kind::Fixed64 => Some(quote! { "fixed64" }),
             Kind::Sfixed32 => Some(quote! { "sfixed32" }),
             Kind::Sfixed64 => Some(quote! { "sfixed64" }),
-            _ => None,
+            Kind::String => Some(quote! { "string" }),
+            Kind::Bytes => Some(quote! { "bytes" }),
+            Kind::Bool => Some(quote! { "bool" }),
+            Kind::Float => Some(quote! { "float" }),
+            Kind::Double => Some(quote! { "double" }),
+            Kind::Message(_) | Kind::Enum(_) => None,
         }
     }
 
     let options = field.options();
-    if let Some(Value::String(_)) = ext_ref(field.parent_pool(), RUST_TYPE, &options) {
-        return quote::quote!();
-    }
-
     if let Kind::Message(ty) = field.kind() {
         let cardinality = field.cardinality();
         if cardinality == Cardinality::Repeated && ty.is_map_entry() {

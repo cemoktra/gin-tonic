@@ -390,6 +390,7 @@ pub(crate) fn one_of_enumeration(
 
         #[allow(unused_imports)]
         impl #ty {
+            #[allow(unused)]
             fn matches_tag(tag: #root::Tag,)  -> bool {
                 [#ids].contains(&tag.field_number())
             }

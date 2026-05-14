@@ -1,6 +1,6 @@
 use protox::prost_reflect::MessageDescriptor;
 
-use crate::codegen::{case, enums, module, one_of, utils, Generator};
+use crate::codegen::{Generator, case, enums, module, one_of, utils};
 
 /// generate message
 pub(crate) fn generate(

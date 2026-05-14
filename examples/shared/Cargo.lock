@@ -216,7 +216,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic"
-version = "0.8.3"
+version = "0.8.5"
 dependencies = [
  "gin-tonic-core",
  "gin-tonic-derive",
@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.8.3"
+version = "0.8.5"
 dependencies = [
  "thiserror",
  "uuid",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-derive"
-version = "0.8.3"
+version = "0.8.5"
 dependencies = [
  "darling",
  "proc-macro2",
