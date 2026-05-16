@@ -15,7 +15,14 @@ uuid_string = ["gin-tonic-core/uuid_string", "gin-tonic-derive/uuid_string"]
 uuid_bytes = ["gin-tonic-core/uuid_bytes", "gin-tonic-derive/uuid_bytes"]
 
 tonic = ["dep:tonic", "dep:tonic-build"]
-generator = ["dep:heck", "dep:proc-macro2", "dep:protox", "dep:quote", "dep:syn", "dep:prettyplease"]
+generator = [
+  "dep:heck",
+  "dep:proc-macro2",
+  "dep:protox",
+  "dep:quote",
+  "dep:syn",
+  "dep:prettyplease",
+]
 derive = ["dep:gin-tonic-derive"]
 internals = []
 
@@ -39,7 +46,7 @@ tonic-build = { workspace = true, optional = true }
 
 [dev-dependencies]
 criterion = "0.5.1"
-prost = { workspace = true }
+prost = "0.14.3"
 uuid = { workspace = true }
 
 hex = { workspace = true }
