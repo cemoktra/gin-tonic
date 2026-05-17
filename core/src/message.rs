@@ -44,8 +44,7 @@ where
 
 #[cfg(test)]
 mod test {
-
-    use std::collections::HashMap;
+    use fxhash::FxHashMap;
 
     use crate::{
         Decode, Map, Message, Packed, Scalar,
@@ -271,7 +270,7 @@ mod test {
 
         #[derive(Debug, PartialEq, Eq)]
         struct Test6 {
-            g: HashMap<String, i32>,
+            g: FxHashMap<String, i32>,
         }
 
         impl crate::Message for Test6 {
@@ -283,7 +282,7 @@ mod test {
             where
                 Self: Sized,
             {
-                let mut g = HashMap::new();
+                let mut g = FxHashMap::with_capacity_and_hasher(4, Default::default());
 
                 while !decoder.eof() {
                     decoder.decode_tag()?;
@@ -295,7 +294,7 @@ mod test {
             }
         }
 
-        let mut g = HashMap::new();
+        let mut g = FxHashMap::with_capacity_and_hasher(4, Default::default());
         g.insert(String::from("true"), 1);
         g.insert(String::from("false"), 0);
         let test6 = Test6 { g };

@@ -256,7 +256,7 @@ pub fn field_type(ctx: &Generator, enclosed_type: &str, field: &FieldDescriptor)
                 let key_ty = field_type(ctx, enclosed_type, &ty.map_entry_key_field());
                 let value_ty = field_type(ctx, enclosed_type, &ty.map_entry_value_field());
                 return quote::quote! {
-                    std::collections::HashMap<#key_ty, #value_ty>
+                    gin_tonic::fxhash::FxHashMap<#key_ty, #value_ty>
                 };
             } else {
                 resolve_message(ctx, enclosed_type, ty.full_name())

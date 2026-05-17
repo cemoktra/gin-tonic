@@ -1,4 +1,6 @@
-use std::{collections::HashMap, hash::Hash};
+use std::hash::Hash;
+
+use fxhash::FxHashMap;
 
 use crate::{
     Decode, Encode, Map, Scalar, Tag, encoder::SizeHint, error::ProtoError,
@@ -37,7 +39,7 @@ impl<'p, RustKey, RustValue> KeyValuePairView<'p, RustKey, RustValue> {
 }
 
 impl<RustKey, ProtobufKey, RustValue, ProtobufValue> Map<ProtobufKey, ProtobufValue>
-    for HashMap<RustKey, RustValue>
+    for FxHashMap<RustKey, RustValue>
 where
     RustKey: Scalar<ProtobufKey> + Hash + Eq,
     RustValue: Scalar<ProtobufValue>,

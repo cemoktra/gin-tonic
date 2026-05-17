@@ -443,25 +443,24 @@ mod nested {
 
 mod map {
     mod required {
-        use gin_tonic_core::{Message, decoder::Decoder, encoder::Encoder};
-        use std::collections::HashMap;
+        use gin_tonic_core::{Message, decoder::Decoder, encoder::Encoder, fxhash::FxHashMap};
 
         #[derive(Default, Debug, PartialEq, gin_tonic_derive::Message)]
         #[gin(root = "crate")]
         struct Test {
             #[gin(id = 1, key_scalar = "uint32")]
-            map_1: HashMap<u32, String>,
+            map_1: FxHashMap<u32, String>,
             #[gin(id = 2, value_scalar = "uint32")]
-            map_2: HashMap<String, u32>,
+            map_2: FxHashMap<String, u32>,
         }
 
         #[test]
         fn encode_decode_non_empty() {
-            let mut map_1 = HashMap::new();
+            let mut map_1 = FxHashMap::with_capacity_and_hasher(8, Default::default());
             map_1.insert(10, "ten".into());
             map_1.insert(20, "twenty".into());
 
-            let mut map_2 = HashMap::new();
+            let mut map_2 = FxHashMap::with_capacity_and_hasher(8, Default::default());
             map_2.insert("ten".into(), 10);
             map_2.insert("twenty".into(), 20);
 
@@ -484,8 +483,8 @@ mod map {
 
         #[test]
         fn encode_decode_empty() {
-            let map_1 = HashMap::new();
-            let map_2 = HashMap::new();
+            let map_1 = FxHashMap::with_capacity_and_hasher(8, Default::default());
+            let map_2 = FxHashMap::with_capacity_and_hasher(8, Default::default());
 
             let test = Test { map_1, map_2 };
 
