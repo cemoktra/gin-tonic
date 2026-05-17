@@ -178,8 +178,7 @@ impl IsMap for syn::Type {
                 // Get the last segment (e.g., 'HashMap' in 'std::option::Option')
                 let segment: &PathSegment = type_path.path.segments.last()?;
 
-                // TODO: also add HashMap
-                if segment.ident != "HashMap" {
+                if segment.ident != "FxHashMap" {
                     return None;
                 }
 

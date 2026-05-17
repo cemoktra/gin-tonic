@@ -29,6 +29,7 @@ fn expand_struct_message(
 
     let builder_ident = format_ident!("{ty}Builder");
     let mut builder_fields = TokenStream::new();
+    let mut builder_new = TokenStream::new();
     let mut builder_destructuring = TokenStream::new();
     let mut finish_field = TokenStream::new();
     let mut decode_field = TokenStream::new();
@@ -47,6 +48,9 @@ fn expand_struct_message(
         if field.oneof.is_present() {
             builder_fields.extend(quote_spanned! { span=>
                 #field_ident: Option<#ty>,
+            });
+            builder_new.extend(quote_spanned! { span=>
+                #field_ident: None,
             });
             builder_destructuring.extend(quote_spanned! { span=>
                 #field_ident,
@@ -74,6 +78,9 @@ fn expand_struct_message(
 
             builder_fields.extend(quote_spanned! { span=>
                 #field_ident: #ty,
+            });
+            builder_new.extend(quote_spanned! { span=>
+                #field_ident: None,
             });
             builder_destructuring.extend(quote_spanned! { span=>
                 #field_ident,
@@ -115,6 +122,9 @@ fn expand_struct_message(
             builder_fields.extend(quote_spanned! { span=>
                 #field_ident: #ty,
             });
+            builder_new.extend(quote_spanned! { span=>
+                #field_ident: Vec::with_capacity(8),
+            });
             builder_destructuring.extend(quote_spanned! { span=>
                 #field_ident,
             });
@@ -154,6 +164,9 @@ fn expand_struct_message(
             builder_fields.extend(quote_spanned! { span=>
                 #field_ident: #ty,
             });
+            builder_new.extend(quote_spanned! { span=>
+                #field_ident: #root::fxhash::FxHashMap::with_capacity_and_hasher(8, Default::default()),
+            });
             builder_destructuring.extend(quote_spanned! { span=>
                 #field_ident,
             });
@@ -175,6 +188,9 @@ fn expand_struct_message(
 
             builder_fields.extend(quote_spanned! { span=>
                 #field_ident: Option<#ty>,
+            });
+            builder_new.extend(quote_spanned! { span=>
+                #field_ident: None,
             });
             builder_destructuring.extend(quote_spanned! { span=>
                 #field_ident,
@@ -206,7 +222,7 @@ fn expand_struct_message(
             where
                 Self: Sized,
             {
-                let mut builder = #builder_ident::default();
+                let mut builder = #builder_ident::new();
 
                 while !decoder.eof() {
                     let tag = decoder.decode_tag()?;
@@ -224,6 +240,12 @@ fn expand_struct_message(
 
         #[allow(unused_imports)]
         impl #builder_ident {
+            fn new() -> Self {
+                Self {
+                    #builder_new
+                }
+            }
+
             fn finish(self) -> Result<#ty, #root::ProtoError> {
                 let Self {
                     #builder_destructuring
