@@ -88,7 +88,7 @@ Measured against prost 0.14.3 on an equivalent message with a UUID, 10 IP addres
 **gin-tonic:**
 ```
 gin_encode    time:   [1.3608 µs 1.3627 µs 1.3654 µs]
-gin_decode    time:   [2.5448 µs 2.5468 µs 2.5487 µs]
+gin_decode    time:   [2.4395 µs 2.4503 µs 2.4634 µs]
 ```
 
 **prost** (including `From` conversions to idiomatic Rust types):

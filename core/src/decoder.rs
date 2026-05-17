@@ -140,4 +140,12 @@ impl<'buf> Decode for Decoder<'buf> {
         self.advance(len);
         Ok(vec)
     }
+
+    #[inline]
+    fn decode_string(&mut self) -> Result<String, crate::ProtoError> {
+        let len = self.decode_uint32()? as usize;
+        let str = str::from_utf8(&self.buffer()[0..len])?;
+        self.advance(len);
+        Ok(str.into())
+    }
 }

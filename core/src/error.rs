@@ -1,4 +1,4 @@
-use std::{array::TryFromSliceError, string::FromUtf8Error};
+use std::{array::TryFromSliceError, str::Utf8Error};
 
 use varint_simd::VarIntDecodeError;
 
@@ -7,7 +7,7 @@ pub enum ProtoError {
     #[error(transparent)]
     VarInt(#[from] VarIntDecodeError),
     #[error(transparent)]
-    Utf8(#[from] FromUtf8Error),
+    Utf8(#[from] Utf8Error),
     #[error(transparent)]
     ArrayFromSlice(#[from] TryFromSliceError),
     #[error("Field number {0} is missing")]

@@ -105,11 +105,7 @@ pub trait Decode {
     fn decode_double(&mut self) -> Result<f64, ProtoError>;
 
     fn decode_bytes(&mut self) -> Result<Vec<u8>, ProtoError>;
-
-    #[inline]
-    fn decode_string(&mut self) -> Result<String, ProtoError> {
-        Ok(String::from_utf8(self.decode_bytes()?)?)
-    }
+    fn decode_string(&mut self) -> Result<String, ProtoError>;
 
     #[inline]
     fn decode_bool(&mut self) -> Result<bool, ProtoError> {
