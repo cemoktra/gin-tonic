@@ -19,6 +19,7 @@ where
         <Self as Message>::encode_message(self, encoder);
     }
 
+    #[inline]
     fn encode_field(&self, field_number: u32, encoder: &mut impl Encode) {
         encoder.encode_tag(Tag::from_parts(
             field_number,

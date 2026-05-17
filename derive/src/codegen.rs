@@ -212,12 +212,14 @@ fn expand_struct_message(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::Message for #ty {
+            #[inline]
             fn encode_message(&self, encoder: &mut impl #root::Encode) {
                 use #root::Scalar;
 
                 #encode_impl
             }
 
+            #[inline]
             fn decode_message(decoder: &mut impl #root::Decode) -> Result<Self, #root::gin_tonic_core::ProtoError>
             where
                 Self: Sized,
@@ -246,6 +248,7 @@ fn expand_struct_message(
                 }
             }
 
+            #[inline]
             fn finish(self) -> Result<#ty, #root::ProtoError> {
                 let Self {
                     #builder_destructuring
@@ -255,6 +258,7 @@ fn expand_struct_message(
                 })
             }
 
+            #[inline]
             fn decode_field(
                 &mut self,
                 tag: #root::Tag,
@@ -316,6 +320,7 @@ pub(crate) fn expand_enumeration(
         impl #root::Scalar<#root::scalars::UInt32> for #ty {
             const WIRE_TYPE: u8 = #root::WIRE_TYPE_VARINT;
 
+            #[inline]
             fn encode(&self, encoder: &mut impl #root::Encode) {
                 let value = match self {
                     #encode_impl
@@ -324,6 +329,7 @@ pub(crate) fn expand_enumeration(
                 <u32 as #root::Scalar::<#root::scalars::UInt32>>::encode(&value, encoder)
             }
 
+            #[inline]
             fn decode(decoder: &mut impl #root::Decode) -> Result<Self, #root::ProtoError>
             where
                 Self: Sized
@@ -386,12 +392,14 @@ pub(crate) fn one_of_enumeration(
         #[automatically_derived]
         #[allow(unused_imports)]
         impl #root::Message for #ty {
+            #[inline]
             fn encode_message(&self, encoder: &mut impl #root::Encode) {
                 match self {
                     #encode_impl
                 }
             }
 
+            #[inline]
             fn decode_message(
                 decoder: &mut impl #root::Decode,
             ) -> Result<Self, #root::ProtoError>
@@ -417,6 +425,7 @@ pub(crate) fn one_of_enumeration(
                 [#ids].contains(&tag.field_number())
             }
 
+            #[inline]
             fn decode_field(
                 tag: #root::Tag,
                 decoder: &mut impl #root::Decode,

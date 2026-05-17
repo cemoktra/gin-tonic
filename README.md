@@ -87,17 +87,17 @@ Measured against prost 0.14.3 on an equivalent message with a UUID, 10 IP addres
 
 **gin-tonic:**
 ```
-gin_encode    time:   [1.3608 µs 1.3627 µs 1.3654 µs]
-gin_decode    time:   [2.4395 µs 2.4503 µs 2.4634 µs]
+gin_encode    time:   [1.0944 µs 1.0957 µs 1.0974 µs]
+gin_decode    time:   [2.4878 µs 2.4886 µs 2.4893 µs]
 ```
 
 **prost** (including `From` conversions to idiomatic Rust types):
 ```
-prost_encode  time:   [2.4047 µs 2.4078 µs 2.4111 µs]
-prost_decode  time:   [2.8447 µs 2.8497 µs 2.8559 µs]
+prost_encode  time:   [2.3426 µs 2.3477 µs 2.3568 µs]
+prost_decode  time:   [2.7674 µs 2.7731 µs 2.7772 µs]
 ```
 
-Decode performance is roughly on par with prost while encoding is about 1.8× faster.
+Decode performance is slightly better while encoding is about twice as fast.
 
 ## Crates
 
