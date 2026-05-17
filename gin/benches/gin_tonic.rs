@@ -18,11 +18,11 @@ pub(crate) mod gin_bench {
     /// this would normally be generated
     #[derive(Clone, Debug, Message)]
     pub struct GinTonic {
-        #[gin(id = 1u32)]
+        #[gin(id = 1u32, scalar = "bytes")]
         pub uuid: uuid::Uuid,
-        #[gin(id = 2u32)]
+        #[gin(id = 2u32, scalar = "uint32")]
         pub ip: Vec<std::net::Ipv4Addr>,
-        #[gin(id = 3u32)]
+        #[gin(id = 3u32, scalar = "string")]
         pub text: String,
         #[gin(id = 4u32)]
         pub nested: GinTonicNested,
