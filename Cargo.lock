@@ -319,7 +319,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "criterion",
  "gin-tonic-core",
@@ -341,7 +341,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-core"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "fxhash",
  "hex",
@@ -353,7 +353,7 @@ dependencies = [
 
 [[package]]
 name = "gin-tonic-derive"
-version = "0.8.7"
+version = "0.8.8"
 dependencies = [
  "darling",
  "proc-macro2",
