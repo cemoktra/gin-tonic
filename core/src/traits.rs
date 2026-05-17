@@ -15,6 +15,7 @@ pub trait Scalar<ProtobufType> {
         Self: Sized;
 
     /// helper to serialize type with field number
+    #[inline]
     fn encode_field(&self, field_number: u32, encoder: &mut impl Encode) {
         encoder.encode_tag(Tag::from_parts(field_number, Self::WIRE_TYPE));
         self.encode(encoder);
