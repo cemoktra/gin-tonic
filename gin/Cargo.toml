@@ -11,8 +11,7 @@ keywords = ["grpc", "protobuf", "tonic"]
 [features]
 default = ["derive", "tonic", "generator"]
 secrecy = ["gin-tonic-core/secrecy", "gin-tonic-derive/secrecy"]
-uuid_string = ["gin-tonic-core/uuid_string", "gin-tonic-derive/uuid_string"]
-uuid_bytes = ["gin-tonic-core/uuid_bytes", "gin-tonic-derive/uuid_bytes"]
+uuid = ["gin-tonic-core/uuid", "gin-tonic-derive/uuid"]
 
 tonic = ["dep:tonic", "dep:tonic-build"]
 generator = [

@@ -11,8 +11,7 @@ keywords = ["grpc", "protobuf", "tonic"]
 [features]
 default = []
 secrecy = ["dep:secrecy"]
-uuid_string = ["dep:uuid"]
-uuid_bytes = ["dep:uuid"]
+uuid = ["dep:uuid"]
 
 [dependencies]
 fxhash = { workspace = true }

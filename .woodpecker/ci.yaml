@@ -1,0 +1,20 @@
+matrix:
+  RUST_VERSION: [stable]
+
+when:
+  - event: pull_request
+  - event: push
+    branch: ${CI_REPO_DEFAULT_BRANCH}
+
+steps:
+  test:
+    image: rust
+    environment:
+      CARGO_TERM_COLOR: always
+    commands:
+      - rustup default $RUST_VERSION
+      - cargo check -j 4
+      - cargo test -j 4 --features uuid,secrecy
+      - rustup component add clippy
+      - cargo clippy -j4 --all-targets --features uuid,secrecy -- -D warnings
+

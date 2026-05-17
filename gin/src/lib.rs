@@ -7,29 +7,22 @@ mod codegen;
 
 #[cfg(feature = "tonic")]
 pub use codec::GinCodec;
-
-#[cfg(feature = "generator")]
-pub use codegen::{CompileConfig, CompilerError};
-
 #[cfg(all(feature = "generator", feature = "internals"))]
 pub use codegen::Generator;
-
-#[cfg(all(feature = "generator", feature = "internals"))]
-pub use protox;
-
+#[cfg(feature = "generator")]
+pub use codegen::{CompileConfig, CompilerError};
 pub use gin_tonic_core;
-
 pub use gin_tonic_core::{
     Decode, Encode, Map, Message, PackableMarker, Packed, ProtoError, Scalar, Tag, Unpacked,
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT, decoder, encoder,
     fxhash, scalars,
 };
-
 #[cfg(feature = "derive")]
 pub use gin_tonic_derive;
-
 #[cfg(feature = "derive")]
 pub use gin_tonic_derive::{Enumeration, Message, OneOf};
+#[cfg(all(feature = "generator", feature = "internals"))]
+pub use protox;
 
 // Re-export the alloc crate for use within derived code.
 #[doc(hidden)]

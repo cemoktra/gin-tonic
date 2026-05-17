@@ -11,8 +11,7 @@ keywords = ["grpc", "protobuf", "tonic"]
 [features]
 default = []
 secrecy = []
-uuid_string = []
-uuid_bytes = []
+uuid = []
 
 [lib]
 proc-macro = true
