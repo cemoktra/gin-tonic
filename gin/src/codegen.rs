@@ -13,10 +13,9 @@ pub(crate) mod utils;
 
 use std::path::PathBuf;
 
+pub use ctx::Generator;
 use external_type::ExternalType;
 use protox::file::{ChainFileResolver, GoogleFileResolver, IncludeFileResolver};
-
-pub use ctx::Generator;
 
 /// [CompileConfig] transforming `*.proto` files into Rust code
 pub struct CompileConfig {

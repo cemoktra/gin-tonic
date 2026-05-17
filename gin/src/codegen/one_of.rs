@@ -1,6 +1,6 @@
 use protox::prost_reflect::{FieldDescriptor, MessageDescriptor, OneofDescriptor};
 
-use crate::codegen::{case, enums, messages, module, utils, Generator};
+use crate::codegen::{Generator, case, enums, messages, module, utils};
 
 pub(crate) fn generate(
     ctx: &Generator,

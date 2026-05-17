@@ -1,10 +1,11 @@
-use crate::codegen::case::{convert, Case};
+use proc_macro2::TokenStream;
+use protox::prost_reflect::DescriptorPool;
+
+use crate::CompilerError;
+use crate::codegen::case::{Case, convert};
 use crate::codegen::external_type::ExternalType;
 use crate::codegen::module::Module;
 use crate::codegen::{enums, external_type, messages, service, utils};
-use crate::CompilerError;
-use proc_macro2::TokenStream;
-use protox::prost_reflect::DescriptorPool;
 
 pub struct Generator {
     well_known_types: bool,
@@ -14,6 +15,12 @@ pub struct Generator {
 
     #[cfg(feature = "tonic")]
     generate_services: bool,
+}
+
+impl Default for Generator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Generator {

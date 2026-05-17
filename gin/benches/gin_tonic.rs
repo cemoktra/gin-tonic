@@ -1,13 +1,13 @@
-#[cfg(not(feature = "uuid_bytes"))]
+#[cfg(not(feature = "uuid"))]
 fn main() {}
 
-#[cfg(feature = "uuid_bytes")]
+#[cfg(feature = "uuid")]
 use criterion::criterion_main;
 
-#[cfg(feature = "uuid_bytes")]
+#[cfg(feature = "uuid")]
 criterion_main!(crate::gin_bench::benches);
 
-#[cfg(feature = "uuid_bytes")]
+#[cfg(feature = "uuid")]
 pub(crate) mod gin_bench {
     use criterion::{Criterion, black_box, criterion_group};
     use gin_tonic::{Message, Scalar, decoder::Decoder, encoder::Encoder, fxhash::FxHashMap};

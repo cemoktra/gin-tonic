@@ -56,9 +56,8 @@ mod test {
     };
 
     mod shared {
-        use crate::Decode;
-
         use super::*;
+        use crate::Decode;
 
         #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
         pub(super) struct Test1 {

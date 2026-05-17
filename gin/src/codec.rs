@@ -1,10 +1,10 @@
 //! [tonic::codec::Codec] implementation for gin-tonic
 
-use protox::prost::bytes::{Buf, BufMut};
 use std::marker::PhantomData;
-use tonic::codec::{DecodeBuf, EncodeBuf};
 
 use gin_tonic_core::{Message, decoder::Decoder, encoder::Encoder};
+use protox::prost::bytes::{Buf, BufMut};
+use tonic::codec::{DecodeBuf, EncodeBuf};
 
 #[derive(Debug, Clone)]
 pub struct GinCodec<T, U> {

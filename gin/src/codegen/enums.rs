@@ -1,6 +1,6 @@
 use protox::prost_reflect::EnumDescriptor;
 
-use crate::codegen::{case, module, Generator};
+use crate::codegen::{Generator, case, module};
 
 /// generate code for enumerations
 pub(crate) fn generate(

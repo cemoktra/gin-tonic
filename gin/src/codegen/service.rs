@@ -1,6 +1,7 @@
-use crate::codegen::{case, module};
 use protox::prost_reflect::ServiceDescriptor;
 use tonic_build::CodeGenBuilder;
+
+use crate::codegen::{case, module};
 
 pub(crate) fn generate(parent: &mut module::Module, module_path: &str, svc: ServiceDescriptor) {
     let mut service = tonic_build::manual::Service::builder()
