@@ -17,4 +17,6 @@ steps:
       - cargo test -j 4 --features uuid,secrecy
       - rustup component add clippy
       - cargo clippy -j4 --all-targets --features uuid,secrecy -- -D warnings
+      - cargo c --manifest-path examples/server/Cargo.toml
+      - cargo c --manifest-path examples/client/Cargo.toml
 

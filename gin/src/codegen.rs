@@ -233,13 +233,19 @@ impl Resolver {
     }
 }
 
+const GIN_PROTO: &str = include_str!("../proto/gin.proto");
+
 impl protox::file::FileResolver for Resolver {
     fn resolve_path(&self, path: &std::path::Path) -> Option<String> {
         self.0.resolve_path(path)
     }
 
     fn open_file(&self, name: &str) -> Result<protox::file::File, protox::Error> {
+        if name.ends_with("gin.proto") {
+            return protox::file::File::from_source(name, GIN_PROTO);
+        }
         let file = self.0.open_file(name)?;
+
         if let Some(path) = file.path() {
             println!("cargo:rerun-if-changed={}", path.display());
         }
