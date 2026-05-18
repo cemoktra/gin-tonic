@@ -2,7 +2,8 @@ syntax = "proto3";
 
 package example;
 
-import "gin/proto/gin.proto";
+// for gin-tonic this file is automatically found!
+import "gin.proto";
 
 service Example {
   rpc echo(EchoRequest) returns (EchoResponse);
