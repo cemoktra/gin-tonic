@@ -177,7 +177,8 @@ pub fn proto_attribute(field: &FieldDescriptor) -> TokenStream {
             Kind::Bool => Some(quote! { "bool" }),
             Kind::Float => Some(quote! { "float" }),
             Kind::Double => Some(quote! { "double" }),
-            Kind::Message(_) | Kind::Enum(_) => None,
+            Kind::Message(_) => None,
+            Kind::Enum(_) => Some(quote! { "int32" }),
         }
     }
 

@@ -17,7 +17,10 @@ impl ExternalType {
 // some of the well known google protobuf types
 pub fn well_known_types() -> Vec<ExternalType> {
     vec![
-        ExternalType::raw(".google.protobuf", "::prost_types"),
+        ExternalType::raw(
+            ".google.protobuf.Duration",
+            "::gin_tonic::types::google::Duration",
+        ),
         ExternalType::raw(".google.protobuf.BoolValue", "bool"),
         ExternalType::raw(
             ".google.protobuf.BytesValue",

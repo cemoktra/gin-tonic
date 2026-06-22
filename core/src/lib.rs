@@ -7,7 +7,7 @@ mod repeated;
 pub mod scalars;
 mod tag;
 mod traits;
-mod types;
+pub mod types;
 mod wire_types;
 
 pub use error::ProtoError;

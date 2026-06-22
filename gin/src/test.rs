@@ -521,7 +521,7 @@ mod enumeration {
         #[derive(Debug, PartialEq, gin_tonic_derive::Message)]
         #[gin(root = "crate")]
         struct Test {
-            #[gin(id = 1, scalar = "uint32")]
+            #[gin(id = 1, scalar = "int32")]
             e: super::TestEnum,
         }
 
@@ -586,7 +586,7 @@ mod enumeration {
         #[derive(Debug, PartialEq, gin_tonic_derive::Message)]
         #[gin(root = "crate")]
         struct Test {
-            #[gin(id = 1, scalar = "uint32")]
+            #[gin(id = 1, scalar = "int32")]
             e: Option<super::TestEnum>,
         }
 
@@ -638,7 +638,7 @@ mod enumeration {
         #[derive(Debug, PartialEq, gin_tonic_derive::Message)]
         #[gin(root = "crate")]
         struct Test {
-            #[gin(id = 1, scalar = "uint32")]
+            #[gin(id = 1, scalar = "int32")]
             e: Vec<super::TestEnum>,
         }
 

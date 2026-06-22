@@ -296,9 +296,9 @@ pub(crate) fn expand_enumeration(
     for variant in variants {
         let var_ident = variant.ident;
         let span = var_ident.span();
-        let id = match variant.id.base10_parse::<u32>() {
+        let id = match variant.id.base10_parse::<i32>() {
             Ok(id) => id,
-            Err(_) => return quote_spanned! {span=> compile_error!("field number (id) is no u32")},
+            Err(_) => return quote_spanned! {span=> compile_error!("field number (id) is no i32")},
         };
 
         encode_impl.extend(quote_spanned! {span=>
@@ -313,11 +313,11 @@ pub(crate) fn expand_enumeration(
     quote_spanned! {span=>
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::PackableMarker<#root::scalars::UInt32> for #ty {}
+        impl #root::PackableMarker<#root::scalars::Int32> for #ty {}
 
         #[automatically_derived]
         #[allow(unused_imports)]
-        impl #root::Scalar<#root::scalars::UInt32> for #ty {
+        impl #root::Scalar<#root::scalars::Int32> for #ty {
             const WIRE_TYPE: u8 = #root::WIRE_TYPE_VARINT;
 
             #[inline]
@@ -326,7 +326,7 @@ pub(crate) fn expand_enumeration(
                     #encode_impl
                 };
 
-                <u32 as #root::Scalar::<#root::scalars::UInt32>>::encode(&value, encoder)
+                <i32 as #root::Scalar::<#root::scalars::Int32>>::encode(&value, encoder)
             }
 
             #[inline]
@@ -334,7 +334,7 @@ pub(crate) fn expand_enumeration(
             where
                 Self: Sized
             {
-                let value = <u32 as #root::Scalar<#root::scalars::UInt32>>::decode(decoder)?;
+                let value = <i32 as #root::Scalar<#root::scalars::Int32>>::decode(decoder)?;
 
                 match value {
                     #decode_impl
