@@ -15,7 +15,7 @@ pub enum ProtoError {
     #[error("No OneOf variants found, expected one of: {0:?}")]
     MissingOneOf(&'static [u32]),
     #[error("{0} is not a known enum variant")]
-    UnknownEnumVariant(u32),
+    UnknownEnumVariant(i32),
     #[error("{0}")]
     Custom(String),
 }

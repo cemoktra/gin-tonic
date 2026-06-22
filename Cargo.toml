@@ -5,9 +5,9 @@ members = ["gin", "derive", "core"]
 [workspace.dependencies]
 darling = "0.23.0"
 fxhash = "0.2.1"
-gin-tonic = { path = "gin", version = "0.8.8" }
-gin-tonic-core = { path = "core", version = "0.8.8" }
-gin-tonic-derive = { path = "derive", version = "0.8.8" }
+gin-tonic = { path = "gin", version = "0.8.9" }
+gin-tonic-core = { path = "core", version = "0.8.9" }
+gin-tonic-derive = { path = "derive", version = "0.8.9" }
 heck = "0.5.0"
 hex = "0.4.3"
 prettyplease = "0.2.37"

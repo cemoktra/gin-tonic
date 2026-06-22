@@ -15,7 +15,7 @@ pub use gin_tonic_core;
 pub use gin_tonic_core::{
     Decode, Encode, Map, Message, PackableMarker, Packed, ProtoError, Scalar, Tag, Unpacked,
     WIRE_TYPE_I32, WIRE_TYPE_I64, WIRE_TYPE_LENGTH_ENCODED, WIRE_TYPE_VARINT, decoder, encoder,
-    fxhash, scalars,
+    fxhash, scalars, types,
 };
 #[cfg(feature = "derive")]
 pub use gin_tonic_derive;

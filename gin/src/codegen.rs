@@ -7,8 +7,6 @@ pub(crate) mod module;
 pub(crate) mod one_of;
 #[cfg(feature = "tonic")]
 pub(crate) mod service;
-#[cfg(test)]
-mod test;
 pub(crate) mod utils;
 
 use std::path::PathBuf;

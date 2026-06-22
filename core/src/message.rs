@@ -85,10 +85,6 @@ mod test {
 
     #[test]
     fn message_1() {
-        // message Test1 {
-        //   int32 a = 1;
-        // }
-
         let test1 = shared::Test1 { a: 150 };
 
         let size_hint = test1.message_size_hint();
@@ -109,10 +105,6 @@ mod test {
 
     #[test]
     fn message_2() {
-        // message Test2 {
-        //   string b = 2;
-        // }
-
         #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
         struct Test2 {
             b: String,

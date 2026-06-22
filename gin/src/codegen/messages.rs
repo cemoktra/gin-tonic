@@ -57,7 +57,7 @@ pub(crate) fn generate(
             let field_type = utils::resolve_message(ctx, qualified_name, one_of.full_name());
 
             body.extend(quote::quote! {
-                #[gin(id = 0 )]
+                #[gin(id = 0)]
                 pub #field_name: #field_type,
             });
 
